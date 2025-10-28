@@ -15,17 +15,16 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@clone/shared-types": "workspace:*",
     "@clone/api-client": "workspace:*",
-    "@clone/validation": "workspace:*",
     "@clone/constants": "workspace:*",
-    "react": "^18.2.0",
-    "react-native": "^0.72.0",
-    "expo": "^49.0.0"
+    "@clone/shared-types": "workspace:*",
+    "@clone/validation": "workspace:*",
+    "expo": "~54.0.20",
+    "react": "^19.1.0",
+    "react-native": "0.81.5"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-native": "^0.72.0",
-    "typescript": "^5.2.0"
+    "@types/react": "^19.1.0",
+    "typescript": "^5.9.3"
   }
 }

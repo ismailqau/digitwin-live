@@ -14,15 +14,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@clone/shared-types": "workspace:*",
     "@clone/config": "workspace:*",
-    "@clone/logger": "workspace:*",
     "@clone/errors": "workspace:*",
+    "@clone/logger": "workspace:*",
+    "@clone/shared-types": "workspace:*",
     "@google-cloud/speech": "^6.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsx": "^3.12.0",
-    "typescript": "^5.2.0"
+    "@types/node": "^24.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
   }
 }

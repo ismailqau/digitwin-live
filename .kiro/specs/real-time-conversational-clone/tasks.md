@@ -48,10 +48,9 @@
   - Set up package versioning and publishing strategy
   - _Requirements: All_
 
-
 ## Phase 2: Backend Infrastructure and Core Services
 
-- [ ] 2. Set up GCP infrastructure with Terraform
+- [-] 2. Set up GCP infrastructure with Terraform
   - Create GCP project and configure basic services (Cloud Run, Cloud SQL, Cloud Storage)
   - Set up Terraform configuration for infrastructure as code
   - Implement Terraform workspaces for dev/staging/prod
@@ -61,18 +60,18 @@
   - Implement infrastructure validation with terraform validate
   - _Requirements: 10, 11_
 
-- [ ] 2.1 Initialize backend WebSocket server with modern architecture
+- [x] 2.1 Initialize backend WebSocket server with modern architecture
   - Create Node.js/TypeScript project in `apps/websocket-server`
   - Implement clean architecture with layers (controllers, services, repositories)
   - Set up dependency injection container (tsyringe)
   - Create domain models and DTOs with validation (class-validator)
   - Implement WebSocket connection handler with Socket.io
-  - Create session management service with Redis
+  - Create session management service with PostgreSQL
   - Implement connection pooling and load balancing configuration
   - Set up structured logging with Winston
   - _Requirements: 10_
 
-- [ ] 2.2 Set up REST API Gateway with OpenAPI documentation
+- [x] 2.2 Set up REST API Gateway with OpenAPI documentation
   - Create Express API Gateway in `apps/api-gateway`
   - Implement OpenAPI 3.0 specification with swagger-jsdoc
   - Set up Swagger UI for interactive API documentation
@@ -83,6 +82,7 @@
   - Implement request validation and sanitization
   - Create rate limiting middleware per endpoint
   - Implement request/response logging with correlation IDs
+  - fix any package WARN warnings
   - Create CORS configuration
   - _Requirements: 9, 10, 12, 16, 18_
 
@@ -123,7 +123,7 @@
   - Separate read and write models
   - Create command handlers for write operations
   - Implement query handlers for read operations
-  - Create read-optimized views in Redis
+  - Create read-optimized materialized views in PostgreSQL
   - Implement eventual consistency handling
   - Create command validation and authorization
   - _Requirements: 11_
@@ -136,7 +136,6 @@
   - Create inter-service error handling
   - Implement distributed transactions with Saga pattern
   - _Requirements: 11_
-
 
 ## Phase 3: Audio Processing and ASR
 
@@ -214,7 +213,6 @@
   - Implement response streaming and sentence buffering for TTS
   - Create prompt versioning and A/B testing
   - _Requirements: 4, 14_
-
 
 ## Phase 6: Voice Cloning and TTS
 
@@ -301,7 +299,6 @@
   - Create video buffering for smooth playback
   - _Requirements: 6, 7_
 
-
 ## Phase 9: Conversation Flow and State Management
 
 - [ ] 9. Implement conversation state management
@@ -330,14 +327,14 @@
 ## Phase 10: Performance Optimization and Caching
 
 - [ ] 10. Implement caching and performance optimization
-  - Set up Redis cache for embeddings and common queries
-  - Implement multi-level caching strategy (L1: memory, L2: Redis, L3: storage)
-  - Create cache invalidation strategies (TTL, event-based)
-  - Implement LLM response caching for FAQs
+  - Set up PostgreSQL cache tables for embeddings and common queries with proper indexing
+  - Implement multi-level caching strategy (L1: memory, L2: PostgreSQL cache tables, L3: storage)
+  - Create cache invalidation strategies (TTL with timestamp columns, event-based triggers)
+  - Implement LLM response caching for FAQs in PostgreSQL
   - Create voice model preloading for active users
   - Implement face model caching in GPU workers
   - Create connection pooling for databases and APIs
-  - Implement query result caching with cache-aside pattern
+  - Implement query result caching with cache-aside pattern using PostgreSQL
   - Create cache warming strategies for frequently accessed data
   - _Requirements: 11_
 
@@ -414,12 +411,11 @@
   - _Requirements: 12_
 
 - [ ] 11.5 Implement rate limiting
-  - Create rate limiting service with Redis
+  - Create rate limiting service with PostgreSQL indexed rate_limits table
   - Implement per-user rate limits based on subscription tier
   - Create rate limit enforcement middleware
   - Implement graceful degradation on rate limit exceeded
   - _Requirements: 12_
-
 
 ## Phase 12: Monitoring and Observability
 
@@ -445,7 +441,6 @@
   - Create cost alerting on threshold exceeded
   - Implement usage analytics for cost optimization
   - _Requirements: 11, 17_
-
 
 ## Phase 13: React Native Mobile App - Complete UI/UX Implementation
 
@@ -658,7 +653,6 @@
   - Implement badge count management
   - _Requirements: 10_
 
-
 ## Phase 14: Deployment and Infrastructure Automation
 
 - [ ] 14. Implement deployment automation and infrastructure
@@ -720,10 +714,9 @@
   - Create backup scripts before deployment
   - _Requirements: 11_
 
-
 ## Phase 15: Testing and Quality Assurance
 
-- [ ]* 15. Write unit tests for backend services
+- [ ]\* 15. Write unit tests for backend services
   - Create unit tests for authentication service
   - Write unit tests for RAG pipeline components
   - Create unit tests for LLM service adapters
@@ -734,7 +727,7 @@
   - Achieve 80%+ code coverage
   - _Requirements: All backend tasks_
 
-- [ ]* 15.1 Write integration tests
+- [ ]\* 15.1 Write integration tests
   - Create end-to-end conversation flow tests
   - Write WebSocket communication tests
   - Create RAG pipeline integration tests
@@ -745,7 +738,7 @@
   - Implement test data cleanup
   - _Requirements: 1, 2, 3, 4, 5, 6, 16, 18_
 
-- [ ]* 15.2 Write API contract tests
+- [ ]\* 15.2 Write API contract tests
   - Create OpenAPI schema validation tests
   - Write contract tests for REST endpoints
   - Create WebSocket message schema tests
@@ -754,7 +747,7 @@
   - Create API response format tests
   - _Requirements: All API tasks_
 
-- [ ]* 15.3 Write performance and load tests
+- [ ]\* 15.3 Write performance and load tests
   - Set up k6 for load testing
   - Create load tests for concurrent conversations (10, 100, 1000 users)
   - Write latency benchmark tests for each pipeline stage
@@ -766,7 +759,7 @@
   - Write performance regression tests
   - _Requirements: 11_
 
-- [ ]* 15.4 Write security tests
+- [ ]\* 15.4 Write security tests
   - Create authentication bypass tests
   - Write authorization and data isolation tests
   - Create rate limiting tests
@@ -779,7 +772,7 @@
   - Write security header validation tests
   - _Requirements: 10, 12_
 
-- [ ]* 15.5 Write end-to-end tests
+- [ ]\* 15.5 Write end-to-end tests
   - Set up Playwright or Cypress for E2E testing
   - Create user registration and login E2E tests
   - Write voice model creation E2E tests
@@ -789,7 +782,7 @@
   - Implement cross-platform E2E tests (iOS, Android)
   - _Requirements: All_
 
-- [ ]* 15.6 Create test automation infrastructure
+- [ ]\* 15.6 Create test automation infrastructure
   - Set up test database with seeding
   - Create test data factories and builders
   - Implement test fixtures for common scenarios
@@ -800,7 +793,7 @@
   - Implement flaky test detection and retry
   - _Requirements: All_
 
-- [ ]* 15.7 Write chaos engineering tests
+- [ ]\* 15.7 Write chaos engineering tests
   - Create network failure simulation tests
   - Write service failure recovery tests
   - Create database connection failure tests
@@ -809,7 +802,7 @@
   - Create resource exhaustion tests
   - _Requirements: 11, 13_
 
-- [ ]* 15.8 Write React Native component tests
+- [ ]\* 15.8 Write React Native component tests
   - Write unit tests for custom hooks
   - Create component tests using React Native Testing Library
   - Write integration tests for screens
@@ -817,7 +810,6 @@
   - Write tests for navigation flows
   - Create tests for WebSocket communication
   - _Requirements: All UI tasks_
-
 
 ## Phase 16: Documentation and Launch Preparation
 

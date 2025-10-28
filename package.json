@@ -18,13 +18,23 @@
     "type-check": "turbo run type-check"
   },
   "devDependencies": {
-    "turbo": "^1.10.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.2.0"
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.10.0"
+  "packageManager": "pnpm@8.10.0",
+  "pnpm": {
+    "overrides": {
+      "glob@<8": ">=11.0.0",
+      "rimraf@<4": ">=6.0.0",
+      "inflight": "npm:@aashutoshrathi/inflight@^1.0.0",
+      "lodash.get": ">=4.4.2",
+      "lodash.isequal": ">=4.5.0",
+      "node-domexception": ">=1.0.0"
+    }
+  }
 }

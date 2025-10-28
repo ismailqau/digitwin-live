@@ -82,7 +82,7 @@ graph TB
     subgraph "Storage & Data"
         CloudStorage[(Cloud Storage)]
         CloudSQL[(Cloud SQL)]
-        Cache[(Redis Cache)]
+        Cache[(PostgreSQL Cache)]
     end
 
     subgraph "External AI APIs"
@@ -1455,7 +1455,7 @@ Implement circuit breakers for:
 - Use approximate nearest neighbor search (HNSW)
 - Limit vector search to top-k=5
 - Pre-filter by user ID at database level
-- Implement query result caching (Redis)
+- Implement query result caching (PostgreSQL with indexed cache tables)
 
 **3. LLM Optimization**
 - Use streaming mode for token-by-token delivery
@@ -1493,14 +1493,14 @@ Implement circuit breakers for:
 
 ```typescript
 interface CacheStrategy {
-  // L1: In-memory cache (Redis)
+  // L1: In-memory cache (Application Memory)
   l1Cache: {
     embeddings: Map<string, number[]>;
     commonResponses: Map<string, string>;
     voiceModels: Map<string, VoiceModel>;
   };
   
-  // L2: Distributed cache (Memorystore)
+  // L2: Database cache (PostgreSQL with indexed cache tables)
   l2Cache: {
     vectorSearchResults: Map<string, SearchResult[]>;
     llmResponses: Map<string, string>;
@@ -1780,7 +1780,7 @@ interface RateLimits {
 ```
 
 **Implementation:**
-- Redis-based rate limiting
+- PostgreSQL-based rate limiting with indexed rate_limits table
 - Token bucket algorithm
 - Per-endpoint limits
 - Graceful degradation
