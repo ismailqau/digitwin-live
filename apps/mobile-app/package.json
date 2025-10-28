@@ -1,0 +1,31 @@
+{
+  "name": "@clone/mobile-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React Native mobile application for conversational clone",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build": "tsc --noEmit",
+    "test": "jest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clone/shared-types": "workspace:*",
+    "@clone/api-client": "workspace:*",
+    "@clone/validation": "workspace:*",
+    "@clone/constants": "workspace:*",
+    "react": "^18.2.0",
+    "react-native": "^0.72.0",
+    "expo": "^49.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-native": "^0.72.0",
+    "typescript": "^5.2.0"
+  }
+}

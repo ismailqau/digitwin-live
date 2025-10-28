@@ -1,0 +1,21 @@
+{
+  "name": "@clone/validation",
+  "version": "1.0.0",
+  "description": "Validation schemas using Zod",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@clone/shared-types": "workspace:*",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.0"
+  }
+}

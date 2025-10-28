@@ -1,0 +1,17 @@
+{
+  "name": "@clone/constants",
+  "version": "1.0.0",
+  "description": "Shared constants and enums",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.0"
+  }
+}

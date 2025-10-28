@@ -1,0 +1,30 @@
+{
+  "name": "@clone/llm-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LLM service with multi-provider support (Gemini, OpenAI, Groq)",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@clone/shared-types": "workspace:*",
+    "@clone/config": "workspace:*",
+    "@clone/logger": "workspace:*",
+    "@clone/errors": "workspace:*",
+    "@google-cloud/aiplatform": "^3.0.0",
+    "openai": "^4.20.0",
+    "groq-sdk": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^3.12.0",
+    "typescript": "^5.2.0"
+  }
+}
