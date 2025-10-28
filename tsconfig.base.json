@@ -18,17 +18,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "paths": {
-      "@clone/shared-types": ["./packages/shared-types/src"],
-      "@clone/api-client": ["./packages/api-client/src"],
-      "@clone/validation": ["./packages/validation/src"],
-      "@clone/config": ["./packages/config/src"],
-      "@clone/logger": ["./packages/logger/src"],
-      "@clone/errors": ["./packages/errors/src"],
-      "@clone/utils": ["./packages/utils/src"],
-      "@clone/constants": ["./packages/constants/src"]
-    }
+    "noFallthroughCasesInSwitch": true
   },
   "exclude": ["node_modules", "dist", "build"]
 }
