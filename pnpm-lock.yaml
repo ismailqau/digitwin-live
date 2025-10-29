@@ -244,6 +244,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/cqrs:
+    dependencies:
+      '@clone/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
+    devDependencies:
+      '@types/uuid':
+        specifier: ^9.0.7
+        version: 9.0.8
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   packages/database:
     dependencies:
       '@clone/logger':

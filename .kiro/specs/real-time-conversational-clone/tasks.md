@@ -129,7 +129,7 @@
   - _Requirements: 9, 11, 16, 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 2.6 Implement CQRS pattern for scalability
+- [x] 2.6 Implement CQRS pattern for scalability
   - Separate read and write models
   - Create command handlers for write operations
   - Implement query handlers for read operations

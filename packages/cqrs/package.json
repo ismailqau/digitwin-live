@@ -1,0 +1,19 @@
+{
+  "name": "@clone/cqrs",
+  "version": "1.0.0",
+  "description": "CQRS pattern implementation for scalability",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@clone/event-bus": "workspace:*",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/uuid": "^9.0.7"
+  }
+}
