@@ -59,8 +59,31 @@ const options: swaggerJsdoc.Options = {
             id: { type: 'string', format: 'uuid' },
             email: { type: 'string', format: 'email' },
             name: { type: 'string' },
+            subscriptionTier: { type: 'string', enum: ['free', 'pro', 'enterprise'] },
+            roles: { 
+              type: 'array', 
+              items: { type: 'string' },
+              description: 'User roles for RBAC'
+            },
             createdAt: { type: 'string', format: 'date-time' },
-            subscriptionTier: { type: 'string', enum: ['free', 'pro', 'enterprise'] }
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        TokenPair: {
+          type: 'object',
+          properties: {
+            accessToken: { 
+              type: 'string',
+              description: 'JWT access token (short-lived)'
+            },
+            refreshToken: { 
+              type: 'string',
+              description: 'Refresh token for obtaining new access tokens'
+            },
+            expiresIn: { 
+              type: 'integer',
+              description: 'Access token expiry time in seconds'
+            }
           }
         },
         Document: {

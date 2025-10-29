@@ -49,8 +49,11 @@ GCP_REGION=us-central1
 # Authentication
 JWT_SECRET=your-jwt-secret
 
-# Redis
-REDIS_URL=redis://localhost:6379
+# Caching (PostgreSQL-based)
+ENABLE_CACHING=true
+CACHE_TTL_SHORT=300
+CACHE_TTL_MEDIUM=3600
+CACHE_TTL_LONG=86400
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/clone_db

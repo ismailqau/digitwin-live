@@ -4,8 +4,9 @@ import jwt from 'jsonwebtoken';
 export interface JWTPayload {
   userId: string;
   email: string;
-  subscriptionTier: string;
+  subscriptionTier: 'free' | 'pro' | 'enterprise';
   permissions: string[];
+  roles: string[];
 }
 
 export interface AuthRequest extends Request {

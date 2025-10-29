@@ -37,60 +37,62 @@ conversational-clone/
 
 ### Prerequisites
 
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
-- Google Cloud Platform account
-- API keys for AI services (Google, OpenAI, Groq)
+- **Node.js** 18+
+- **PostgreSQL** 15+
+- **pnpm** 8+
 
 ### Installation
 
-1. Clone the repository:
 ```bash
+# 1. Clone and install
 git clone <repository-url>
 cd conversational-clone
-```
+pnpm install
 
-2. Run the setup script:
-```bash
-chmod +x scripts/*.sh
-./scripts/setup.sh
-```
+# 2. Set up environment
+cp .env.development .env
+node scripts/generate-secrets.js
+# Copy generated secrets to .env
 
-3. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-```
+# 3. Create database
+createdb conversational_clone_dev
 
-4. Start development servers:
-```bash
+# 4. Validate and start
+node scripts/validate-env.js
 pnpm dev
 ```
 
-## 📦 Package Management
+**📖 Detailed Guide**: See [Getting Started](./docs/GETTING-STARTED.md)
 
-This monorepo uses pnpm workspaces for dependency management.
+## 📦 Monorepo Structure
 
-### Install dependencies
+This project uses **Turborepo** and **pnpm workspaces** for efficient monorepo management.
+
+### Package Organization
+
+- **`apps/`** - Deployable applications (mobile-app, api-gateway, websocket-server)
+- **`services/`** - Backend microservices (asr, rag, llm, tts, lipsync, face-processing)
+- **`packages/`** - Shared libraries (shared-types, logger, config, validation, etc.)
+
+All internal packages use the `@clone/` scope (e.g., `@clone/shared-types`).
+
+### Common Commands
+
 ```bash
+# Install all dependencies
 pnpm install
-```
 
-### Add a dependency to a specific package
-```bash
-pnpm --filter @clone/websocket-server add express
-```
+# Build all packages
+pnpm build
 
-### Add a dev dependency
-```bash
-pnpm --filter @clone/shared-types add -D jest
-```
-
-### Run commands in specific packages
-```bash
+# Run specific package
 pnpm --filter @clone/websocket-server dev
-pnpm --filter @clone/mobile-app build
+
+# Add dependency to package
+pnpm --filter @clone/api-gateway add express
 ```
+
+**📖 Detailed Guide**: See [Monorepo Development](./docs/MONOREPO-DEVELOPMENT.md)
 
 ## 🔨 Development
 
@@ -145,16 +147,34 @@ The system follows a microservices architecture with the following key component
 - **AI Services**: Google Chirp, Gemini, OpenAI, Groq, XTTS-v2
 - **Infrastructure**: Google Cloud Platform (Cloud Run, GKE, Cloud SQL)
 - **Vector Database**: Pinecone
-- **Caching**: Redis
+- **Caching**: PostgreSQL (indexed cache tables)
 - **Build Tool**: Turborepo
 - **Package Manager**: pnpm
 
 ## 📚 Documentation
 
-- [Architecture Overview](docs/architecture/overview.md)
-- [API Reference](docs/api/reference.md)
-- [Getting Started Guide](docs/guides/getting-started.md)
-- [Deployment Guide](docs/deployment/guide.md)
+### Getting Started
+- **[Getting Started Guide](./docs/GETTING-STARTED.md)** - Quick setup guide
+- **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive configuration
+
+### Configuration
+- **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive setup guide
+- **[Quick Reference](./docs/ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
+- **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
+
+### Security & Authentication
+- **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth guide
+- **[RBAC Guide](./apps/api-gateway/docs/RBAC-GUIDE.md)** - Role-based access control
+
+### Development
+- **[Scripts Documentation](./scripts/README.md)** - Utility scripts
+- **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
+
+### Architecture
+- **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - Complete system design
+- **[Implementation Summary](./apps/api-gateway/docs/IMPLEMENTATION-SUMMARY.md)** - What's implemented
+
+**📁 All Documentation**: See [docs/](./docs/README.md) | [Documentation Index](./docs/INDEX.md)
 
 ## 🧪 Testing
 
@@ -194,29 +214,35 @@ See [Deployment Guide](docs/deployment/guide.md) for detailed instructions.
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Essential Environment Variables
 
-Key environment variables (see `.env.example` for complete list):
+```bash
+# Authentication
+JWT_SECRET=<generated-secret>
+REFRESH_SECRET=<generated-secret>
 
-- `GCP_PROJECT_ID`: Google Cloud Platform project ID
-- `GCP_REGION`: GCP region (default: us-central1)
-- `JWT_SECRET`: Secret for JWT token signing
-- `REDIS_URL`: Redis connection URL
-- `DATABASE_URL`: PostgreSQL connection URL
-- `GOOGLE_CLOUD_API_KEY`: Google Cloud API key
-- `OPENAI_API_KEY`: OpenAI API key
-- `GROQ_API_KEY`: Groq API key
-- `PINECONE_API_KEY`: Pinecone API key
+# Database (includes caching)
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
-### Turborepo Configuration
+# Application
+NODE_ENV=development
+API_GATEWAY_PORT=3000
+WEBSOCKET_PORT=3001
 
-Turborepo is configured in `turbo.json` with the following pipelines:
+# Caching (PostgreSQL-based)
+ENABLE_CACHING=true
+```
 
-- `build`: Builds all packages with dependency ordering
-- `test`: Runs tests after building
-- `lint`: Lints code
-- `type-check`: Type checks TypeScript
-- `dev`: Starts development servers
+**📖 Complete Reference**: See [Environment Variables Guide](./ENVIRONMENT-VARIABLES.md)
+
+### Utility Scripts
+
+```bash
+node scripts/generate-secrets.js    # Generate secure secrets
+node scripts/validate-env.js        # Validate configuration
+```
+
+**📖 Scripts Guide**: See [scripts/README.md](./scripts/README.md)
 
 ## 🤝 Contributing
 

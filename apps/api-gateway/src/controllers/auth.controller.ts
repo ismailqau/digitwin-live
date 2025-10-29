@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'development-secret-key';
+import { authService } from '../services/auth.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 /**
  * @swagger
@@ -51,37 +49,32 @@ const JWT_SECRET = process.env.JWT_SECRET || 'development-secret-key';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password: _password, name } = req.body;
+    const { email, password, name } = req.body;
 
-    // TODO: Implement actual user registration with database
-    // For now, return mock response
-    const userId = uuidv4();
-    const token = jwt.sign(
-      {
-        userId,
-        email,
-        subscriptionTier: 'free',
-        permissions: []
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const { user, tokens } = await authService.register(email, password, name);
 
     res.status(201).json({
       user: {
-        id: userId,
-        email,
-        name,
-        createdAt: new Date().toISOString(),
-        subscriptionTier: 'free'
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        subscriptionTier: user.subscriptionTier,
+        roles: user.roles,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString()
       },
-      token
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn
     });
   } catch (error) {
-    res.status(500).json({
+    const message = error instanceof Error ? error.message : 'Failed to register user';
+    const statusCode = message === 'User already exists' ? 409 : 500;
+
+    res.status(statusCode).json({
       error: {
-        code: 'REGISTRATION_FAILED',
-        message: 'Failed to register user'
+        code: statusCode === 409 ? 'USER_EXISTS' : 'REGISTRATION_FAILED',
+        message
       }
     });
   }
@@ -130,37 +123,32 @@ export const register = async (req: Request, res: Response): Promise<void> => {
  */
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password: _password } = req.body;
+    const { email, password } = req.body;
 
-    // TODO: Implement actual authentication with database
-    // For now, return mock response
-    const userId = uuidv4();
-    const token = jwt.sign(
-      {
-        userId,
-        email,
-        subscriptionTier: 'free',
-        permissions: []
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const { user, tokens } = await authService.login(email, password);
 
     res.json({
       user: {
-        id: userId,
-        email,
-        name: 'Test User',
-        createdAt: new Date().toISOString(),
-        subscriptionTier: 'free'
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        subscriptionTier: user.subscriptionTier,
+        roles: user.roles,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString()
       },
-      token
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn
     });
   } catch (error) {
-    res.status(500).json({
+    const message = error instanceof Error ? error.message : 'Failed to login';
+    const statusCode = message === 'Invalid credentials' ? 401 : 500;
+
+    res.status(statusCode).json({
       error: {
-        code: 'LOGIN_FAILED',
-        message: 'Failed to login'
+        code: statusCode === 401 ? 'INVALID_CREDENTIALS' : 'LOGIN_FAILED',
+        message
       }
     });
   }
@@ -189,17 +177,314 @@ export const login = async (req: Request, res: Response): Promise<void> => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-export const refreshToken = async (_req: Request, res: Response): Promise<void> => {
+export const refreshToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    // TODO: Implement token refresh logic
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      res.status(400).json({
+        error: {
+          code: 'MISSING_REFRESH_TOKEN',
+          message: 'Refresh token is required'
+        }
+      });
+      return;
+    }
+
+    const tokens = await authService.refreshAccessToken(refreshToken);
+
     res.json({
-      token: 'new-jwt-token'
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to refresh token';
+
+    res.status(401).json({
+      error: {
+        code: 'TOKEN_REFRESH_FAILED',
+        message
+      }
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/oauth/google:
+ *   post:
+ *     summary: Login with Google OAuth
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Google OAuth ID token
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 expiresIn:
+ *                   type: number
+ *       401:
+ *         description: Invalid OAuth token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+export const loginWithGoogle = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      res.status(400).json({
+        error: {
+          code: 'MISSING_TOKEN',
+          message: 'OAuth token is required'
+        }
+      });
+      return;
+    }
+
+    const { user, tokens } = await authService.loginWithOAuth('google', token);
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        subscriptionTier: user.subscriptionTier,
+        roles: user.roles,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString()
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'OAuth login failed';
+
+    res.status(401).json({
+      error: {
+        code: 'OAUTH_LOGIN_FAILED',
+        message
+      }
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/oauth/apple:
+ *   post:
+ *     summary: Login with Apple OAuth
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Apple OAuth ID token
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 expiresIn:
+ *                   type: number
+ *       401:
+ *         description: Invalid OAuth token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+export const loginWithApple = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      res.status(400).json({
+        error: {
+          code: 'MISSING_TOKEN',
+          message: 'OAuth token is required'
+        }
+      });
+      return;
+    }
+
+    const { user, tokens } = await authService.loginWithOAuth('apple', token);
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        subscriptionTier: user.subscriptionTier,
+        roles: user.roles,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString()
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'OAuth login failed';
+
+    res.status(401).json({
+      error: {
+        code: 'OAUTH_LOGIN_FAILED',
+        message
+      }
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout and revoke refresh token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Missing refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      res.status(400).json({
+        error: {
+          code: 'MISSING_REFRESH_TOKEN',
+          message: 'Refresh token is required'
+        }
+      });
+      return;
+    }
+
+    await authService.revokeRefreshToken(refreshToken);
+
+    res.json({
+      message: 'Logout successful'
     });
   } catch (error) {
     res.status(500).json({
       error: {
-        code: 'TOKEN_REFRESH_FAILED',
-        message: 'Failed to refresh token'
+        code: 'LOGOUT_FAILED',
+        message: 'Failed to logout'
+      }
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+export const getCurrentUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required'
+        }
+      });
+      return;
+    }
+
+    res.json({
+      userId: req.user.userId,
+      email: req.user.email,
+      subscriptionTier: req.user.subscriptionTier,
+      permissions: req.user.permissions,
+      roles: req.user.roles
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: {
+        code: 'FETCH_USER_FAILED',
+        message: 'Failed to fetch user profile'
       }
     });
   }

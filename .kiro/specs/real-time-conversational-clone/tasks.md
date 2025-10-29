@@ -86,7 +86,7 @@
   - Create CORS configuration
   - _Requirements: 9, 10, 12, 16, 18_
 
-- [ ] 2.3 Set up authentication and authorization service
+- [x] 2.3 Set up authentication and authorization service
   - Integrate Firebase Auth or implement JWT-based authentication
   - Create user registration and login REST endpoints
   - Implement JWT token generation and validation

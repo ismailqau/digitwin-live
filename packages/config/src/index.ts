@@ -13,8 +13,11 @@ export interface Config {
     jwtSecret: string;
     jwtExpiresIn: string;
   };
-  redis: {
-    url: string;
+  cache: {
+    enabled: boolean;
+    ttlShort: number;
+    ttlMedium: number;
+    ttlLong: number;
   };
   database: {
     url: string;
@@ -45,8 +48,11 @@ export function loadConfig(): Config {
       jwtSecret: process.env.JWT_SECRET || 'dev-secret',
       jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     },
-    redis: {
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
+    cache: {
+      enabled: process.env.ENABLE_CACHING === 'true',
+      ttlShort: parseInt(process.env.CACHE_TTL_SHORT || '300', 10),
+      ttlMedium: parseInt(process.env.CACHE_TTL_MEDIUM || '3600', 10),
+      ttlLong: parseInt(process.env.CACHE_TTL_LONG || '86400', 10),
     },
     database: {
       url: process.env.DATABASE_URL || '',
