@@ -22,6 +22,7 @@ conversational-clone/
 ├── packages/                  # Shared libraries
 │   ├── shared-types/         # TypeScript types and interfaces
 │   ├── api-client/           # REST and WebSocket client library
+│   ├── database/             # Database layer with Prisma ORM
 │   ├── validation/           # Zod validation schemas
 │   ├── config/               # Environment configuration
 │   ├── logger/               # Structured logging (Winston)
@@ -161,6 +162,7 @@ The system follows a microservices architecture with the following key component
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive setup guide
 - **[Quick Reference](./docs/ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
+- **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
 
 ### Security & Authentication
 - **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth guide

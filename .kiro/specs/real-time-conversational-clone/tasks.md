@@ -106,7 +106,7 @@
   - _Requirements: 10_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 2.4 Set up Cloud SQL database with repository pattern
+- [x] 2.4 Set up Cloud SQL database with repository pattern
   - Create PostgreSQL database instance on Cloud SQL
   - Design and implement database schema (users, sessions, documents, face_models, conversations)
   - Set up Prisma ORM for database access

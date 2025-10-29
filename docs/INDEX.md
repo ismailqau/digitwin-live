@@ -10,12 +10,17 @@ docs/
 ├── ENVIRONMENT-SETUP.md         # Comprehensive configuration
 ├── ENV-QUICK-REFERENCE.md       # Environment variables cheat sheet
 ├── CACHING-ARCHITECTURE.md      # PostgreSQL caching design
+├── DATABASE-ARCHITECTURE.md     # Database schema and repository pattern
 └── README.md                    # Documentation hub
 
 apps/api-gateway/docs/
 ├── authentication-flow.md       # JWT & OAuth guide
 ├── RBAC-GUIDE.md               # Role-based access control
 └── IMPLEMENTATION-SUMMARY.md    # Auth implementation details
+
+packages/database/
+├── README.md                    # Database package documentation
+└── prisma/schema.prisma         # Database schema
 
 scripts/
 └── README.md                    # Utility scripts documentation
@@ -38,6 +43,7 @@ Root:
 
 ### Architecture & Design
 - [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
+- [Database Architecture](./DATABASE-ARCHITECTURE.md) - Database schema and repository pattern
 - [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
 - [Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md) - Requirements
 - [Tasks](../.kiro/specs/real-time-conversational-clone/tasks.md) - Implementation tasks
@@ -71,12 +77,12 @@ Root:
 
 ## 📊 Documentation Stats
 
-- **Total Documents**: 13
+- **Total Documents**: 15
 - **Setup Guides**: 2
 - **Configuration Docs**: 2
-- **Development Docs**: 2
+- **Development Docs**: 3
 - **Security Docs**: 3
-- **Architecture Docs**: 4
+- **Architecture Docs**: 5
 
 ## 🔗 External Resources
 

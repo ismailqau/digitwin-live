@@ -1,0 +1,30 @@
+{
+  "name": "@clone/database",
+  "version": "1.0.0",
+  "description": "Database access layer with Prisma ORM and repository pattern",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@clone/logger": "workspace:*",
+    "@clone/shared-types": "workspace:*",
+    "@prisma/client": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "prisma": "^6.2.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

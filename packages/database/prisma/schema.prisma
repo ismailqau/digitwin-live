@@ -1,0 +1,303 @@
+// Prisma schema for Real-Time Conversational Clone System
+// Database: PostgreSQL 15+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User Management
+// ============================================================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  // Personality configuration
+  personalityTraits String[] @map("personality_traits")
+  speakingStyle     String?  @map("speaking_style")
+
+  // AI provider preferences
+  preferredLLMProvider String? @map("preferred_llm_provider")
+  preferredTTSProvider String? @map("preferred_tts_provider")
+
+  // Usage and limits
+  conversationMinutesUsed Int    @default(0) @map("conversation_minutes_used")
+  subscriptionTier        String @default("free") @map("subscription_tier")
+
+  // Settings (stored as JSON)
+  settings Json @default("{}")
+
+  // Relations
+  voiceModels          VoiceModel[]
+  faceModels           FaceModel[]
+  conversationSessions ConversationSession[]
+  knowledgeDocuments   KnowledgeDocument[]
+  auditLogs            AuditLog[]
+
+  @@index([email])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+// ============================================================================
+// Voice Models
+// ============================================================================
+
+model VoiceModel {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  provider  String   // 'xtts-v2', 'google-cloud-tts', 'openai-tts'
+  modelPath String   @map("model_path")
+  sampleRate Int     @default(22050) @map("sample_rate")
+  qualityScore Float @map("quality_score")
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  // Metadata (stored as JSON)
+  metadata Json @default("{}")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([deletedAt])
+  @@map("voice_models")
+}
+
+// ============================================================================
+// Face Models
+// ============================================================================
+
+model FaceModel {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  modelPath String   @map("model_path")
+  resolution Json    // { width: number, height: number }
+  qualityScore Float @map("quality_score")
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  // Metadata (stored as JSON)
+  metadata Json @default("{}")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([deletedAt])
+  @@map("face_models")
+}
+
+// ============================================================================
+// Conversation Sessions
+// ============================================================================
+
+model ConversationSession {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  startedAt       DateTime  @default(now()) @map("started_at")
+  endedAt         DateTime? @map("ended_at")
+  durationSeconds Int       @default(0) @map("duration_seconds")
+  state           String    @default("idle") // 'idle', 'listening', 'processing', 'speaking', 'interrupted', 'error'
+  currentTurnId   String?   @map("current_turn_id")
+
+  // Configuration
+  llmProvider   String  @map("llm_provider")
+  ttsProvider   String  @map("tts_provider")
+  voiceModelId  String? @map("voice_model_id")
+  faceModelId   String? @map("face_model_id")
+
+  // Metrics
+  totalTurns       Int   @default(0) @map("total_turns")
+  averageLatencyMs Float @default(0) @map("average_latency_ms")
+  totalCost        Float @default(0) @map("total_cost")
+
+  // Relations
+  user  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  turns ConversationTurn[]
+
+  @@index([userId, startedAt])
+  @@index([state])
+  @@map("conversation_sessions")
+}
+
+// ============================================================================
+// Conversation Turns
+// ============================================================================
+
+model ConversationTurn {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  timestamp DateTime @default(now())
+
+  // User input
+  userAudioDurationMs Int     @map("user_audio_duration_ms")
+  userTranscript      String  @map("user_transcript")
+  transcriptConfidence Float  @map("transcript_confidence")
+
+  // System response
+  retrievedChunks      String[] @map("retrieved_chunks")
+  llmResponse          String   @map("llm_response")
+  responseAudioDurationMs Int   @map("response_audio_duration_ms")
+
+  // Performance metrics
+  asrLatencyMs   Int @map("asr_latency_ms")
+  ragLatencyMs   Int @map("rag_latency_ms")
+  llmLatencyMs   Int @map("llm_latency_ms")
+  ttsLatencyMs   Int @map("tts_latency_ms")
+  totalLatencyMs Int @map("total_latency_ms")
+
+  // Costs
+  asrCost   Float @map("asr_cost")
+  llmCost   Float @map("llm_cost")
+  ttsCost   Float @map("tts_cost")
+  totalCost Float @map("total_cost")
+
+  // Relations
+  session ConversationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, timestamp])
+  @@map("conversation_turns")
+}
+
+// ============================================================================
+// Knowledge Base Documents
+// ============================================================================
+
+model KnowledgeDocument {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  filename    String
+  contentType String    @map("content_type")
+  sizeBytes   Int       @map("size_bytes")
+  uploadedAt  DateTime  @default(now()) @map("uploaded_at")
+  processedAt DateTime? @map("processed_at")
+
+  // Content
+  textContent String @map("text_content") @db.Text
+  chunkCount  Int    @default(0) @map("chunk_count")
+
+  // Metadata
+  title     String?
+  author    String?
+  sourceUrl String?  @map("source_url")
+  tags      String[]
+
+  // Processing status
+  status       String  @default("pending") // 'pending', 'processing', 'completed', 'failed'
+  errorMessage String? @map("error_message")
+
+  // Storage
+  storagePath String   @map("storage_path")
+  vectorIds   String[] @map("vector_ids")
+
+  deletedAt DateTime? @map("deleted_at") // Soft delete
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, uploadedAt])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("knowledge_documents")
+}
+
+// ============================================================================
+// Cache Tables (L2 Cache - PostgreSQL)
+// ============================================================================
+
+model EmbeddingCache {
+  id        String   @id @default(uuid())
+  queryHash String   @unique @map("query_hash") // Hash of the query text
+  embedding Float[]  // Vector embedding
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  @@index([queryHash])
+  @@index([expiresAt])
+  @@map("embedding_cache")
+}
+
+model VectorSearchCache {
+  id         String   @id @default(uuid())
+  queryHash  String   @map("query_hash") // Hash of query + filters
+  userId     String   @map("user_id")
+  results    Json     // Cached search results
+  createdAt  DateTime @default(now()) @map("created_at")
+  expiresAt  DateTime @map("expires_at")
+
+  @@index([queryHash, userId])
+  @@index([expiresAt])
+  @@map("vector_search_cache")
+}
+
+model LLMResponseCache {
+  id         String   @id @default(uuid())
+  promptHash String   @map("prompt_hash") // Hash of the prompt
+  response   String   @db.Text
+  provider   String
+  createdAt  DateTime @default(now()) @map("created_at")
+  expiresAt  DateTime @map("expires_at")
+  hitCount   Int      @default(0) @map("hit_count")
+
+  @@index([promptHash])
+  @@index([expiresAt])
+  @@map("llm_response_cache")
+}
+
+// ============================================================================
+// Rate Limiting
+// ============================================================================
+
+model RateLimit {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  endpoint   String
+  windowStart DateTime @map("window_start")
+  requestCount Int     @default(0) @map("request_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, endpoint, windowStart])
+  @@index([userId, endpoint, windowStart])
+  @@index([windowStart])
+  @@map("rate_limits")
+}
+
+// ============================================================================
+// Audit Logging
+// ============================================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  timestamp DateTime @default(now())
+  userId    String   @map("user_id")
+  action    String
+  resource  String
+  result    String   // 'success', 'failure'
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  metadata  Json     @default("{}")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+  @@index([action])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
