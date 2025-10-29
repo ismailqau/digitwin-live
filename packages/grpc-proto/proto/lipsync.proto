@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package lipsync;
+
+// Lip-sync Service
+service LipSyncService {
+  // Generate lip-sync video frames
+  rpc GenerateFrames(GenerateFramesRequest) returns (stream VideoFrame);
+  
+  // Create face model
+  rpc CreateFaceModel(CreateFaceModelRequest) returns (CreateFaceModelResponse);
+  
+  // Get face model status
+  rpc GetFaceModelStatus(FaceModelStatusRequest) returns (FaceModelStatusResponse);
+  
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message GenerateFramesRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string face_model_id = 3;
+  bytes audio_data = 4;
+  VideoConfig config = 5;
+}
+
+message VideoConfig {
+  int32 width = 1;
+  int32 height = 2;
+  int32 fps = 3;
+  string format = 4;
+}
+
+message VideoFrame {
+  string session_id = 1;
+  bytes frame_data = 2;
+  int32 sequence_number = 3;
+  int64 timestamp = 4;
+  int64 audio_timestamp = 5;
+  bool is_final = 6;
+}
+
+message CreateFaceModelRequest {
+  string user_id = 1;
+  string face_model_id = 2;
+  repeated bytes media_data = 3;
+  string media_type = 4;
+}
+
+message CreateFaceModelResponse {
+  string face_model_id = 1;
+  string status = 2;
+  float quality_score = 3;
+  string message = 4;
+}
+
+message FaceModelStatusRequest {
+  string user_id = 1;
+  string face_model_id = 2;
+}
+
+message FaceModelStatusResponse {
+  string face_model_id = 1;
+  string status = 2;
+  float quality_score = 3;
+  int64 created_at = 4;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+}

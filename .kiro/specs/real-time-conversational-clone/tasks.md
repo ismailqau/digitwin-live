@@ -54,7 +54,7 @@
 
 ## Phase 2: Backend Infrastructure and Core Services
 
-- [-] 2. Set up GCP infrastructure with Terraform
+- [ ] 2. Set up GCP infrastructure with Terraform
   - Create GCP project and configure basic services (Cloud Run, Cloud SQL, Cloud Storage)
   - Set up Terraform configuration for infrastructure as code
   - Implement Terraform workspaces for dev/staging/prod
@@ -139,7 +139,7 @@
   - _Requirements: 11_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 2.7 Set up microservices communication
+- [x] 2.7 Set up microservices communication
   - Create service-to-service authentication with JWT
   - Implement gRPC for internal service communication
   - Create Protocol Buffer definitions for services
@@ -148,6 +148,8 @@
   - Implement distributed transactions with Saga pattern
   - _Requirements: 11_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 2.8 Setup guide on GCP to verify the deployment and cloud setup ensuring everything can be run through scripts.
 
 ## Phase 3: Audio Processing and ASR
 

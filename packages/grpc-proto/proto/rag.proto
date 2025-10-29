@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package rag;
+
+// RAG Service - Retrieval-Augmented Generation
+service RAGService {
+  // Process a query and retrieve relevant context
+  rpc ProcessQuery(QueryRequest) returns (QueryResponse);
+  
+  // Index a document
+  rpc IndexDocument(DocumentRequest) returns (DocumentResponse);
+  
+  // Delete a document
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+  
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message QueryRequest {
+  string user_id = 1;
+  string session_id = 2;
+  string query = 3;
+  repeated ConversationTurn conversation_history = 4;
+  int32 top_k = 5;
+  float similarity_threshold = 6;
+}
+
+message ConversationTurn {
+  string user_message = 1;
+  string assistant_message = 2;
+  int64 timestamp = 3;
+}
+
+message QueryResponse {
+  repeated RetrievedChunk chunks = 1;
+  string assembled_context = 2;
+  int32 total_tokens = 3;
+}
+
+message RetrievedChunk {
+  string id = 1;
+  string content = 2;
+  float score = 3;
+  map<string, string> metadata = 4;
+}
+
+message DocumentRequest {
+  string user_id = 1;
+  string document_id = 2;
+  string filename = 3;
+  string content = 4;
+  map<string, string> metadata = 5;
+}
+
+message DocumentResponse {
+  string document_id = 1;
+  int32 chunks_created = 2;
+  string status = 3;
+}
+
+message DeleteDocumentRequest {
+  string user_id = 1;
+  string document_id = 2;
+}
+
+message DeleteDocumentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+}

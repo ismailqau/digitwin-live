@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package tts;
+
+// TTS Service - Text-to-Speech
+service TTSService {
+  // Synthesize speech with streaming
+  rpc SynthesizeSpeech(SynthesizeRequest) returns (stream AudioChunk);
+  
+  // Train a voice model
+  rpc TrainVoiceModel(TrainVoiceRequest) returns (TrainVoiceResponse);
+  
+  // Get voice model status
+  rpc GetVoiceModelStatus(VoiceModelStatusRequest) returns (VoiceModelStatusResponse);
+  
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message SynthesizeRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string text = 3;
+  string voice_model_id = 4;
+  TTSConfig config = 5;
+}
+
+message TTSConfig {
+  string provider = 1;
+  int32 sample_rate = 2;
+  float speed = 3;
+  float pitch = 4;
+}
+
+message AudioChunk {
+  string session_id = 1;
+  bytes audio_data = 2;
+  int32 sequence_number = 3;
+  int64 timestamp = 4;
+  bool is_final = 5;
+}
+
+message TrainVoiceRequest {
+  string user_id = 1;
+  string voice_model_id = 2;
+  repeated bytes audio_samples = 3;
+  string provider = 4;
+}
+
+message TrainVoiceResponse {
+  string voice_model_id = 1;
+  string status = 2;
+  float quality_score = 3;
+  string message = 4;
+}
+
+message VoiceModelStatusRequest {
+  string user_id = 1;
+  string voice_model_id = 2;
+}
+
+message VoiceModelStatusResponse {
+  string voice_model_id = 1;
+  string status = 2;
+  float quality_score = 3;
+  int64 created_at = 4;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+  repeated string available_providers = 3;
+}

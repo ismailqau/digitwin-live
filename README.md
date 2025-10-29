@@ -174,6 +174,7 @@ The system follows a microservices architecture with the following key component
 
 ### Architecture
 - **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - Complete system design
+- **[Microservices Communication](./docs/microservices-communication.md)** - gRPC, service discovery, and distributed transactions
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus and event sourcing
 - **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query Responsibility Segregation
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern

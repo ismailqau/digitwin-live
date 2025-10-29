@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package asr;
+
+// ASR Service - Automatic Speech Recognition
+service ASRService {
+  // Start a streaming ASR session
+  rpc StreamAudio(stream AudioChunk) returns (stream TranscriptResult);
+  
+  // Get ASR service health
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message AudioChunk {
+  string session_id = 1;
+  bytes audio_data = 2;
+  int32 sequence_number = 3;
+  int64 timestamp = 4;
+  AudioConfig config = 5;
+}
+
+message AudioConfig {
+  int32 sample_rate = 1;
+  string encoding = 2;
+  string language_code = 3;
+  bool enable_automatic_punctuation = 4;
+}
+
+message TranscriptResult {
+  string session_id = 1;
+  string transcript = 2;
+  bool is_final = 3;
+  float confidence = 4;
+  repeated WordInfo words = 5;
+}
+
+message WordInfo {
+  string word = 1;
+  int64 start_time_ms = 2;
+  int64 end_time_ms = 3;
+  float confidence = 4;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string version = 2;
+}

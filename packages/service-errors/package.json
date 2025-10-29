@@ -1,0 +1,17 @@
+{
+  "name": "@clone/service-errors",
+  "version": "1.0.0",
+  "description": "Inter-service error handling and circuit breaker",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
