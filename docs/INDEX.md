@@ -44,6 +44,7 @@ Root:
 ### Architecture & Design
 - [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
 - [Database Architecture](./DATABASE-ARCHITECTURE.md) - Database schema and repository pattern
+- [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus and event sourcing
 - [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
 - [Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md) - Requirements
 - [Tasks](../.kiro/specs/real-time-conversational-clone/tasks.md) - Implementation tasks
@@ -67,8 +68,9 @@ Root:
 
 ### "I want to understand the architecture"
 1. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md)
-2. [Caching Architecture](./CACHING-ARCHITECTURE.md)
-3. [Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md)
+2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)
+3. [Caching Architecture](./CACHING-ARCHITECTURE.md)
+4. [Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md)
 
 ### "I'm having configuration issues"
 1. [Quick Reference](./ENV-QUICK-REFERENCE.md)
@@ -77,12 +79,12 @@ Root:
 
 ## 📊 Documentation Stats
 
-- **Total Documents**: 15
+- **Total Documents**: 16
 - **Setup Guides**: 2
 - **Configuration Docs**: 2
 - **Development Docs**: 3
 - **Security Docs**: 3
-- **Architecture Docs**: 5
+- **Architecture Docs**: 6
 
 ## 🔗 External Resources
 

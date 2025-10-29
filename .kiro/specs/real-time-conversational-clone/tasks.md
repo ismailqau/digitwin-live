@@ -118,7 +118,7 @@
   - _Requirements: 9, 11_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 2.5 Implement event-driven architecture
+- [x] 2.5 Implement event-driven architecture
   - Set up event bus using Google Cloud Pub/Sub
   - Create event publisher service
   - Implement event subscriber services

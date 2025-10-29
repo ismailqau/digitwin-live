@@ -174,6 +174,7 @@ The system follows a microservices architecture with the following key component
 
 ### Architecture
 - **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - Complete system design
+- **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus and event sourcing
 - **[Implementation Summary](./apps/api-gateway/docs/IMPLEMENTATION-SUMMARY.md)** - What's implemented
 
 **📁 All Documentation**: See [docs/](./docs/README.md) | [Documentation Index](./docs/INDEX.md)
