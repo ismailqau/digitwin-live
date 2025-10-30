@@ -27,7 +27,11 @@ export const interruptionSchema = z.object({
 export const documentUploadSchema = z.object({
   filename: z.string().min(1).max(255),
   contentType: z.string(),
-  sizeBytes: z.number().int().positive().max(50 * 1024 * 1024), // 50MB
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(50 * 1024 * 1024), // 50MB
 });
 
 // Voice model schemas

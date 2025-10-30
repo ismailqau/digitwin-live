@@ -1,5 +1,5 @@
-import { injectable } from 'tsyringe';
 import jwt from 'jsonwebtoken';
+import { injectable } from 'tsyringe';
 
 export interface JWTPayload {
   userId: string;
@@ -19,29 +19,29 @@ export class AuthService {
     try {
       const decoded = jwt.verify(token, this.JWT_SECRET) as JWTPayload;
       return decoded;
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired token');
     }
   }
 
   generateToken(
-    userId: string, 
-    email: string, 
+    userId: string,
+    email: string,
     subscriptionTier: 'free' | 'pro' | 'enterprise' = 'free',
     roles: string[] = ['user']
   ): string {
     const permissions = this.getPermissionsForTier(subscriptionTier, roles);
-    
+
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
       userId,
       email,
       subscriptionTier,
       permissions,
-      roles
+      roles,
     };
 
     return jwt.sign(payload, this.JWT_SECRET, {
-      expiresIn: '24h'
+      expiresIn: '24h',
     });
   }
 
@@ -65,7 +65,7 @@ export class AuthService {
 
   extractTokenFromHeader(authHeader: string | undefined): string | null {
     if (!authHeader) return null;
-    
+
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       return null;

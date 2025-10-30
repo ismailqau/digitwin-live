@@ -9,11 +9,13 @@ This directory contains utility scripts for managing the Conversational Clone pl
 Generates cryptographically secure random secrets for environment variables.
 
 **Usage:**
+
 ```bash
 node scripts/generate-secrets.js
 ```
 
 **What it generates:**
+
 - JWT secrets (access and refresh tokens)
 - Session management secrets
 - CSRF protection secrets
@@ -23,6 +25,7 @@ node scripts/generate-secrets.js
 - API keys
 
 **Example output:**
+
 ```
 🔐 Secure Secret Generator
 
@@ -36,6 +39,7 @@ REFRESH_SECRET:
 ```
 
 **Security Notes:**
+
 - All secrets use `crypto.randomBytes()` for cryptographic security
 - Secrets are unique on each run
 - Store production secrets in a secret manager (GCP Secret Manager, AWS Secrets Manager)
@@ -46,11 +50,62 @@ REFRESH_SECRET:
 Validates that all required environment variables are set and have appropriate values.
 
 **Usage:**
+
 ```bash
 node scripts/validate-env.js
 ```
 
+### 3. Verify Directory Structure (`verify-directory-structure.sh`)
+
+Verifies that all required directories exist with proper `.gitkeep` files to preserve directory structure in Git.
+
+**Usage:**
+
+```bash
+./scripts/verify-directory-structure.sh
+```
+
 **What it checks:**
+
+- Infrastructure directories (Terraform, scripts)
+- Application directories (logs, uploads)
+- Service directories (logs, cache, tmp)
+- .gitignore patterns for preserving .gitkeep files
+
+**Example output:**
+
+```
+=========================================
+Verifying Directory Structure
+=========================================
+
+1. Checking Infrastructure Directories...
+✓ Terraform root: infrastructure/terraform
+✓ Terraform backends: infrastructure/terraform/backends
+...
+
+Verification Summary
+Total checks: 24
+Passed: 24
+Failed: 0
+
+✓ All directory structure checks passed!
+```
+
+**Exit codes:**
+
+- `0` - All checks passed
+- `1` - One or more checks failed
+
+**When to run:**
+
+- After cloning the repository
+- Before deployment
+- After adding new services
+- As part of CI/CD validation
+
+**What it checks:**
+
 - Required variables are present
 - Variable values meet format requirements
 - Port numbers are valid
@@ -59,6 +114,7 @@ node scripts/validate-env.js
 - Production-specific security checks
 
 **Example output:**
+
 ```
 🔍 Validating environment variables...
 
@@ -74,10 +130,12 @@ Environment: development
 ```
 
 **Exit codes:**
+
 - `0` - Validation passed
 - `1` - Validation failed (missing or invalid variables)
 
 **Integration with CI/CD:**
+
 ```yaml
 # .github/workflows/deploy.yml
 - name: Validate environment
@@ -89,11 +147,13 @@ Environment: development
 When adding new scripts to this directory:
 
 1. **Make it executable:**
+
    ```bash
    chmod +x scripts/your-script.js
    ```
 
 2. **Add shebang:**
+
    ```javascript
    #!/usr/bin/env node
    ```
@@ -155,6 +215,7 @@ node scripts/generate-secrets.js
 ## Script Dependencies
 
 All scripts use only Node.js built-in modules:
+
 - `crypto` - For secure random generation
 - `fs` - For file system operations
 - `path` - For path manipulation
@@ -230,6 +291,7 @@ When contributing new scripts:
 ## Support
 
 For issues with scripts:
+
 1. Check this documentation
 2. Review script comments
 3. Check logs for error messages

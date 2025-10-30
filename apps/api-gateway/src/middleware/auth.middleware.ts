@@ -18,13 +18,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'development-secret-key';
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader) {
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'No authorization header provided'
-        }
+          message: 'No authorization header provided',
+        },
       });
       return;
     }
@@ -34,15 +34,15 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
       res.status(401).json({
         error: {
           code: 'INVALID_TOKEN_FORMAT',
-          message: 'Authorization header must be in format: Bearer <token>'
-        }
+          message: 'Authorization header must be in format: Bearer <token>',
+        },
       });
       return;
     }
 
     const token = parts[1];
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    
+
     req.user = decoded;
     next();
   } catch (error) {
@@ -50,8 +50,8 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
       res.status(401).json({
         error: {
           code: 'TOKEN_EXPIRED',
-          message: 'Token has expired'
-        }
+          message: 'Token has expired',
+        },
       });
       return;
     }
@@ -59,16 +59,20 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     res.status(401).json({
       error: {
         code: 'INVALID_TOKEN',
-        message: 'Invalid token'
-      }
+        message: 'Invalid token',
+      },
     });
   }
 };
 
-export const optionalAuthMiddleware = (req: AuthRequest, _res: Response, next: NextFunction): void => {
+export const optionalAuthMiddleware = (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+): void => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader) {
       next();
       return;
@@ -80,7 +84,7 @@ export const optionalAuthMiddleware = (req: AuthRequest, _res: Response, next: N
       const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
       req.user = decoded;
     }
-    
+
     next();
   } catch (error) {
     // Ignore auth errors for optional auth

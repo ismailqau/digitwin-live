@@ -1,17 +1,18 @@
 import 'reflect-metadata';
 import { container } from 'tsyringe';
-import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
-import { PostgresSessionRepository } from '../repositories/PostgresSessionRepository';
-import { SessionService } from '../../application/services/SessionService';
+
+import { AuthService } from '../../application/services/AuthService';
 import { ConnectionService } from '../../application/services/ConnectionService';
 import { MessageRouterService } from '../../application/services/MessageRouterService';
-import { AuthService } from '../../application/services/AuthService';
+import { SessionService } from '../../application/services/SessionService';
+import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
 import { WebSocketController } from '../../presentation/controllers/WebSocketController';
+import { PostgresSessionRepository } from '../repositories/PostgresSessionRepository';
 
 export function setupContainer(): void {
   // Register repositories
   container.register<ISessionRepository>('ISessionRepository', {
-    useClass: PostgresSessionRepository
+    useClass: PostgresSessionRepository,
   });
 
   // Register services

@@ -1,6 +1,6 @@
 /**
  * gRPC Client Factory
- * 
+ *
  * Creates gRPC clients with authentication, retry, and circuit breaker support
  */
 
@@ -44,7 +44,7 @@ export class GrpcClientFactory {
     options?: GrpcClientOptions
   ): T {
     const cacheKey = `${packageName}.${serviceName}:${config.host}:${config.port}`;
-    
+
     // Return cached client if exists
     if (this.clients.has(cacheKey)) {
       return this.clients.get(cacheKey);
@@ -65,9 +65,10 @@ export class GrpcClientFactory {
     const ServiceClient = servicePackage[serviceName];
 
     // Create credentials
-    const credentials = config.useTLS || this.enableTLS
-      ? grpc.credentials.createSsl()
-      : grpc.credentials.createInsecure();
+    const credentials =
+      config.useTLS || this.enableTLS
+        ? grpc.credentials.createSsl()
+        : grpc.credentials.createInsecure();
 
     // Create client
     const address = `${config.host}:${config.port}`;
@@ -80,14 +81,9 @@ export class GrpcClientFactory {
 
     // Wrap client with interceptors if options provided
     let wrappedClient = client;
-    
+
     if (options) {
-      wrappedClient = this.wrapClientWithInterceptors(
-        client,
-        serviceName,
-        options,
-        config
-      );
+      wrappedClient = this.wrapClientWithInterceptors(client, serviceName, options, config);
     }
 
     // Cache and return
@@ -134,8 +130,9 @@ export class GrpcClientFactory {
     const wrappedClient: any = {};
 
     // Get all methods from the client
-    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(client))
-      .filter(name => name !== 'constructor' && typeof client[name] === 'function');
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(client)).filter(
+      (name) => name !== 'constructor' && typeof client[name] === 'function'
+    );
 
     for (const method of methods) {
       const originalMethod = client[method].bind(client);
@@ -148,7 +145,7 @@ export class GrpcClientFactory {
             options.serviceName,
             options.permissions
           );
-          
+
           // Insert metadata as second-to-last argument (before callback)
           if (args.length > 0) {
             args.splice(args.length - 1, 0, metadata);
@@ -239,11 +236,11 @@ export class GrpcClientFactory {
   closeClient(packageName: string, serviceName: string, host: string, port: number): void {
     const cacheKey = `${packageName}.${serviceName}:${host}:${port}`;
     const client = this.clients.get(cacheKey);
-    
+
     if (client && client.close) {
       client.close();
     }
-    
+
     this.clients.delete(cacheKey);
   }
 }

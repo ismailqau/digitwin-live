@@ -147,7 +147,8 @@ async function main() {
   const turns = [
     {
       userTranscript: 'What are the company vacation policies?',
-      llmResponse: 'According to the company handbook, employees receive 15 days of paid vacation per year.',
+      llmResponse:
+        'According to the company handbook, employees receive 15 days of paid vacation per year.',
       userAudioDurationMs: 2500,
       responseAudioDurationMs: 4000,
       transcriptConfidence: 0.95,
@@ -164,7 +165,8 @@ async function main() {
     },
     {
       userTranscript: 'How do I request time off?',
-      llmResponse: 'You can request time off through the HR portal by submitting a leave request form at least 2 weeks in advance.',
+      llmResponse:
+        'You can request time off through the HR portal by submitting a leave request form at least 2 weeks in advance.',
       userAudioDurationMs: 2000,
       responseAudioDurationMs: 5000,
       transcriptConfidence: 0.97,

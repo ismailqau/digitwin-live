@@ -22,14 +22,15 @@ export { AuditLogRepository } from './repositories/AuditLogRepository';
 
 // Export repository factory
 import { PrismaClient } from '@prisma/client';
-import { UserRepository } from './repositories/UserRepository';
-import { ConversationSessionRepository } from './repositories/ConversationSessionRepository';
-import { KnowledgeDocumentRepository } from './repositories/KnowledgeDocumentRepository';
-import { VoiceModelRepository } from './repositories/VoiceModelRepository';
-import { FaceModelRepository } from './repositories/FaceModelRepository';
-import { CacheRepository } from './repositories/CacheRepository';
-import { RateLimitRepository } from './repositories/RateLimitRepository';
+
 import { AuditLogRepository } from './repositories/AuditLogRepository';
+import { CacheRepository } from './repositories/CacheRepository';
+import { ConversationSessionRepository } from './repositories/ConversationSessionRepository';
+import { FaceModelRepository } from './repositories/FaceModelRepository';
+import { KnowledgeDocumentRepository } from './repositories/KnowledgeDocumentRepository';
+import { RateLimitRepository } from './repositories/RateLimitRepository';
+import { UserRepository } from './repositories/UserRepository';
+import { VoiceModelRepository } from './repositories/VoiceModelRepository';
 
 /**
  * Repository Factory

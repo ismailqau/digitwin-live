@@ -41,9 +41,7 @@ export class CommandBus {
   /**
    * Execute a command
    */
-  async execute<TCommand extends AllCommands>(
-    command: TCommand
-  ): Promise<CommandResult> {
+  async execute<TCommand extends AllCommands>(command: TCommand): Promise<CommandResult> {
     const handler = this.handlers.get(command.commandType);
     if (!handler) {
       throw new Error(`No handler registered for command type: ${command.commandType}`);
@@ -81,9 +79,7 @@ export class CommandBus {
   /**
    * Execute multiple commands in sequence
    */
-  async executeMany<TCommand extends AllCommands>(
-    commands: TCommand[]
-  ): Promise<CommandResult[]> {
+  async executeMany<TCommand extends AllCommands>(commands: TCommand[]): Promise<CommandResult[]> {
     const results: CommandResult[] = [];
     for (const command of commands) {
       const result = await this.execute(command);

@@ -1,6 +1,6 @@
 /**
  * Saga Pattern Implementation for Distributed Transactions
- * 
+ *
  * Provides orchestration for multi-service transactions with compensation logic
  * to maintain consistency across microservices.
  */
@@ -69,14 +69,14 @@ export class Saga<T extends SagaContext = SagaContext> {
           const result = await step.action(context);
           this.completedSteps.push({ step, result });
           completedStepNames.push(step.name);
-          
+
           // Store result in context for next steps
           (context as any)[`${step.name}_result`] = result;
         } catch (error) {
           // Step failed, start compensation
           this.state = SagaState.COMPENSATING;
           await this.compensate(context);
-          
+
           return {
             success: false,
             context,
@@ -183,8 +183,6 @@ export class SagaBuilder<T extends SagaContext = SagaContext> {
 /**
  * Create a new saga builder
  */
-export function createSaga<T extends SagaContext = SagaContext>(
-  initialContext: T
-): SagaBuilder<T> {
+export function createSaga<T extends SagaContext = SagaContext>(initialContext: T): SagaBuilder<T> {
   return new SagaBuilder(initialContext);
 }

@@ -1,6 +1,6 @@
 /**
  * gRPC Proto Package
- * 
+ *
  * Provides Protocol Buffer definitions and utilities for microservices communication
  */
 

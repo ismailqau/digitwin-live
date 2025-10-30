@@ -1,5 +1,5 @@
-import { io, Socket } from 'socket.io-client';
 import type { ClientMessage, ServerMessage } from '@clone/shared-types';
+import { io, Socket } from 'socket.io-client';
 
 export interface WebSocketClientConfig {
   url: string;

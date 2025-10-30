@@ -13,12 +13,14 @@ Quick guide to set up the database for the Conversational Clone System.
 ### 1. Install PostgreSQL (if not installed)
 
 **macOS (Homebrew):**
+
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get install postgresql-15
 sudo systemctl start postgresql
@@ -31,11 +33,11 @@ Download and install from [postgresql.org](https://www.postgresql.org/download/w
 
 ```bash
 # Create database
-createdb conversational_clone_dev
+createdb digitwinline_dev
 
 # Or using psql
 psql -U postgres
-CREATE DATABASE conversational_clone_dev;
+CREATE DATABASE digitwinline_dev;
 \q
 ```
 
@@ -46,7 +48,7 @@ CREATE DATABASE conversational_clone_dev;
 cp packages/database/.env.example packages/database/.env
 
 # Edit .env and set DATABASE_URL
-# Example: DATABASE_URL="postgresql://postgres:postgres@localhost:5432/conversational_clone_dev?schema=public"
+# Example: DATABASE_URL="postgresql://postgres:postgres@localhost:5432/digitwinline_dev?schema=public"
 ```
 
 ### 4. Install Dependencies
@@ -104,11 +106,11 @@ import { DatabaseConnection, RepositoryFactory } from '@clone/database';
 
 async function test() {
   await DatabaseConnection.connect();
-  
+
   const prisma = DatabaseConnection.getInstance();
   const factory = new RepositoryFactory(prisma);
   const userRepo = factory.getUserRepository();
-  
+
   // Create a test user
   const user = await userRepo.create({
     email: 'test@example.com',
@@ -117,13 +119,13 @@ async function test() {
     subscriptionTier: 'free',
     settings: {},
   });
-  
+
   console.log('Created user:', user);
-  
+
   // Find the user
   const found = await userRepo.findByEmail('test@example.com');
   console.log('Found user:', found);
-  
+
   await DatabaseConnection.disconnect();
 }
 
@@ -131,6 +133,7 @@ test().catch(console.error);
 ```
 
 Run it:
+
 ```bash
 tsx test-db.ts
 ```
@@ -142,6 +145,7 @@ tsx test-db.ts
 **Problem:** `Error: connect ECONNREFUSED 127.0.0.1:5432`
 
 **Solution:**
+
 ```bash
 # Check if PostgreSQL is running
 brew services list  # macOS
@@ -158,17 +162,19 @@ sudo systemctl start postgresql  # Linux
 
 **Solution:**
 Update your DATABASE_URL with correct credentials:
+
 ```bash
-DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@localhost:5432/conversational_clone_dev"
+DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@localhost:5432/digitwinline_dev"
 ```
 
 ### Database Does Not Exist
 
-**Problem:** `Error: database "conversational_clone_dev" does not exist`
+**Problem:** `Error: database "digitwinline_dev" does not exist`
 
 **Solution:**
+
 ```bash
-createdb conversational_clone_dev
+createdb digitwinline_dev
 ```
 
 ### Migration Conflicts
@@ -176,13 +182,14 @@ createdb conversational_clone_dev
 **Problem:** Migration fails due to existing tables
 
 **Solution:**
+
 ```bash
 # Reset database (WARNING: deletes all data)
 pnpm prisma migrate reset
 
 # Or drop and recreate database
-dropdb conversational_clone_dev
-createdb conversational_clone_dev
+dropdb digitwinline_dev
+createdb digitwinline_dev
 pnpm prisma migrate dev
 ```
 
@@ -191,6 +198,7 @@ pnpm prisma migrate dev
 ### Cloud SQL (Google Cloud Platform)
 
 1. Create Cloud SQL instance:
+
 ```bash
 gcloud sql instances create clone-db \
   --database-version=POSTGRES_15 \
@@ -199,21 +207,24 @@ gcloud sql instances create clone-db \
 ```
 
 2. Create database:
+
 ```bash
-gcloud sql databases create conversational_clone_prod \
+gcloud sql databases create digitwinline_prod \
   --instance=clone-db
 ```
 
 3. Set up connection:
+
 ```bash
 # For Cloud Run (Unix socket)
-DATABASE_URL="postgresql://USER:PASSWORD@/conversational_clone_prod?host=/cloudsql/PROJECT:REGION:INSTANCE"
+DATABASE_URL="postgresql://USER:PASSWORD@/digitwinline_prod?host=/cloudsql/PROJECT:REGION:INSTANCE"
 
 # For external connection
-DATABASE_URL="postgresql://USER:PASSWORD@INSTANCE_IP:5432/conversational_clone_prod"
+DATABASE_URL="postgresql://USER:PASSWORD@INSTANCE_IP:5432/digitwinline_prod"
 ```
 
 4. Run migrations:
+
 ```bash
 pnpm prisma migrate deploy
 ```
@@ -263,6 +274,7 @@ pnpm prisma db push
 ## Support
 
 For issues:
+
 - Check [Troubleshooting](#common-issues) section
 - Review [Prisma Documentation](https://www.prisma.io/docs)
 - Open an issue on GitHub

@@ -1,9 +1,10 @@
-import { injectable, inject } from 'tsyringe';
 import { Socket } from 'socket.io';
-import { SessionService } from '../../application/services/SessionService';
+import { injectable, inject } from 'tsyringe';
+
+import { AuthService } from '../../application/services/AuthService';
 import { ConnectionService } from '../../application/services/ConnectionService';
 import { MessageRouterService } from '../../application/services/MessageRouterService';
-import { AuthService } from '../../application/services/AuthService';
+import { SessionService } from '../../application/services/SessionService';
 import { ClientMessage } from '../../domain/models/Message';
 
 @injectable()
@@ -26,27 +27,28 @@ export class WebSocketController {
       }
 
       const payload = this.authService.verifyToken(token);
-      
+
       // Create session
       const session = await this.sessionService.createSession(payload.userId, socket.id);
-      
+
       // Register connection
       this.connectionService.registerConnection(session.id, socket);
 
       // Send session info to client
       socket.emit('session_created', {
         sessionId: session.id,
-        userId: session.userId
+        userId: session.userId,
       });
 
-      console.log(`Client connected: ${socket.id}, Session: ${session.id}, User: ${payload.userId}`);
+      console.log(
+        `Client connected: ${socket.id}, Session: ${session.id}, User: ${payload.userId}`
+      );
 
       // Set up message handlers
       this.setupMessageHandlers(socket, session.id);
 
       // Handle disconnection
       socket.on('disconnect', () => this.handleDisconnection(session.id, socket.id));
-
     } catch (error) {
       console.error('Connection error:', error);
       socket.emit('error', { message: 'Authentication failed' });
@@ -71,9 +73,9 @@ export class WebSocketController {
 
   private async handleDisconnection(sessionId: string, socketId: string): Promise<void> {
     console.log(`Client disconnected: ${socketId}, Session: ${sessionId}`);
-    
+
     this.connectionService.unregisterConnection(sessionId);
-    
+
     // Optionally end session or keep it for reconnection
     // await this.sessionService.endSession(sessionId);
   }

@@ -115,7 +115,7 @@ export class EventReplayer {
    */
   private async createReplaySubscription(options: ReplayOptions): Promise<Subscription> {
     const subscriptionName = `${this.config.replaySubscription}-${Date.now()}`;
-    
+
     // Build filter expression
     const filters: string[] = [];
 

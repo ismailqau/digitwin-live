@@ -1,6 +1,6 @@
 /**
  * Basic Usage Examples for Event Bus
- * 
+ *
  * This file demonstrates how to use the event-driven architecture
  * components in the Conversational Clone system.
  */
@@ -32,37 +32,27 @@ async function publishingExample() {
   });
 
   // Create and publish a user created event
-  const userEvent = createEvent<UserCreatedEvent>(
-    'user.created',
-    'user-123',
-    'user',
-    {
-      userId: 'user-123',
-      email: 'john@example.com',
-      name: 'John Doe',
-      subscriptionTier: 'free',
-    }
-  );
+  const userEvent = createEvent<UserCreatedEvent>('user.created', 'user-123', 'user', {
+    userId: 'user-123',
+    email: 'john@example.com',
+    name: 'John Doe',
+    subscriptionTier: 'free',
+  });
 
   const result = await publisher.publish(userEvent);
   console.log('Event published:', result);
 
   // Batch publish multiple events
   const events = [
-    createEvent<DocumentProcessedEvent>(
-      'document.processed',
-      'doc-456',
-      'knowledge_document',
-      {
-        documentId: 'doc-456',
-        userId: 'user-123',
-        filename: 'resume.pdf',
-        contentType: 'application/pdf',
-        chunkCount: 10,
-        vectorIds: ['vec-1', 'vec-2'],
-        processingDurationMs: 5000,
-      }
-    ),
+    createEvent<DocumentProcessedEvent>('document.processed', 'doc-456', 'knowledge_document', {
+      documentId: 'doc-456',
+      userId: 'user-123',
+      filename: 'resume.pdf',
+      contentType: 'application/pdf',
+      chunkCount: 10,
+      vectorIds: ['vec-1', 'vec-2'],
+      processingDurationMs: 5000,
+    }),
   ];
 
   await publisher.publishBatch(events);
@@ -86,10 +76,10 @@ async function subscribingExample() {
     eventType: 'user.created',
     handler: async (event: UserCreatedEvent) => {
       console.log('User created:', event.payload);
-      
+
       // Send welcome email
       // await sendWelcomeEmail(event.payload.email);
-      
+
       // Track analytics
       // await trackUserSignup(event.payload.userId);
     },
@@ -102,10 +92,10 @@ async function subscribingExample() {
     eventType: 'document.processed',
     handler: async (event: DocumentProcessedEvent) => {
       console.log('Document processed:', event.payload);
-      
+
       // Notify user
       // await notifyUser(event.payload.userId, 'Document ready');
-      
+
       // Update analytics
       // await trackDocumentProcessing(event.payload.documentId);
     },
@@ -114,7 +104,7 @@ async function subscribingExample() {
   });
 
   console.log('Subscriptions active. Press Ctrl+C to exit.');
-  
+
   // Keep process running
   await new Promise(() => {});
 }
@@ -219,24 +209,17 @@ async function eventReplayExample() {
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const now = new Date();
 
-  const count = await replayer.replayTimeRange(
-    yesterday,
-    now,
-    async (event) => {
-      console.log('Replaying event:', event.eventType, event.eventId);
-      // Process event for debugging or state reconstruction
-    }
-  );
+  const count = await replayer.replayTimeRange(yesterday, now, async (event) => {
+    console.log('Replaying event:', event.eventType, event.eventId);
+    // Process event for debugging or state reconstruction
+  });
 
   console.log(`Replayed ${count} events`);
 
   // Replay specific event types
-  await replayer.replayEventTypes(
-    ['user.created', 'document.processed'],
-    async (event) => {
-      console.log('Replaying:', event);
-    }
-  );
+  await replayer.replayEventTypes(['user.created', 'document.processed'], async (event) => {
+    console.log('Replaying:', event);
+  });
 }
 
 /**
@@ -305,10 +288,10 @@ async function completeWorkflowExample() {
     eventType: 'user.created',
     handler: async (event: UserCreatedEvent) => {
       console.log('Processing user creation:', event.payload.userId);
-      
+
       // Store in event store for audit trail
       await eventStore.appendEvent(event);
-      
+
       // Trigger downstream processes
       // - Send welcome email
       // - Create default settings
@@ -318,17 +301,12 @@ async function completeWorkflowExample() {
   });
 
   // 3. Publish event
-  const userEvent = createEvent<UserCreatedEvent>(
-    'user.created',
-    'user-new',
-    'user',
-    {
-      userId: 'user-new',
-      email: 'newuser@example.com',
-      name: 'New User',
-      subscriptionTier: 'free',
-    }
-  );
+  const userEvent = createEvent<UserCreatedEvent>('user.created', 'user-new', 'user', {
+    userId: 'user-new',
+    email: 'newuser@example.com',
+    name: 'New User',
+    subscriptionTier: 'free',
+  });
 
   await publisher.publish(userEvent);
   console.log('User creation event published');
@@ -362,6 +340,8 @@ if (require.main === module) {
       completeWorkflowExample().catch(console.error);
       break;
     default:
-      console.log('Unknown example. Available: publishing, subscribing, event-sourcing, replay, dlq, complete');
+      console.log(
+        'Unknown example. Available: publishing, subscribing, event-sourcing, replay, dlq, complete'
+      );
   }
 }

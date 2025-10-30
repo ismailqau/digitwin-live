@@ -1,4 +1,5 @@
 import { PrismaClient, KnowledgeDocument, Prisma } from '@prisma/client';
+
 import { BaseRepository, PaginatedResult, PaginationOptions } from './BaseRepository';
 
 /**
@@ -164,10 +165,7 @@ export class KnowledgeDocumentRepository implements BaseRepository<KnowledgeDocu
   /**
    * Find documents by status
    */
-  async findByStatus(
-    status: string,
-    includeDeleted = false
-  ): Promise<KnowledgeDocument[]> {
+  async findByStatus(status: string, includeDeleted = false): Promise<KnowledgeDocument[]> {
     return this.findMany({ status }, includeDeleted);
   }
 
@@ -222,10 +220,13 @@ export class KnowledgeDocumentRepository implements BaseRepository<KnowledgeDocu
     const totalSizeBytes = documents.reduce((sum, d) => sum + d.sizeBytes, 0);
     const totalChunks = documents.reduce((sum, d) => sum + d.chunkCount, 0);
 
-    const documentsByStatus = documents.reduce((acc, d) => {
-      acc[d.status] = (acc[d.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const documentsByStatus = documents.reduce(
+      (acc, d) => {
+        acc[d.status] = (acc[d.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       totalDocuments,

@@ -48,7 +48,7 @@ export class RetryPolicy {
 
     // Check if error message matches retryable patterns
     if (this.config.retryableErrors) {
-      return this.config.retryableErrors.some(pattern =>
+      return this.config.retryableErrors.some((pattern) =>
         error.message.toLowerCase().includes(pattern.toLowerCase())
       );
     }
@@ -62,6 +62,6 @@ export class RetryPolicy {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

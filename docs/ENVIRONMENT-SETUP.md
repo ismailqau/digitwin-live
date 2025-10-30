@@ -41,15 +41,19 @@ Edit `.env` and replace placeholder values with your actual credentials.
 ## Environment Files
 
 ### `.env.example`
+
 Complete reference with all available environment variables and descriptions.
 
 ### `.env.development`
+
 Pre-configured for local development with sensible defaults.
 
 ### `.env.production`
+
 Production configuration template with security best practices.
 
 ### `.env.test`
+
 Test environment configuration with mocked services.
 
 ## Required Variables
@@ -67,7 +71,7 @@ JWT_SECRET=your-jwt-secret
 REFRESH_SECRET=your-refresh-secret
 
 # Database (includes caching via indexed tables)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/conversational_clone_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinline_dev
 
 # Caching (PostgreSQL-based)
 ENABLE_CACHING=true
@@ -80,7 +84,7 @@ CACHE_TTL_LONG=86400
 
 ```bash
 # CORS
-CORS_ORIGIN=https://app.conversational-clone.com
+CORS_ORIGIN=https://app.digitwin-live.com
 
 # Database with SSL
 DATABASE_SSL=true
@@ -117,10 +121,10 @@ brew services start postgresql  # macOS
 sudo systemctl start postgresql  # Ubuntu
 
 # Create database
-createdb conversational_clone_dev
+createdb digitwinline_dev
 
 # Set environment variables
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/conversational_clone_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinline_dev
 ```
 
 #### Cloud SQL (Production)
@@ -136,7 +140,7 @@ gcloud sql instances create clone-db-prod \
   --region=us-central1
 
 # Create database
-gcloud sql databases create conversational_clone_prod \
+gcloud sql databases create digitwinline_prod \
   --instance=clone-db-prod
 
 # Get connection name
@@ -179,7 +183,7 @@ All cache tables use PostgreSQL indexes for fast lookups and automatic TTL-based
 
 ```sql
 -- Example: Check cache hit rate
-SELECT 
+SELECT
   table_name,
   COUNT(*) as total_entries,
   COUNT(*) FILTER (WHERE expires_at > NOW()) as valid_entries
@@ -196,7 +200,7 @@ GROUP BY table_name;
 2. Create OAuth 2.0 Client ID
 3. Add authorized redirect URIs:
    - Development: `http://localhost:3000/api/v1/auth/oauth/google/callback`
-   - Production: `https://api.conversational-clone.com/api/v1/auth/oauth/google/callback`
+   - Production: `https://api.digitwin-live.com/api/v1/auth/oauth/google/callback`
 4. Copy Client ID and Client Secret
 
 ```bash
@@ -214,7 +218,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/oauth/google/callback
 5. Download and save the `.p8` file
 
 ```bash
-APPLE_CLIENT_ID=com.yourcompany.conversational-clone
+APPLE_CLIENT_ID=com.yourcompany.digitwin-live
 APPLE_TEAM_ID=YOUR_TEAM_ID
 APPLE_KEY_ID=YOUR_KEY_ID
 APPLE_PRIVATE_KEY_PATH=./secrets/apple-private-key.p8
@@ -231,7 +235,7 @@ APPLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/oauth/apple/callback
 
 ```bash
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 #### OpenAI
@@ -267,7 +271,7 @@ GOOGLE_APPLICATION_CREDENTIALS=./secrets/gcp-service-account.json
 ```bash
 PINECONE_API_KEY=your-pinecone-api-key
 PINECONE_ENVIRONMENT=us-west1-gcp
-PINECONE_INDEX_NAME=conversational-clone
+PINECONE_INDEX_NAME=digitwin-live
 ```
 
 #### Weaviate (Self-hosted)
@@ -328,13 +332,9 @@ The application validates required environment variables on startup:
 
 ```typescript
 // Example validation
-const requiredEnvVars = [
-  'JWT_SECRET',
-  'REFRESH_SECRET',
-  'DATABASE_URL'
-];
+const requiredEnvVars = ['JWT_SECRET', 'REFRESH_SECRET', 'DATABASE_URL'];
 
-requiredEnvVars.forEach(varName => {
+requiredEnvVars.forEach((varName) => {
   if (!process.env[varName]) {
     throw new Error(`Missing required environment variable: ${varName}`);
   }
@@ -352,7 +352,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'staging', 'production', 'test']),
   JWT_SECRET: z.string().min(32),
   DATABASE_URL: z.string().url(),
-  API_GATEWAY_PORT: z.coerce.number().int().positive()
+  API_GATEWAY_PORT: z.coerce.number().int().positive(),
 });
 
 const env = envSchema.parse(process.env);
@@ -371,18 +371,18 @@ services:
     env_file:
       - .env.development
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - postgres
 
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: conversational_clone_dev
+      POSTGRES_DB: digitwinline_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
     # Note: Caching uses PostgreSQL indexed tables, no separate cache service needed
 ```
 
@@ -398,13 +398,13 @@ spec:
   template:
     spec:
       containers:
-      - name: api-gateway
-        image: gcr.io/project/api-gateway:latest
-        envFrom:
-        - secretRef:
-            name: app-secrets
-        - configMapRef:
-            name: app-config
+        - name: api-gateway
+          image: gcr.io/project/api-gateway:latest
+          envFrom:
+            - secretRef:
+                name: app-secrets
+            - configMapRef:
+                name: app-config
 ```
 
 ## Troubleshooting
@@ -418,7 +418,7 @@ spec:
 pg_isready
 
 # Test connection
-psql -h localhost -U postgres -d conversational_clone_dev
+psql -h localhost -U postgres -d digitwinline_dev
 
 # Verify DATABASE_URL format
 echo $DATABASE_URL

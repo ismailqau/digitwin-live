@@ -13,12 +13,14 @@ The system uses an event-driven architecture to enable loose coupling between se
 The Event Publisher service publishes domain events to Google Cloud Pub/Sub topics.
 
 **Features:**
+
 - Topic-based routing by event type
 - Message ordering per aggregate
 - Batch publishing for efficiency
 - Automatic topic creation
 
 **Usage:**
+
 ```typescript
 const publisher = new EventPublisher({
   projectId: process.env.GCP_PROJECT_ID,
@@ -35,12 +37,14 @@ await publisher.publish(event);
 The Event Subscriber service subscribes to domain events and routes them to appropriate handlers.
 
 **Features:**
+
 - Type-safe event handlers
 - Automatic retry with exponential backoff
 - Dead letter queue integration
 - Flow control for message processing
 
 **Usage:**
+
 ```typescript
 const subscriber = new EventSubscriber({
   projectId: process.env.GCP_PROJECT_ID,
@@ -63,12 +67,14 @@ await subscriber.subscribe({
 The Event Store implements event sourcing for conversation history and state reconstruction.
 
 **Features:**
+
 - Append-only event log
 - Event stream per aggregate
 - Snapshot support for performance
 - State reconstruction from events
 
 **Usage:**
+
 ```typescript
 const eventStore = new EventStore({
   projectId: process.env.GCP_PROJECT_ID,
@@ -93,12 +99,14 @@ const state = await eventStore.reconstructState(
 The Event Replayer enables debugging and state reconstruction by replaying historical events.
 
 **Features:**
+
 - Time-range replay
 - Event type filtering
 - Aggregate filtering
 - Batch processing
 
 **Usage:**
+
 ```typescript
 const replayer = new EventReplayer({
   projectId: process.env.GCP_PROJECT_ID,
@@ -107,13 +115,9 @@ const replayer = new EventReplayer({
 });
 
 // Replay events for debugging
-await replayer.replayTimeRange(
-  startDate,
-  endDate,
-  async (event) => {
-    console.log('Replaying:', event);
-  }
-);
+await replayer.replayTimeRange(startDate, endDate, async (event) => {
+  console.log('Replaying:', event);
+});
 ```
 
 ### 5. Dead Letter Queue Handler
@@ -121,12 +125,14 @@ await replayer.replayTimeRange(
 The Dead Letter Queue Handler manages failed events and provides retry mechanisms.
 
 **Features:**
+
 - Automatic retry with configurable attempts
 - Failed event inspection
 - Manual intervention support
 - Statistics and monitoring
 
 **Usage:**
+
 ```typescript
 const dlqHandler = new DeadLetterQueueHandler({
   projectId: process.env.GCP_PROJECT_ID,
@@ -149,50 +155,60 @@ await dlqHandler.startProcessing(async (message) => {
 ### User Events
 
 **UserCreatedEvent**
+
 - Emitted when a new user registers
 - Triggers: Welcome email, analytics tracking, initial setup
 
 ### Voice Model Events
 
 **VoiceModelTrainedEvent**
+
 - Emitted when voice model training completes
 - Triggers: Notification to user, model activation, quality validation
 
 **VoiceModelTrainingFailedEvent**
+
 - Emitted when voice model training fails
 - Triggers: Error notification, retry logic, support ticket
 
 ### Document Events
 
 **DocumentProcessedEvent**
+
 - Emitted when a knowledge document is processed
 - Triggers: Vector indexing, user notification, analytics
 
 **DocumentProcessingFailedEvent**
+
 - Emitted when document processing fails
 - Triggers: Error notification, retry logic, cleanup
 
 ### Face Model Events
 
 **FaceModelCreatedEvent**
+
 - Emitted when face model creation completes
 - Triggers: User notification, model activation, quality validation
 
 **FaceModelCreationFailedEvent**
+
 - Emitted when face model creation fails
 - Triggers: Error notification, retry logic, support ticket
 
 ### Conversation Events
 
 **ConversationStartedEvent**
+
 - Emitted when a conversation session begins
 - Triggers: Session tracking, analytics, resource allocation
 
 **ConversationTurnCompletedEvent**
+
 - Emitted when a conversation turn completes
 - Triggers: History storage, metrics tracking, cost calculation
 
 **ConversationEndedEvent**
+
 - Emitted when a conversation session ends
 - Triggers: Session cleanup, analytics, billing
 
@@ -205,6 +221,7 @@ User Action → Command → Service → Event → Subscribers
 ```
 
 Example: Document Upload
+
 ```
 Upload Request → ProcessDocumentCommand → DocumentService → DocumentProcessedEvent → [Analytics, Notification, Indexing]
 ```
@@ -216,6 +233,7 @@ Events → Event Store → State Reconstruction
 ```
 
 Example: Conversation History
+
 ```
 [ConversationStarted, TurnCompleted, TurnCompleted, ConversationEnded] → Reconstruct Full Conversation
 ```
@@ -227,6 +245,7 @@ Event → Saga Coordinator → Multiple Commands → Multiple Events
 ```
 
 Example: Voice Model Training
+
 ```
 VoiceModelTrainingStarted → [ProcessAudio, TrainModel, ValidateQuality] → VoiceModelTrained
 ```
@@ -234,14 +253,17 @@ VoiceModelTrainingStarted → [ProcessAudio, TrainModel, ValidateQuality] → Vo
 ## Topic and Subscription Naming
 
 ### Topics
+
 - Format: `{prefix}-{event-type}`
 - Example: `clone-user-created`, `clone-document-processed`
 
 ### Subscriptions
+
 - Format: `{prefix}-sub-{event-type}`
 - Example: `clone-sub-user-created`, `clone-sub-document-processed`
 
 ### Dead Letter Topics
+
 - Format: `{prefix}-dead-letter`
 - Example: `clone-dead-letter`
 
@@ -251,7 +273,7 @@ VoiceModelTrainingStarted → [ProcessAudio, TrainModel, ValidateQuality] → Vo
 
 ```bash
 # GCP Configuration
-GCP_PROJECT_ID=conversational-clone-prod
+GCP_PROJECT_ID=digitwin-live-prod
 GCP_REGION=us-central1
 
 # Event Bus Configuration
@@ -274,11 +296,13 @@ DEAD_LETTER_MAX_RETRIES=3
 ### GCP Setup
 
 1. **Enable Cloud Pub/Sub API**
+
 ```bash
 gcloud services enable pubsub.googleapis.com
 ```
 
 2. **Create Service Account**
+
 ```bash
 gcloud iam service-accounts create event-bus-sa \
   --display-name="Event Bus Service Account"
@@ -293,6 +317,7 @@ gcloud projects add-iam-policy-binding PROJECT_ID \
 ```
 
 3. **Create Topics**
+
 ```bash
 # Event store topic
 gcloud pubsub topics create clone-event-store \
@@ -309,6 +334,7 @@ gcloud pubsub topics create clone-retry \
 ```
 
 4. **Create Subscriptions with Dead Letter Queue**
+
 ```bash
 gcloud pubsub subscriptions create clone-sub-user-created \
   --topic=clone-user-created \
@@ -362,6 +388,7 @@ All event operations are logged with structured logging:
 ### Alerting
 
 Set up alerts for:
+
 - High error rate (> 5%)
 - Dead letter queue growth
 - Publishing latency (> 1s)

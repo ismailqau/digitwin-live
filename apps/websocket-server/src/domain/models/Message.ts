@@ -67,4 +67,10 @@ export interface TurnMetrics {
 }
 
 export type ClientMessage = AudioChunkMessage | InterruptionMessage | EndUtteranceMessage;
-export type ServerMessage = TranscriptMessage | ResponseStartMessage | ResponseAudioMessage | ResponseVideoMessage | ResponseEndMessage | ErrorMessage;
+export type ServerMessage =
+  | TranscriptMessage
+  | ResponseStartMessage
+  | ResponseAudioMessage
+  | ResponseVideoMessage
+  | ResponseEndMessage
+  | ErrorMessage;

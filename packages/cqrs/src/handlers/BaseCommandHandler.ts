@@ -1,4 +1,10 @@
-import { Command, CommandHandler, CommandResult, CommandValidationError, CommandAuthorizationError } from '../types';
+import {
+  Command,
+  CommandHandler,
+  CommandResult,
+  CommandValidationError,
+  CommandAuthorizationError,
+} from '../types';
 
 /**
  * Base Command Handler

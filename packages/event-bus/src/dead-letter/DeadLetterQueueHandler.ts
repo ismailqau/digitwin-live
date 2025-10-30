@@ -20,7 +20,9 @@ export interface DeadLetterMessage {
   originalSubscription: string;
 }
 
-export type DeadLetterHandler = (message: DeadLetterMessage) => Promise<'retry' | 'discard' | 'manual'>;
+export type DeadLetterHandler = (
+  message: DeadLetterMessage
+) => Promise<'retry' | 'discard' | 'manual'>;
 
 /**
  * Dead Letter Queue Handler
@@ -39,11 +41,11 @@ export class DeadLetterQueueHandler {
       projectId: config.projectId,
     });
     this.deadLetterSubscription = this.pubsub.subscription(config.deadLetterSubscription);
-    
+
     if (config.retryTopic) {
       this.retryTopic = this.pubsub.topic(config.retryTopic);
     }
-    
+
     this.isProcessing = false;
   }
 
@@ -124,9 +126,7 @@ export class DeadLetterQueueHandler {
       timestamp: new Date(eventData.timestamp),
     };
 
-    const deliveryAttempts = parseInt(
-      message.attributes['googclient_deliveryattempt'] || '1'
-    );
+    const deliveryAttempts = parseInt(message.attributes['googclient_deliveryattempt'] || '1');
 
     return {
       originalEvent,
@@ -203,7 +203,7 @@ export class DeadLetterQueueHandler {
   }> {
     // Get subscription metadata
     const [metadata] = await this.deadLetterSubscription.getMetadata();
-    
+
     return {
       messageCount: (metadata as any).numUndeliveredMessages || 0,
       oldestMessageAge: (metadata as any).oldestUnackedMessageAge || 0,
@@ -215,10 +215,10 @@ export class DeadLetterQueueHandler {
    */
   async purge(): Promise<void> {
     console.warn('Purging dead letter queue...');
-    
+
     // Seek to end to effectively purge all messages
     await this.deadLetterSubscription.seek(new Date());
-    
+
     console.log('Dead letter queue purged');
   }
 

@@ -1,4 +1,5 @@
 import { PrismaClient, ConversationSession, Prisma } from '@prisma/client';
+
 import { BaseRepository, PaginatedResult, PaginationOptions } from './BaseRepository';
 
 /**
@@ -82,7 +83,10 @@ export class ConversationSessionRepository implements BaseRepository<Conversatio
     });
   }
 
-  async update(id: string, data: Prisma.ConversationSessionUpdateInput): Promise<ConversationSession> {
+  async update(
+    id: string,
+    data: Prisma.ConversationSessionUpdateInput
+  ): Promise<ConversationSession> {
     return this.prisma.conversationSession.update({
       where: { id },
       data,
@@ -132,9 +136,7 @@ export class ConversationSessionRepository implements BaseRepository<Conversatio
       throw new Error('Session not found');
     }
 
-    const durationSeconds = Math.floor(
-      (new Date().getTime() - session.startedAt.getTime()) / 1000
-    );
+    const durationSeconds = Math.floor((new Date().getTime() - session.startedAt.getTime()) / 1000);
 
     return this.prisma.conversationSession.update({
       where: { id },
@@ -194,10 +196,7 @@ export class ConversationSessionRepository implements BaseRepository<Conversatio
     });
 
     const totalSessions = sessions.length;
-    const totalDurationMinutes = sessions.reduce(
-      (sum, s) => sum + s.durationSeconds / 60,
-      0
-    );
+    const totalDurationMinutes = sessions.reduce((sum, s) => sum + s.durationSeconds / 60, 0);
     const totalTurns = sessions.reduce((sum, s) => sum + s.totalTurns, 0);
     const averageLatencyMs =
       sessions.reduce((sum, s) => sum + s.averageLatencyMs, 0) / (totalSessions || 1);

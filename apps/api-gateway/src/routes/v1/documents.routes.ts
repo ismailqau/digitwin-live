@@ -1,15 +1,16 @@
 import { Router, type Router as RouterType } from 'express';
 import { param } from 'express-validator';
+
 import {
   getDocuments,
   getDocumentById,
   uploadDocument,
-  deleteDocument
+  deleteDocument,
 } from '../../controllers/documents.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
+import { uploadLimiter } from '../../middleware/rateLimit.middleware';
 import { requirePermission, requireSubscriptionTier } from '../../middleware/rbac.middleware';
 import { validate } from '../../middleware/validation.middleware';
-import { uploadLimiter } from '../../middleware/rateLimit.middleware';
 
 const router: RouterType = Router();
 
@@ -28,8 +29,8 @@ router.get(
 
 // Write operations - require pro tier or higher
 router.post(
-  '/', 
-  uploadLimiter, 
+  '/',
+  uploadLimiter,
   requirePermission('knowledge:write'),
   requireSubscriptionTier('pro'),
   uploadDocument

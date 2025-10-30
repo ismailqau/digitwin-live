@@ -7,7 +7,7 @@ A real-time conversational AI system that enables natural voice conversations wi
 This project uses a monorepo architecture managed by Turborepo and pnpm workspaces.
 
 ```
-conversational-clone/
+digitwin-live/
 ├── apps/                      # Deployable applications
 │   ├── mobile-app/           # React Native mobile app (iOS/Android)
 │   ├── websocket-server/     # WebSocket server for real-time communication
@@ -47,18 +47,22 @@ conversational-clone/
 ```bash
 # 1. Clone and install
 git clone <repository-url>
-cd conversational-clone
+cd digitwin-live
+
 pnpm install
 
-# 2. Set up environment
+# 2. Verify directory structure (optional)
+./scripts/verify-directory-structure.sh
+
+# 3. Set up environment
 cp .env.development .env
 node scripts/generate-secrets.js
 # Copy generated secrets to .env
 
-# 3. Create database
-createdb conversational_clone_dev
+# 4. Create database
+createdb digitwinline_dev
 
-# 4. Validate and start
+# 5. Validate and start
 node scripts/validate-env.js
 pnpm dev
 ```
@@ -98,31 +102,37 @@ pnpm --filter @clone/api-gateway add express
 ## 🔨 Development
 
 ### Build all packages
+
 ```bash
 pnpm build
 ```
 
 ### Run tests
+
 ```bash
 pnpm test
 ```
 
 ### Lint code
+
 ```bash
 pnpm lint
 ```
 
 ### Format code
+
 ```bash
 pnpm format
 ```
 
 ### Type check
+
 ```bash
 pnpm type-check
 ```
 
 ### Clean build artifacts
+
 ```bash
 pnpm clean
 ```
@@ -155,25 +165,31 @@ The system follows a microservices architecture with the following key component
 ## 📚 Documentation
 
 ### Getting Started
+
 - **[Getting Started Guide](./docs/GETTING-STARTED.md)** - Quick setup guide
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive configuration
 
 ### Configuration
+
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive setup guide
 - **[Quick Reference](./docs/ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
 
 ### Security & Authentication
+
 - **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth guide
 - **[RBAC Guide](./apps/api-gateway/docs/RBAC-GUIDE.md)** - Role-based access control
 
 ### Development
+
 - **[Scripts Documentation](./scripts/README.md)** - Utility scripts
 - **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
 
 ### Architecture
-- **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - Complete system design
+
+- **[Design Document](./.kiro/specs/real-time-digitwin-live/design.md)** - Complete system design
+- **[GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)** - Cloud infrastructure setup and deployment
 - **[Microservices Communication](./docs/microservices-communication.md)** - gRPC, service discovery, and distributed transactions
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus and event sourcing
 - **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query Responsibility Segregation
@@ -185,38 +201,56 @@ The system follows a microservices architecture with the following key component
 ## 🧪 Testing
 
 ### Run all tests
+
 ```bash
 pnpm test
 ```
 
 ### Run tests for a specific package
+
 ```bash
 pnpm --filter @clone/websocket-server test
 ```
 
 ### Run tests in watch mode
+
 ```bash
 pnpm --filter @clone/shared-types test --watch
 ```
 
 ## 🚢 Deployment
 
-### Build for production
+### Infrastructure (GCP)
+
+The system is deployed on Google Cloud Platform using Terraform:
+
 ```bash
+# Initialize infrastructure
+./infrastructure/scripts/init-terraform.sh dev
+
+# Plan changes
+./infrastructure/scripts/plan-terraform.sh dev <project-id>
+
+# Apply changes
+./infrastructure/scripts/apply-terraform.sh dev
+```
+
+**📖 Infrastructure Guide**: See [GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)
+
+### Application Deployment
+
+```bash
+# Build for production
 pnpm build
-```
 
-### Deploy to staging
-```bash
+# Deploy to staging
 ./scripts/deploy.sh staging
-```
 
-### Deploy to production
-```bash
+# Deploy to production
 ./scripts/deploy.sh production
 ```
 
-See [Deployment Guide](docs/deployment/guide.md) for detailed instructions.
+**📖 Deployment Guide**: See [Infrastructure README](./infrastructure/README.md)
 
 ## 🔧 Configuration
 
@@ -264,6 +298,7 @@ node scripts/validate-env.js        # Validate configuration
 ## 🆘 Support
 
 For issues and questions:
+
 - GitHub Issues: [repository-url]/issues
 - Documentation: [docs-url]
 - Email: support@example.com

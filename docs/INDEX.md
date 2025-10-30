@@ -32,24 +32,28 @@ Root:
 ## 📚 By Topic
 
 ### Setup & Configuration
+
 - [Getting Started](./GETTING-STARTED.md) - 5-step quick setup
 - [Environment Setup](./ENVIRONMENT-SETUP.md) - Detailed setup guide
 - [Quick Reference](./ENV-QUICK-REFERENCE.md) - Variables cheat sheet
 
 ### Authentication & Security
+
 - [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) - JWT & OAuth
 - [RBAC Guide](../apps/api-gateway/docs/RBAC-GUIDE.md) - Access control
 - [Implementation Summary](../apps/api-gateway/docs/IMPLEMENTATION-SUMMARY.md) - What's implemented
 
 ### Architecture & Design
+
 - [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
 - [Database Architecture](./DATABASE-ARCHITECTURE.md) - Database schema and repository pattern
 - [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus and event sourcing
-- [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
-- [Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md) - Requirements
-- [Tasks](../.kiro/specs/real-time-conversational-clone/tasks.md) - Implementation tasks
+- [Design Document](../.kiro/specs/real-time-digitwin-live/design.md) - System design
+- [Requirements](../.kiro/specs/real-time-digitwin-live/requirements.md) - Requirements
+- [Tasks](../.kiro/specs/real-time-digitwin-live/tasks.md) - Implementation tasks
 
 ### Development Tools
+
 - [Monorepo Development](./MONOREPO-DEVELOPMENT.md) - Turborepo & pnpm guide
 - [Scripts Documentation](../scripts/README.md) - Utility scripts
 - [API Documentation](http://localhost:3000/api-docs) - OpenAPI (when running)
@@ -57,22 +61,26 @@ Root:
 ## 🔍 By Use Case
 
 ### "I want to set up the project"
+
 1. [Getting Started](./GETTING-STARTED.md)
 2. [Environment Setup](./ENVIRONMENT-SETUP.md)
 3. [Scripts Documentation](../scripts/README.md)
 
 ### "I need to configure authentication"
+
 1. [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md)
 2. [RBAC Guide](../apps/api-gateway/docs/RBAC-GUIDE.md)
 3. [Environment Setup](./ENVIRONMENT-SETUP.md#oauth-configuration)
 
 ### "I want to understand the architecture"
-1. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md)
+
+1. [Design Document](../.kiro/specs/real-time-digitwin-live/design.md)
 2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)
 3. [Caching Architecture](./CACHING-ARCHITECTURE.md)
-4. [Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md)
+4. [Requirements](../.kiro/specs/real-time-digitwin-live/requirements.md)
 
 ### "I'm having configuration issues"
+
 1. [Quick Reference](./ENV-QUICK-REFERENCE.md)
 2. [Environment Setup - Troubleshooting](./ENVIRONMENT-SETUP.md#troubleshooting)
 3. Run `node scripts/validate-env.js`

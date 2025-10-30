@@ -1,11 +1,13 @@
 import 'reflect-metadata';
-import express from 'express';
 import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
+
 import cors from 'cors';
+import express from 'express';
+import { Server as SocketIOServer } from 'socket.io';
+
 import { setupContainer, container } from './infrastructure/config/container';
-import { WebSocketController } from './presentation/controllers/WebSocketController';
 import logger from './infrastructure/logging/logger';
+import { WebSocketController } from './presentation/controllers/WebSocketController';
 
 const PORT = process.env.PORT || 3001;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
@@ -16,12 +18,14 @@ async function bootstrap() {
 
   // Create Express app
   const app = express();
-  
+
   // Middleware
-  app.use(cors({
-    origin: CORS_ORIGIN,
-    credentials: true
-  }));
+  app.use(
+    cors({
+      origin: CORS_ORIGIN,
+      credentials: true,
+    })
+  );
   app.use(express.json());
 
   // Health check endpoint
@@ -29,7 +33,7 @@ async function bootstrap() {
     res.json({
       status: 'healthy',
       service: 'websocket-server',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   });
 
@@ -40,11 +44,11 @@ async function bootstrap() {
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: CORS_ORIGIN,
-      credentials: true
+      credentials: true,
     },
     transports: ['websocket', 'polling'],
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
   });
 
   // Get WebSocket controller from DI container

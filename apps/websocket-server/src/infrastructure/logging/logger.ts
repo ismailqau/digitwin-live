@@ -12,23 +12,24 @@ export const logger = winston.createLogger({
   defaultMeta: { service: 'websocket-server' },
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    })
-  ]
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+    }),
+  ],
 });
 
 // Add file transport in production
 if (process.env.NODE_ENV === 'production') {
-  logger.add(new winston.transports.File({
-    filename: 'logs/error.log',
-    level: 'error'
-  }));
-  logger.add(new winston.transports.File({
-    filename: 'logs/combined.log'
-  }));
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+    })
+  );
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+    })
+  );
 }
 
 export default logger;

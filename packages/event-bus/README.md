@@ -29,17 +29,12 @@ const publisher = new EventPublisher({
   enableOrdering: true,
 });
 
-const event = createEvent<UserCreatedEvent>(
-  'user.created',
+const event = createEvent<UserCreatedEvent>('user.created', userId, 'user', {
   userId,
-  'user',
-  {
-    userId,
-    email: 'user@example.com',
-    name: 'John Doe',
-    subscriptionTier: 'free',
-  }
-);
+  email: 'user@example.com',
+  name: 'John Doe',
+  subscriptionTier: 'free',
+});
 
 await publisher.publish(event);
 ```
@@ -85,7 +80,7 @@ const conversationState = await eventStore.reconstructState(
   'conversation_session',
   (state, event) => {
     // Reducer function to apply events
-    return { ...state, /* updated state */ };
+    return { ...state /* updated state */ };
   },
   initialState
 );
@@ -103,13 +98,9 @@ const replayer = new EventReplayer({
 });
 
 // Replay events for debugging
-await replayer.replayTimeRange(
-  new Date('2024-01-01'),
-  new Date('2024-01-31'),
-  async (event) => {
-    console.log('Replaying event:', event);
-  }
-);
+await replayer.replayTimeRange(new Date('2024-01-01'), new Date('2024-01-31'), async (event) => {
+  console.log('Replaying event:', event);
+});
 ```
 
 ### Dead Letter Queue
@@ -128,7 +119,7 @@ const dlqHandler = new DeadLetterQueueHandler({
 await dlqHandler.startProcessing(async (message) => {
   // Inspect failed message
   console.log('Failed event:', message.originalEvent);
-  
+
   // Decide action: 'retry', 'discard', or 'manual'
   if (message.deliveryAttempts < 3) {
     return 'retry';

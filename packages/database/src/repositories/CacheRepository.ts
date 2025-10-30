@@ -73,10 +73,7 @@ export class CacheRepository {
   // Vector Search Cache
   // ============================================================================
 
-  async getVectorSearchResults(
-    queryHash: string,
-    userId: string
-  ): Promise<any | null> {
+  async getVectorSearchResults(queryHash: string, userId: string): Promise<any | null> {
     const cached = await this.prisma.vectorSearchCache.findFirst({
       where: {
         queryHash,

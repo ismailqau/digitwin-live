@@ -14,7 +14,7 @@ Quick guide to set up and run the Conversational Clone platform locally.
 
 ```bash
 git clone <repository-url>
-cd conversational-clone
+cd digitwin-live
 npm install
 ```
 
@@ -35,10 +35,10 @@ node scripts/generate-secrets.js
 
 ```bash
 # Create database
-createdb conversational_clone_dev
+createdb digitwinline_dev
 
 # Set DATABASE_URL in .env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/conversational_clone_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinline_dev
 ```
 
 ### 4. Validate Configuration
@@ -123,14 +123,14 @@ node scripts/generate-secrets.js    # Generate secrets
 node scripts/validate-env.js        # Validate config
 
 # Database
-createdb conversational_clone_dev   # Create database
+createdb digitwinline_dev   # Create database
 psql $DATABASE_URL                  # Connect to database
 ```
 
 ## Project Structure
 
 ```
-conversational-clone/
+digitwin-live/
 ├── apps/
 │   ├── api-gateway/         # REST API
 │   └── websocket-server/    # WebSocket server

@@ -2,9 +2,9 @@
 
 /**
  * Secret Generation Script
- * 
+ *
  * This script generates secure random secrets for use in environment variables.
- * 
+ *
  * Usage:
  *   node scripts/generate-secrets.js
  *   npm run generate-secrets
@@ -18,7 +18,7 @@ const colors = {
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   cyan: '\x1b[36m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
 function log(message, color = 'reset') {
@@ -58,11 +58,7 @@ function main() {
   log('JWT Authentication Secrets', 'bold');
   log('━'.repeat(70), 'cyan');
 
-  displaySecret(
-    'JWT_SECRET',
-    generateSecret(32),
-    'Used to sign access tokens (32 bytes, base64)'
-  );
+  displaySecret('JWT_SECRET', generateSecret(32), 'Used to sign access tokens (32 bytes, base64)');
 
   displaySecret(
     'REFRESH_SECRET',
@@ -81,11 +77,7 @@ function main() {
     'Used for session management (32 bytes, hex)'
   );
 
-  displaySecret(
-    'CSRF_SECRET',
-    generateSecret(24),
-    'Used for CSRF protection (24 bytes, base64)'
-  );
+  displaySecret('CSRF_SECRET', generateSecret(24), 'Used for CSRF protection (24 bytes, base64)');
 
   // Webhook Secrets
   log('\n' + '━'.repeat(70), 'cyan');
@@ -138,11 +130,7 @@ function main() {
   log('Additional Secrets', 'bold');
   log('━'.repeat(70), 'cyan');
 
-  displaySecret(
-    'ADMIN_API_KEY',
-    generateUUID(),
-    'Admin API key for privileged operations'
-  );
+  displaySecret('ADMIN_API_KEY', generateUUID(), 'Admin API key for privileged operations');
 
   displaySecret(
     'BACKUP_ENCRYPTION_KEY',

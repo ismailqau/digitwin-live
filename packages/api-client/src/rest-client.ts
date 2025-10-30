@@ -44,7 +44,11 @@ export class RestClient {
     return response.data;
   }
 
-  async upload<T>(url: string, file: File | Blob, onProgress?: (progress: number) => void): Promise<T> {
+  async upload<T>(
+    url: string,
+    file: File | Blob,
+    onProgress?: (progress: number) => void
+  ): Promise<T> {
     const formData = new FormData();
     formData.append('file', file);
 

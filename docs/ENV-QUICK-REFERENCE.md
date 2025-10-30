@@ -3,17 +3,20 @@
 ## Essential Variables
 
 ### Authentication (Required)
+
 ```bash
 JWT_SECRET=<32+ character secret>
 REFRESH_SECRET=<32+ character secret>
 ```
 
 ### Database (Required)
+
 ```bash
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 ```
 
 ### Application (Required)
+
 ```bash
 NODE_ENV=development|staging|production|test
 API_GATEWAY_PORT=3000
@@ -23,6 +26,7 @@ WEBSOCKET_PORT=3001
 ## By Feature
 
 ### OAuth Authentication
+
 ```bash
 # Google
 GOOGLE_CLIENT_ID=<client-id>.apps.googleusercontent.com
@@ -38,6 +42,7 @@ APPLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/oauth/apple/callback
 ```
 
 ### AI Services
+
 ```bash
 # LLM
 GEMINI_API_KEY=<key>
@@ -53,11 +58,12 @@ GOOGLE_TTS_API_KEY=<key>
 ```
 
 ### Vector Database
+
 ```bash
 # Pinecone
 PINECONE_API_KEY=<key>
 PINECONE_ENVIRONMENT=us-west1-gcp
-PINECONE_INDEX_NAME=conversational-clone
+PINECONE_INDEX_NAME=digitwin-live
 
 # Weaviate
 WEAVIATE_URL=http://localhost:8080
@@ -65,6 +71,7 @@ WEAVIATE_API_KEY=<key>
 ```
 
 ### Caching & Rate Limiting
+
 ```bash
 # PostgreSQL-based caching (no separate cache service)
 ENABLE_CACHING=true
@@ -78,6 +85,7 @@ RATE_LIMIT_WINDOW_MS=900000
 ```
 
 ### Cloud Storage (GCP)
+
 ```bash
 GCP_PROJECT_ID=<project-id>
 GCP_REGION=us-central1
@@ -87,12 +95,14 @@ GCS_BUCKET_DOCUMENTS=<bucket-name>
 ```
 
 ### Monitoring
+
 ```bash
 SENTRY_DSN=<dsn>
 LOG_LEVEL=info|debug|warn|error
 ```
 
 ### Security
+
 ```bash
 CORS_ORIGIN=*  # Development
 CORS_ORIGIN=https://app.example.com  # Production
@@ -103,6 +113,7 @@ CSRF_SECRET=<secret>
 ## By Environment
 
 ### Development Minimum
+
 ```bash
 NODE_ENV=development
 JWT_SECRET=dev-secret-change-me
@@ -113,6 +124,7 @@ WEBSOCKET_PORT=3001
 ```
 
 ### Production Minimum
+
 ```bash
 NODE_ENV=production
 JWT_SECRET=${SECRET_JWT_SECRET}
@@ -127,11 +139,13 @@ WEBSOCKET_PORT=8081
 ## Quick Setup
 
 ### 1. Copy template
+
 ```bash
 cp .env.development .env
 ```
 
 ### 2. Generate secrets
+
 ```bash
 node scripts/generate-secrets.js
 ```
@@ -139,11 +153,13 @@ node scripts/generate-secrets.js
 ### 3. Update .env with generated secrets
 
 ### 4. Validate
+
 ```bash
 node scripts/validate-env.js
 ```
 
 ### 5. Start services
+
 ```bash
 npm run dev
 ```
@@ -151,6 +167,7 @@ npm run dev
 ## Common Patterns
 
 ### Database URLs
+
 ```bash
 # Local PostgreSQL
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dbname
@@ -163,6 +180,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require
 ```
 
 ### Cache Configuration
+
 ```bash
 # PostgreSQL-based caching (uses indexed cache tables)
 ENABLE_CACHING=true
@@ -174,6 +192,7 @@ CACHE_TTL_LONG=86400     # 24 hours
 ```
 
 ### Feature Flags
+
 ```bash
 FEATURE_OAUTH_GOOGLE=true
 FEATURE_VOICE_CLONING=true
@@ -184,21 +203,25 @@ FEATURE_VIDEO_GENERATION=true
 ## Troubleshooting
 
 ### "Missing required variable"
+
 - Check .env file exists
 - Verify variable name spelling
 - Ensure no spaces around `=`
 
 ### "Invalid token"
+
 - Regenerate JWT secrets
 - Check secret length (min 32 chars)
 - Verify no special characters causing issues
 
 ### "Database connection failed"
+
 - Verify PostgreSQL is running
 - Check DATABASE_URL format
 - Test connection: `psql $DATABASE_URL`
 
 ### "Caching not working"
+
 - Verify ENABLE_CACHING is set to true
 - Check database connection (caching uses PostgreSQL)
 - Verify cache tables exist in database

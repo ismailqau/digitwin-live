@@ -172,11 +172,11 @@ export class CreateUserCommandHandler extends BaseCommandHandler<
 > {
   protected async validateCommand(command: CreateUserCommand): Promise<string[]> {
     const violations: string[] = [];
-    
+
     if (!command.payload.email) {
       violations.push('email is required');
     }
-    
+
     return violations;
   }
 
@@ -184,7 +184,7 @@ export class CreateUserCommandHandler extends BaseCommandHandler<
     try {
       // Perform write operation
       const userId = await this.userRepository.create(command.payload);
-      
+
       // Create domain event
       const event = {
         eventId: uuidv4(),
@@ -195,7 +195,7 @@ export class CreateUserCommandHandler extends BaseCommandHandler<
         version: 1,
         payload: { userId, ...command.payload },
       };
-      
+
       return this.success({ userId }, [event]);
     } catch (error) {
       return this.error(error as Error);
@@ -218,11 +218,10 @@ export class GetUserProfileQueryHandler extends BaseQueryHandler<
   async handle(query: GetUserProfileQuery): Promise<QueryResult<UserProfileDTO>> {
     try {
       // Query materialized view
-      const profile = await this.db.query(
-        'SELECT * FROM user_profile_view WHERE id = $1',
-        [query.payload.userId]
-      );
-      
+      const profile = await this.db.query('SELECT * FROM user_profile_view WHERE id = $1', [
+        query.payload.userId,
+      ]);
+
       return this.success(profile);
     } catch (error) {
       return this.error(error as Error);

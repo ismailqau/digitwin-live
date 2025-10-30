@@ -1,6 +1,7 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
 import { v4 as uuidv4 } from 'uuid';
+
+import { AuthRequest } from '../middleware/auth.middleware';
 
 /**
  * @swagger
@@ -25,14 +26,14 @@ export const getDocuments = async (_req: AuthRequest, res: Response): Promise<vo
   try {
     // TODO: Fetch documents from database
     res.json({
-      documents: []
+      documents: [],
     });
   } catch (error) {
     res.status(500).json({
       error: {
         code: 'FETCH_DOCUMENTS_FAILED',
-        message: 'Failed to fetch documents'
-      }
+        message: 'Failed to fetch documents',
+      },
     });
   }
 };
@@ -74,14 +75,14 @@ export const getDocumentById = async (req: AuthRequest, res: Response): Promise<
       sizeBytes: 1024000,
       uploadedAt: new Date().toISOString(),
       status: 'completed',
-      chunkCount: 10
+      chunkCount: 10,
     });
   } catch (error) {
     res.status(500).json({
       error: {
         code: 'FETCH_DOCUMENT_FAILED',
-        message: 'Failed to fetch document'
-      }
+        message: 'Failed to fetch document',
+      },
     });
   }
 };
@@ -125,14 +126,14 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       sizeBytes: 1024000,
       uploadedAt: new Date().toISOString(),
       status: 'pending',
-      chunkCount: 0
+      chunkCount: 0,
     });
   } catch (error) {
     res.status(500).json({
       error: {
         code: 'UPLOAD_FAILED',
-        message: 'Failed to upload document'
-      }
+        message: 'Failed to upload document',
+      },
     });
   }
 };
@@ -164,8 +165,8 @@ export const deleteDocument = async (_req: AuthRequest, res: Response): Promise<
     res.status(500).json({
       error: {
         code: 'DELETE_FAILED',
-        message: 'Failed to delete document'
-      }
+        message: 'Failed to delete document',
+      },
     });
   }
 };

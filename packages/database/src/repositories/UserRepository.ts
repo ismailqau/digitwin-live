@@ -1,4 +1,5 @@
 import { PrismaClient, User, Prisma } from '@prisma/client';
+
 import { BaseRepository, PaginatedResult, PaginationOptions } from './BaseRepository';
 
 /**

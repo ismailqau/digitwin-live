@@ -1,4 +1,5 @@
 import { PrismaClient, FaceModel, Prisma } from '@prisma/client';
+
 import { BaseRepository } from './BaseRepository';
 
 /**

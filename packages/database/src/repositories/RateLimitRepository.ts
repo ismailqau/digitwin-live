@@ -160,10 +160,13 @@ export class RateLimitRepository {
 
     const totalRequests = records.reduce((sum, r) => sum + r.requestCount, 0);
 
-    const requestsByEndpoint = records.reduce((acc, r) => {
-      acc[r.endpoint] = (acc[r.endpoint] || 0) + r.requestCount;
-      return acc;
-    }, {} as Record<string, number>);
+    const requestsByEndpoint = records.reduce(
+      (acc, r) => {
+        acc[r.endpoint] = (acc[r.endpoint] || 0) + r.requestCount;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       totalRequests,

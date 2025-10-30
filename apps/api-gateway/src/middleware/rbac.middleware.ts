@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+
 import { AuthRequest } from './auth.middleware';
 
 /**
@@ -10,21 +11,21 @@ export const requirePermission = (permission: string) => {
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        }
+          message: 'Authentication required',
+        },
       });
       return;
     }
 
-    const hasPermission = req.user.permissions.includes(permission) || 
-                         req.user.roles?.includes('admin');
+    const hasPermission =
+      req.user.permissions.includes(permission) || req.user.roles?.includes('admin');
 
     if (!hasPermission) {
       res.status(403).json({
         error: {
           code: 'FORBIDDEN',
-          message: `Permission denied. Required permission: ${permission}`
-        }
+          message: `Permission denied. Required permission: ${permission}`,
+        },
       });
       return;
     }
@@ -42,8 +43,8 @@ export const requireRole = (role: string) => {
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        }
+          message: 'Authentication required',
+        },
       });
       return;
     }
@@ -54,8 +55,8 @@ export const requireRole = (role: string) => {
       res.status(403).json({
         error: {
           code: 'FORBIDDEN',
-          message: `Access denied. Required role: ${role}`
-        }
+          message: `Access denied. Required role: ${role}`,
+        },
       });
       return;
     }
@@ -73,20 +74,20 @@ export const requireAnyRole = (roles: string[]) => {
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        }
+          message: 'Authentication required',
+        },
       });
       return;
     }
 
-    const hasAnyRole = roles.some(role => req.user?.roles?.includes(role));
+    const hasAnyRole = roles.some((role) => req.user?.roles?.includes(role));
 
     if (!hasAnyRole) {
       res.status(403).json({
         error: {
           code: 'FORBIDDEN',
-          message: `Access denied. Required roles: ${roles.join(', ')}`
-        }
+          message: `Access denied. Required roles: ${roles.join(', ')}`,
+        },
       });
       return;
     }
@@ -104,14 +105,14 @@ export const requireAllPermissions = (permissions: string[]) => {
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        }
+          message: 'Authentication required',
+        },
       });
       return;
     }
 
     const isAdmin = req.user.roles?.includes('admin');
-    const hasAllPermissions = permissions.every(permission => 
+    const hasAllPermissions = permissions.every((permission) =>
       req.user?.permissions.includes(permission)
     );
 
@@ -119,8 +120,8 @@ export const requireAllPermissions = (permissions: string[]) => {
       res.status(403).json({
         error: {
           code: 'FORBIDDEN',
-          message: `Permission denied. Required permissions: ${permissions.join(', ')}`
-        }
+          message: `Permission denied. Required permissions: ${permissions.join(', ')}`,
+        },
       });
       return;
     }
@@ -140,8 +141,8 @@ export const requireSubscriptionTier = (minTier: 'free' | 'pro' | 'enterprise') 
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        }
+          message: 'Authentication required',
+        },
       });
       return;
     }
@@ -155,8 +156,8 @@ export const requireSubscriptionTier = (minTier: 'free' | 'pro' | 'enterprise') 
           code: 'SUBSCRIPTION_REQUIRED',
           message: `This feature requires ${minTier} subscription or higher`,
           requiredTier: minTier,
-          currentTier: req.user.subscriptionTier
-        }
+          currentTier: req.user.subscriptionTier,
+        },
       });
       return;
     }

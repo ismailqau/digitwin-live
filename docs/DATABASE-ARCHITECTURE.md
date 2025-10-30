@@ -16,9 +16,11 @@ The system uses **PostgreSQL 15+** as the primary database, hosted on **Google C
 ### Core Entities
 
 #### Users
+
 Stores user account information, preferences, and settings.
 
 **Key Fields:**
+
 - `id`: UUID primary key
 - `email`: Unique email address
 - `personalityTraits`: Array of personality characteristics
@@ -27,33 +29,40 @@ Stores user account information, preferences, and settings.
 - `deletedAt`: Soft delete timestamp
 
 **Relationships:**
+
 - One-to-many with VoiceModels
 - One-to-many with FaceModels
 - One-to-many with ConversationSessions
 - One-to-many with KnowledgeDocuments
 
 #### Voice Models
+
 Stores voice cloning model metadata and references.
 
 **Key Fields:**
+
 - `provider`: xtts-v2, google-cloud-tts, or openai-tts
 - `modelPath`: Cloud Storage path to model files
 - `qualityScore`: 0-1 score indicating voice similarity
 - `isActive`: Boolean flag for active model
 
 #### Face Models
+
 Stores face cloning model metadata and references.
 
 **Key Fields:**
+
 - `modelPath`: Cloud Storage path to model artifacts
 - `resolution`: JSON object with width/height
 - `qualityScore`: 0-1 score indicating face quality
 - `isActive`: Boolean flag for active model
 
 #### Conversation Sessions
+
 Tracks conversation sessions between users and their clones.
 
 **Key Fields:**
+
 - `state`: idle, listening, processing, speaking, interrupted, error
 - `llmProvider`: Selected LLM provider
 - `ttsProvider`: Selected TTS provider
@@ -62,22 +71,27 @@ Tracks conversation sessions between users and their clones.
 - `totalCost`: Total cost of the session
 
 **Relationships:**
+
 - Many-to-one with User
 - One-to-many with ConversationTurns
 
 #### Conversation Turns
+
 Individual question-answer exchanges within a session.
 
 **Key Fields:**
+
 - `userTranscript`: Transcribed user speech
 - `llmResponse`: Generated response text
 - `asrLatencyMs`, `ragLatencyMs`, `llmLatencyMs`, `ttsLatencyMs`: Performance metrics
 - `asrCost`, `llmCost`, `ttsCost`: Cost breakdown
 
 #### Knowledge Documents
+
 User-uploaded documents for the knowledge base.
 
 **Key Fields:**
+
 - `filename`: Original filename
 - `contentType`: MIME type
 - `textContent`: Extracted text content
@@ -89,9 +103,11 @@ User-uploaded documents for the knowledge base.
 ### Cache Tables
 
 #### Embedding Cache
+
 Caches query embeddings to avoid redundant API calls.
 
 **Key Fields:**
+
 - `queryHash`: Hash of the query text
 - `embedding`: Float array of embedding values
 - `expiresAt`: Cache expiration timestamp
@@ -99,9 +115,11 @@ Caches query embeddings to avoid redundant API calls.
 **TTL:** 1 hour (configurable)
 
 #### Vector Search Cache
+
 Caches vector search results for frequently accessed queries.
 
 **Key Fields:**
+
 - `queryHash`: Hash of query + filters
 - `userId`: User ID for isolation
 - `results`: JSON object with search results
@@ -110,9 +128,11 @@ Caches vector search results for frequently accessed queries.
 **TTL:** 30 minutes (configurable)
 
 #### LLM Response Cache
+
 Caches LLM responses for common questions (FAQs).
 
 **Key Fields:**
+
 - `promptHash`: Hash of the prompt
 - `response`: Generated response text
 - `provider`: LLM provider used
@@ -124,9 +144,11 @@ Caches LLM responses for common questions (FAQs).
 ### System Tables
 
 #### Rate Limits
+
 Implements token bucket algorithm for rate limiting.
 
 **Key Fields:**
+
 - `userId`: User ID
 - `endpoint`: API endpoint
 - `windowStart`: Time window start
@@ -135,9 +157,11 @@ Implements token bucket algorithm for rate limiting.
 **Unique Constraint:** (userId, endpoint, windowStart)
 
 #### Audit Logs
+
 Comprehensive audit trail for security and compliance.
 
 **Key Fields:**
+
 - `userId`: User who performed the action
 - `action`: Action type (e.g., user.login, document.upload)
 - `resource`: Resource ID affected
@@ -159,7 +183,7 @@ interface BaseRepository<T> {
   findOne(where: any): Promise<T | null>;
   create(data: any): Promise<T>;
   update(id: string, data: any): Promise<T>;
-  delete(id: string): Promise<T>;  // Soft delete
+  delete(id: string): Promise<T>; // Soft delete
   hardDelete(id: string): Promise<T>;
   restore(id: string): Promise<T>;
   count(where?: any): Promise<number>;
@@ -195,6 +219,7 @@ User-related data uses soft delete to support:
 - **User Experience**: Undo delete operations
 
 **Implementation:**
+
 - `deletedAt` timestamp field (NULL = not deleted)
 - Queries automatically filter out soft-deleted records
 - `restore()` method to undelete records
@@ -210,12 +235,13 @@ Prisma automatically manages connection pooling:
 - **Idle Timeout**: 600 seconds
 
 **Cloud SQL Configuration:**
+
 ```typescript
 // Unix socket connection (recommended for Cloud Run)
-DATABASE_URL="postgresql://USER:PASSWORD@/DATABASE?host=/cloudsql/PROJECT:REGION:INSTANCE"
+DATABASE_URL = 'postgresql://USER:PASSWORD@/DATABASE?host=/cloudsql/PROJECT:REGION:INSTANCE';
 
 // TCP connection
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+DATABASE_URL = 'postgresql://USER:PASSWORD@HOST:PORT/DATABASE';
 ```
 
 ## Caching Strategy

@@ -55,11 +55,7 @@ export class EventSubscriber {
     this.handlers.set(subscriptionName, options.handler);
 
     // Get or create subscription
-    const subscription = await this.getOrCreateSubscription(
-      topicName,
-      subscriptionName,
-      options
-    );
+    const subscription = await this.getOrCreateSubscription(topicName, subscriptionName, options);
 
     // Set up message handler
     subscription.on('message', async (message: Message) => {
@@ -94,7 +90,7 @@ export class EventSubscriber {
     try {
       // Parse event from message data
       const eventData = JSON.parse(message.data.toString());
-      
+
       // Reconstruct event with proper Date objects
       const event: DomainEvent = {
         ...eventData,
@@ -108,7 +104,7 @@ export class EventSubscriber {
       message.ack();
     } catch (error) {
       console.error(`Error handling message in ${subscriptionName}:`, error);
-      
+
       // Check delivery attempts
       const deliveryAttempt = parseInt(message.attributes['googclient_deliveryattempt'] || '1');
       const maxAttempts = 5; // Default max attempts

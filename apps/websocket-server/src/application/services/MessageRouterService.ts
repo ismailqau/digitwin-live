@@ -1,8 +1,10 @@
+import { ConversationState } from '@clone/shared-types';
 import { injectable, inject } from 'tsyringe';
+
 import { ClientMessage, ServerMessage, ErrorMessage } from '../../domain/models/Message';
+
 import { ConnectionService } from './ConnectionService';
 import { SessionService } from './SessionService';
-import { ConversationState } from '@clone/shared-types';
 
 @injectable()
 export class MessageRouterService {
@@ -44,14 +46,14 @@ export class MessageRouterService {
 
   private async handleInterruption(sessionId: string, _message: ClientMessage): Promise<void> {
     await this.sessionService.updateSessionState(sessionId, ConversationState.INTERRUPTED);
-    
+
     // TODO: Cancel ongoing response generation
     console.log(`Interruption received for session ${sessionId}`);
   }
 
   private async handleEndUtterance(sessionId: string, _message: ClientMessage): Promise<void> {
     await this.sessionService.updateSessionState(sessionId, ConversationState.PROCESSING);
-    
+
     // TODO: Signal ASR service to finalize transcript
     console.log(`End utterance for session ${sessionId}`);
   }
@@ -70,7 +72,7 @@ export class MessageRouterService {
       timestamp: Date.now(),
       errorCode: 'INTERNAL_ERROR',
       errorMessage: error.message,
-      recoverable: true
+      recoverable: true,
     };
 
     this.sendToClient(sessionId, errorMessage);

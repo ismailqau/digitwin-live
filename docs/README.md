@@ -28,23 +28,23 @@ Complete documentation for the Conversational Clone platform.
 
 ## 🏗️ Architecture
 
-- **[Design Document](../.kiro/specs/real-time-conversational-clone/design.md)** - Complete system design
+- **[Design Document](../.kiro/specs/real-time-digitwin-live/design.md)** - Complete system design
 - **[Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus and event sourcing
 - **[Database Architecture](./DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
-- **[Requirements](../.kiro/specs/real-time-conversational-clone/requirements.md)** - System requirements
-- **[Tasks](../.kiro/specs/real-time-conversational-clone/tasks.md)** - Implementation tasks
+- **[Requirements](../.kiro/specs/real-time-digitwin-live/requirements.md)** - System requirements
+- **[Tasks](../.kiro/specs/real-time-digitwin-live/tasks.md)** - Implementation tasks
 
 ## 📖 Quick Links
 
-| Topic | Document |
-|-------|----------|
-| Setup | [Getting Started](./GETTING-STARTED.md) |
-| Config | [Environment Setup](./ENVIRONMENT-SETUP.md) |
-| Auth | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
-| Security | [RBAC Guide](../apps/api-gateway/docs/RBAC-GUIDE.md) |
-| Caching | [Caching Architecture](./CACHING-ARCHITECTURE.md) |
-| Events | [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) |
-| Scripts | [Scripts README](../scripts/README.md) |
+| Topic    | Document                                                               |
+| -------- | ---------------------------------------------------------------------- |
+| Setup    | [Getting Started](./GETTING-STARTED.md)                                |
+| Config   | [Environment Setup](./ENVIRONMENT-SETUP.md)                            |
+| Auth     | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
+| Security | [RBAC Guide](../apps/api-gateway/docs/RBAC-GUIDE.md)                   |
+| Caching  | [Caching Architecture](./CACHING-ARCHITECTURE.md)                      |
+| Events   | [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)            |
+| Scripts  | [Scripts README](../scripts/README.md)                                 |
 
 ## 🆘 Need Help?
 

@@ -7,11 +7,11 @@ export const apiLimiter = rateLimit({
   message: {
     error: {
       code: 'RATE_LIMIT_EXCEEDED',
-      message: 'Too many requests from this IP, please try again later'
-    }
+      message: 'Too many requests from this IP, please try again later',
+    },
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Strict rate limiter for auth endpoints
@@ -21,11 +21,11 @@ export const authLimiter = rateLimit({
   message: {
     error: {
       code: 'AUTH_RATE_LIMIT_EXCEEDED',
-      message: 'Too many authentication attempts, please try again later'
-    }
+      message: 'Too many authentication attempts, please try again later',
+    },
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Upload rate limiter
@@ -35,9 +35,9 @@ export const uploadLimiter = rateLimit({
   message: {
     error: {
       code: 'UPLOAD_RATE_LIMIT_EXCEEDED',
-      message: 'Too many uploads, please try again later'
-    }
+      message: 'Too many uploads, please try again later',
+    },
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });

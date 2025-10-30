@@ -1,13 +1,12 @@
-import { injectable, inject } from 'tsyringe';
-import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
-import { Session } from '../../domain/models/Session';
 import { ConversationState, ConversationTurn } from '@clone/shared-types';
+import { injectable, inject } from 'tsyringe';
+
+import { Session } from '../../domain/models/Session';
+import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
 
 @injectable()
 export class SessionService {
-  constructor(
-    @inject('ISessionRepository') private sessionRepository: ISessionRepository
-  ) {}
+  constructor(@inject('ISessionRepository') private sessionRepository: ISessionRepository) {}
 
   async createSession(userId: string, connectionId: string): Promise<Session> {
     return await this.sessionRepository.create(userId, connectionId);

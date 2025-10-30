@@ -1,5 +1,6 @@
-import { injectable } from 'tsyringe';
 import { Socket } from 'socket.io';
+import { injectable } from 'tsyringe';
+
 import { ServerMessage } from '../../domain/models/Message';
 
 @injectable()

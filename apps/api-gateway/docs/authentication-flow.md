@@ -3,6 +3,7 @@
 ## Overview
 
 The Conversational Clone API uses JWT (JSON Web Tokens) for authentication with a dual-token system:
+
 - **Access Token**: Short-lived (15 minutes) token for API requests
 - **Refresh Token**: Long-lived (7 days) token for obtaining new access tokens
 
@@ -11,6 +12,7 @@ The Conversational Clone API uses JWT (JSON Web Tokens) for authentication with 
 ### 1. Email/Password Authentication
 
 #### Registration
+
 ```http
 POST /api/v1/auth/register
 Content-Type: application/json
@@ -23,6 +25,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "user": {
@@ -41,6 +44,7 @@ Content-Type: application/json
 ```
 
 #### Login
+
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
@@ -56,6 +60,7 @@ Content-Type: application/json
 ### 2. OAuth Authentication
 
 #### Google OAuth
+
 ```http
 POST /api/v1/auth/oauth/google
 Content-Type: application/json
@@ -66,6 +71,7 @@ Content-Type: application/json
 ```
 
 #### Apple OAuth
+
 ```http
 POST /api/v1/auth/oauth/apple
 Content-Type: application/json
@@ -80,6 +86,7 @@ Content-Type: application/json
 ## Token Management
 
 ### Refresh Access Token
+
 ```http
 POST /api/v1/auth/refresh
 Content-Type: application/json
@@ -90,6 +97,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "new_access_token",
@@ -99,6 +107,7 @@ Content-Type: application/json
 ```
 
 ### Logout (Revoke Refresh Token)
+
 ```http
 POST /api/v1/auth/logout
 Content-Type: application/json
@@ -109,6 +118,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Logout successful"
@@ -127,16 +137,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ## JWT Payload Structure
 
 ### Access Token Payload
+
 ```json
 {
   "userId": "uuid",
   "email": "user@example.com",
   "subscriptionTier": "free",
-  "permissions": [
-    "conversation:create",
-    "conversation:read",
-    "knowledge:read"
-  ],
+  "permissions": ["conversation:create", "conversation:read", "knowledge:read"],
   "roles": ["user"],
   "iat": 1234567890,
   "exp": 1234568790
@@ -144,6 +151,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ```
 
 ### Refresh Token Payload
+
 ```json
 {
   "userId": "uuid",
@@ -156,10 +164,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ## Role-Based Access Control (RBAC)
 
 ### Roles
+
 - **user**: Standard user with basic permissions
 - **admin**: Administrator with full system access
 
 ### Subscription Tiers
+
 - **free**: Basic features (60 min/day conversations)
 - **pro**: Advanced features (unlimited conversations, voice cloning)
 - **enterprise**: All features + team management
@@ -167,20 +177,24 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ### Permissions by Tier
 
 #### Free Tier
+
 - `conversation:create`
 - `conversation:read`
 - `knowledge:read`
 
 #### Pro Tier (includes Free)
+
 - `knowledge:write`
 - `voice:create`
 - `face:create`
 
 #### Enterprise Tier (includes Pro)
+
 - `analytics:read`
 - `team:manage`
 
 #### Admin Role
+
 - `admin:all`
 - `user:manage`
 - `system:manage`
@@ -192,29 +206,29 @@ WebSocket connections require authentication via JWT token:
 ```javascript
 const socket = io('wss://api.example.com', {
   auth: {
-    token: 'your_access_token'
-  }
+    token: 'your_access_token',
+  },
 });
 
 // Or via headers
 const socket = io('wss://api.example.com', {
   extraHeaders: {
-    Authorization: 'Bearer your_access_token'
-  }
+    Authorization: 'Bearer your_access_token',
+  },
 });
 ```
 
 ## Error Codes
 
-| Code | Status | Description |
-|------|--------|-------------|
-| `UNAUTHORIZED` | 401 | No authentication provided |
-| `INVALID_TOKEN` | 401 | Token is invalid or malformed |
-| `TOKEN_EXPIRED` | 401 | Access token has expired |
-| `INVALID_CREDENTIALS` | 401 | Email/password is incorrect |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `SUBSCRIPTION_REQUIRED` | 403 | Feature requires higher subscription tier |
-| `USER_EXISTS` | 409 | Email already registered |
+| Code                    | Status | Description                               |
+| ----------------------- | ------ | ----------------------------------------- |
+| `UNAUTHORIZED`          | 401    | No authentication provided                |
+| `INVALID_TOKEN`         | 401    | Token is invalid or malformed             |
+| `TOKEN_EXPIRED`         | 401    | Access token has expired                  |
+| `INVALID_CREDENTIALS`   | 401    | Email/password is incorrect               |
+| `FORBIDDEN`             | 403    | Insufficient permissions                  |
+| `SUBSCRIPTION_REQUIRED` | 403    | Feature requires higher subscription tier |
+| `USER_EXISTS`           | 409    | Email already registered                  |
 
 ## Security Best Practices
 
@@ -243,32 +257,32 @@ const socket = io('wss://api.example.com', {
 ```javascript
 async function makeAuthenticatedRequest(url, options = {}) {
   let accessToken = getStoredAccessToken();
-  
+
   // Add auth header
   options.headers = {
     ...options.headers,
-    'Authorization': `Bearer ${accessToken}`
+    Authorization: `Bearer ${accessToken}`,
   };
-  
+
   let response = await fetch(url, options);
-  
+
   // If token expired, refresh and retry
   if (response.status === 401) {
     const refreshToken = getStoredRefreshToken();
-    
+
     const refreshResponse = await fetch('/api/v1/auth/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken })
+      body: JSON.stringify({ refreshToken }),
     });
-    
+
     if (refreshResponse.ok) {
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = 
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
         await refreshResponse.json();
-      
+
       // Store new tokens
       storeTokens(newAccessToken, newRefreshToken);
-      
+
       // Retry original request
       options.headers['Authorization'] = `Bearer ${newAccessToken}`;
       response = await fetch(url, options);
@@ -277,7 +291,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
       redirectToLogin();
     }
   }
-  
+
   return response;
 }
 ```

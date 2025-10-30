@@ -1,4 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
+
 import authRoutes from './auth.routes';
 import documentsRoutes from './documents.routes';
 

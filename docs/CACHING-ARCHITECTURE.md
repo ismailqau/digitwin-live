@@ -7,6 +7,7 @@ The Conversational Clone platform uses **PostgreSQL indexed cache tables** inste
 ## Design Decision
 
 According to the system design document:
+
 > "PostgreSQL-based rate limiting with indexed rate_limits table"  
 > "Implement query result caching (PostgreSQL with indexed cache tables)"
 
@@ -67,6 +68,7 @@ CREATE INDEX idx_cache_<type>_accessed ON cache_<type>(last_accessed_at);
 ### Cache Types
 
 #### 1. Embeddings Cache (`cache_embeddings`)
+
 ```sql
 CREATE TABLE cache_embeddings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -85,6 +87,7 @@ CREATE INDEX idx_cache_embeddings_expires ON cache_embeddings(expires_at);
 **Use Case**: Cache embeddings for frequently queried text to avoid re-computing.
 
 #### 2. LLM Responses Cache (`cache_llm_responses`)
+
 ```sql
 CREATE TABLE cache_llm_responses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,6 +107,7 @@ CREATE INDEX idx_cache_llm_expires ON cache_llm_responses(expires_at);
 **Use Case**: Cache LLM responses for common questions to reduce API costs.
 
 #### 3. Vector Search Cache (`cache_vector_search`)
+
 ```sql
 CREATE TABLE cache_vector_search (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -121,6 +125,7 @@ CREATE INDEX idx_cache_vector_expires ON cache_vector_search(expires_at);
 **Use Case**: Cache vector search results for frequently asked questions.
 
 #### 4. Audio Chunks Cache (`cache_audio_chunks`)
+
 ```sql
 CREATE TABLE cache_audio_chunks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -144,15 +149,11 @@ CREATE INDEX idx_cache_audio_expires ON cache_audio_chunks(expires_at);
 ### Setting Cache
 
 ```typescript
-async function setCache(
-  type: string,
-  key: string,
-  value: any,
-  ttl: number = 3600
-): Promise<void> {
+async function setCache(type: string, key: string, value: any, ttl: number = 3600): Promise<void> {
   const expiresAt = new Date(Date.now() + ttl * 1000);
-  
-  await db.query(`
+
+  await db.query(
+    `
     INSERT INTO cache_${type} (cache_key, cache_value, expires_at)
     VALUES ($1, $2, $3)
     ON CONFLICT (cache_key) 
@@ -161,18 +162,18 @@ async function setCache(
       expires_at = $3,
       hit_count = cache_${type}.hit_count + 1,
       last_accessed_at = NOW()
-  `, [key, JSON.stringify(value), expiresAt]);
+  `,
+    [key, JSON.stringify(value), expiresAt]
+  );
 }
 ```
 
 ### Getting Cache
 
 ```typescript
-async function getCache(
-  type: string,
-  key: string
-): Promise<any | null> {
-  const result = await db.query(`
+async function getCache(type: string, key: string): Promise<any | null> {
+  const result = await db.query(
+    `
     UPDATE cache_${type}
     SET 
       hit_count = hit_count + 1,
@@ -180,12 +181,14 @@ async function getCache(
     WHERE cache_key = $1 
       AND expires_at > NOW()
     RETURNING cache_value
-  `, [key]);
-  
+  `,
+    [key]
+  );
+
   if (result.rows.length === 0) {
     return null;
   }
-  
+
   return JSON.parse(result.rows[0].cache_value);
 }
 ```
@@ -195,18 +198,24 @@ async function getCache(
 ```typescript
 // Invalidate specific key
 async function invalidateCache(type: string, key: string): Promise<void> {
-  await db.query(`
+  await db.query(
+    `
     DELETE FROM cache_${type}
     WHERE cache_key = $1
-  `, [key]);
+  `,
+    [key]
+  );
 }
 
 // Invalidate by pattern
 async function invalidateCachePattern(type: string, pattern: string): Promise<void> {
-  await db.query(`
+  await db.query(
+    `
     DELETE FROM cache_${type}
     WHERE cache_key LIKE $1
-  `, [pattern]);
+  `,
+    [pattern]
+  );
 }
 
 // Clear expired entries
@@ -235,18 +244,19 @@ CACHE_TTL_LONG=86400
 
 ### TTL by Cache Type
 
-| Cache Type | TTL | Reason |
-|------------|-----|--------|
-| Embeddings | Long (24h) | Embeddings don't change for same text |
-| LLM Responses | Medium (1h) | Responses may need updates |
-| Vector Search | Medium (1h) | Knowledge base may be updated |
-| Audio Chunks | Long (24h) | Audio doesn't change for same input |
+| Cache Type    | TTL         | Reason                                |
+| ------------- | ----------- | ------------------------------------- |
+| Embeddings    | Long (24h)  | Embeddings don't change for same text |
+| LLM Responses | Medium (1h) | Responses may need updates            |
+| Vector Search | Medium (1h) | Knowledge base may be updated         |
+| Audio Chunks  | Long (24h)  | Audio doesn't change for same input   |
 
 ## Performance Optimization
 
 ### Indexes
 
 All cache tables have indexes on:
+
 - `cache_key` - Fast lookups
 - `expires_at` - Fast expiration cleanup
 - `last_accessed_at` - LRU eviction
@@ -274,7 +284,7 @@ WHERE id IN (
   SELECT id FROM cache_embeddings
   ORDER BY last_accessed_at ASC
   LIMIT (
-    SELECT COUNT(*) - 10000 
+    SELECT COUNT(*) - 10000
     FROM cache_embeddings
   )
 );
@@ -285,7 +295,7 @@ WHERE id IN (
 ### Cache Hit Rate
 
 ```sql
-SELECT 
+SELECT
   'embeddings' as cache_type,
   COUNT(*) as total_entries,
   SUM(hit_count) as total_hits,
@@ -295,7 +305,7 @@ FROM cache_embeddings
 
 UNION ALL
 
-SELECT 
+SELECT
   'llm_responses',
   COUNT(*),
   SUM(hit_count),
@@ -307,7 +317,7 @@ FROM cache_llm_responses;
 ### Cache Size
 
 ```sql
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -320,7 +330,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 ```sql
 -- Most frequently accessed cache entries
-SELECT 
+SELECT
   cache_key,
   hit_count,
   created_at,
@@ -335,11 +345,13 @@ LIMIT 10;
 If migrating from Redis to PostgreSQL caching:
 
 1. **Create cache tables**
+
    ```sql
    -- Run migration scripts to create cache tables
    ```
 
 2. **Update application code**
+
    ```typescript
    // Replace Redis calls with PostgreSQL cache functions
    // Before: await redis.get(key)
@@ -347,10 +359,11 @@ If migrating from Redis to PostgreSQL caching:
    ```
 
 3. **Remove Redis dependencies**
+
    ```bash
    # Remove Redis from package.json
    npm uninstall redis ioredis
-   
+
    # Remove Redis environment variables
    # REDIS_URL, REDIS_HOST, etc.
    ```
@@ -389,7 +402,7 @@ If migrating from Redis to PostgreSQL caching:
 
 ```sql
 -- Check if entries are expiring too quickly
-SELECT 
+SELECT
   AVG(EXTRACT(EPOCH FROM (expires_at - created_at))) as avg_ttl_seconds
 FROM cache_embeddings;
 

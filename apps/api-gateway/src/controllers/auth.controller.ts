@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { authService } from '../services/auth.service';
+
 import { AuthRequest } from '../middleware/auth.middleware';
+import { authService } from '../services/auth.service';
 
 /**
  * @swagger
@@ -61,11 +62,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         subscriptionTier: user.subscriptionTier,
         roles: user.roles,
         createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString()
+        updatedAt: user.updatedAt.toISOString(),
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn
+      expiresIn: tokens.expiresIn,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to register user';
@@ -74,8 +75,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     res.status(statusCode).json({
       error: {
         code: statusCode === 409 ? 'USER_EXISTS' : 'REGISTRATION_FAILED',
-        message
-      }
+        message,
+      },
     });
   }
 };
@@ -135,11 +136,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         subscriptionTier: user.subscriptionTier,
         roles: user.roles,
         createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString()
+        updatedAt: user.updatedAt.toISOString(),
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn
+      expiresIn: tokens.expiresIn,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to login';
@@ -148,8 +149,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(statusCode).json({
       error: {
         code: statusCode === 401 ? 'INVALID_CREDENTIALS' : 'LOGIN_FAILED',
-        message
-      }
+        message,
+      },
     });
   }
 };
@@ -185,8 +186,8 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       res.status(400).json({
         error: {
           code: 'MISSING_REFRESH_TOKEN',
-          message: 'Refresh token is required'
-        }
+          message: 'Refresh token is required',
+        },
       });
       return;
     }
@@ -196,7 +197,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     res.json({
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn
+      expiresIn: tokens.expiresIn,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to refresh token';
@@ -204,8 +205,8 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     res.status(401).json({
       error: {
         code: 'TOKEN_REFRESH_FAILED',
-        message
-      }
+        message,
+      },
     });
   }
 };
@@ -260,8 +261,8 @@ export const loginWithGoogle = async (req: Request, res: Response): Promise<void
       res.status(400).json({
         error: {
           code: 'MISSING_TOKEN',
-          message: 'OAuth token is required'
-        }
+          message: 'OAuth token is required',
+        },
       });
       return;
     }
@@ -276,11 +277,11 @@ export const loginWithGoogle = async (req: Request, res: Response): Promise<void
         subscriptionTier: user.subscriptionTier,
         roles: user.roles,
         createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString()
+        updatedAt: user.updatedAt.toISOString(),
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn
+      expiresIn: tokens.expiresIn,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'OAuth login failed';
@@ -288,8 +289,8 @@ export const loginWithGoogle = async (req: Request, res: Response): Promise<void
     res.status(401).json({
       error: {
         code: 'OAUTH_LOGIN_FAILED',
-        message
-      }
+        message,
+      },
     });
   }
 };
@@ -344,8 +345,8 @@ export const loginWithApple = async (req: Request, res: Response): Promise<void>
       res.status(400).json({
         error: {
           code: 'MISSING_TOKEN',
-          message: 'OAuth token is required'
-        }
+          message: 'OAuth token is required',
+        },
       });
       return;
     }
@@ -360,11 +361,11 @@ export const loginWithApple = async (req: Request, res: Response): Promise<void>
         subscriptionTier: user.subscriptionTier,
         roles: user.roles,
         createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString()
+        updatedAt: user.updatedAt.toISOString(),
       },
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn
+      expiresIn: tokens.expiresIn,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'OAuth login failed';
@@ -372,8 +373,8 @@ export const loginWithApple = async (req: Request, res: Response): Promise<void>
     res.status(401).json({
       error: {
         code: 'OAUTH_LOGIN_FAILED',
-        message
-      }
+        message,
+      },
     });
   }
 };
@@ -420,8 +421,8 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({
         error: {
           code: 'MISSING_REFRESH_TOKEN',
-          message: 'Refresh token is required'
-        }
+          message: 'Refresh token is required',
+        },
       });
       return;
     }
@@ -429,14 +430,14 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     await authService.revokeRefreshToken(refreshToken);
 
     res.json({
-      message: 'Logout successful'
+      message: 'Logout successful',
     });
   } catch (error) {
     res.status(500).json({
       error: {
         code: 'LOGOUT_FAILED',
-        message: 'Failed to logout'
-      }
+        message: 'Failed to logout',
+      },
     });
   }
 };
@@ -467,8 +468,8 @@ export const getCurrentUser = async (req: AuthRequest, res: Response): Promise<v
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required'
-        }
+          message: 'Authentication required',
+        },
       });
       return;
     }
@@ -478,14 +479,14 @@ export const getCurrentUser = async (req: AuthRequest, res: Response): Promise<v
       email: req.user.email,
       subscriptionTier: req.user.subscriptionTier,
       permissions: req.user.permissions,
-      roles: req.user.roles
+      roles: req.user.roles,
     });
   } catch (error) {
     res.status(500).json({
       error: {
         code: 'FETCH_USER_FAILED',
-        message: 'Failed to fetch user profile'
-      }
+        message: 'Failed to fetch user profile',
+      },
     });
   }
 };

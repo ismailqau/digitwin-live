@@ -49,12 +49,16 @@ export class AuthService {
       subscriptionTier: 'free',
       roles: ['user'],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     this.users.set(demoUser.email, demoUser);
   }
 
-  async register(email: string, password: string, name: string): Promise<{ user: User; tokens: TokenPair }> {
+  async register(
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{ user: User; tokens: TokenPair }> {
     // Check if user already exists
     if (this.users.has(email)) {
       throw new Error('User already exists');
@@ -71,7 +75,7 @@ export class AuthService {
       subscriptionTier: 'free',
       roles: ['user'],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     this.users.set(email, user);
@@ -106,12 +110,15 @@ export class AuthService {
     return { user: userWithoutPassword, tokens };
   }
 
-  async loginWithOAuth(provider: 'google' | 'apple', oauthToken: string): Promise<{ user: User; tokens: TokenPair }> {
+  async loginWithOAuth(
+    provider: 'google' | 'apple',
+    oauthToken: string
+  ): Promise<{ user: User; tokens: TokenPair }> {
     // In production, verify OAuth token with provider
     // For now, mock the OAuth flow
     const oauthUser = await this.verifyOAuthToken(provider, oauthToken);
 
-    let user = Array.from(this.users.values()).find(u => u.email === oauthUser.email);
+    let user = Array.from(this.users.values()).find((u) => u.email === oauthUser.email);
 
     if (!user) {
       // Create new user from OAuth data
@@ -122,7 +129,7 @@ export class AuthService {
         subscriptionTier: 'free',
         roles: ['user'],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
       this.users.set(user.email, user);
     }
@@ -149,7 +156,7 @@ export class AuthService {
       }
 
       // Get user
-      const user = Array.from(this.users.values()).find(u => u.id === decoded.userId);
+      const user = Array.from(this.users.values()).find((u) => u.id === decoded.userId);
 
       if (!user) {
         throw new Error('User not found');
@@ -198,24 +205,18 @@ export class AuthService {
       email: user.email,
       subscriptionTier: user.subscriptionTier,
       permissions,
-      roles: user.roles
+      roles: user.roles,
     };
 
-    const accessToken = jwt.sign(
-      accessTokenPayload, 
-      this.JWT_SECRET
-    );
+    const accessToken = jwt.sign(accessTokenPayload, this.JWT_SECRET);
 
     const tokenId = uuidv4();
     const refreshTokenPayload: RefreshTokenPayload = {
       userId: user.id,
-      tokenId
+      tokenId,
     };
 
-    const refreshToken = jwt.sign(
-      refreshTokenPayload, 
-      this.REFRESH_SECRET
-    );
+    const refreshToken = jwt.sign(refreshTokenPayload, this.REFRESH_SECRET);
 
     // Store refresh token
     const expiresAt = new Date();
@@ -251,7 +252,10 @@ export class AuthService {
     return permissions;
   }
 
-  private async verifyOAuthToken(provider: 'google' | 'apple', token: string): Promise<{ email: string; name: string }> {
+  private async verifyOAuthToken(
+    provider: 'google' | 'apple',
+    token: string
+  ): Promise<{ email: string; name: string }> {
     // In production, verify token with OAuth provider
     // For Google: https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=TOKEN
     // For Apple: Verify JWT with Apple's public keys
@@ -260,12 +264,12 @@ export class AuthService {
     if (provider === 'google') {
       return {
         email: `google_${token}@example.com`,
-        name: 'Google User'
+        name: 'Google User',
       };
     } else {
       return {
         email: `apple_${token}@example.com`,
-        name: 'Apple User'
+        name: 'Apple User',
       };
     }
   }

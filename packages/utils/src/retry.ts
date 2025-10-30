@@ -6,10 +6,7 @@ export interface RetryOptions {
   shouldRetry?: (error: Error) => boolean;
 }
 
-export async function retry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions
-): Promise<T> {
+export async function retry<T>(fn: () => Promise<T>, options: RetryOptions): Promise<T> {
   let lastError: Error;
   let delay = options.initialDelayMs;
 

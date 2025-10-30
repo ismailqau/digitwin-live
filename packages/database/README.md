@@ -22,6 +22,7 @@ pnpm install
 ## Setup
 
 1. Copy the environment file:
+
 ```bash
 cp .env.example .env
 ```
@@ -29,16 +30,19 @@ cp .env.example .env
 2. Update `DATABASE_URL` in `.env` with your PostgreSQL connection string
 
 3. Generate Prisma client:
+
 ```bash
 pnpm prisma:generate
 ```
 
 4. Run migrations:
+
 ```bash
 pnpm prisma:migrate
 ```
 
 5. Seed the database (optional):
+
 ```bash
 pnpm prisma:seed
 ```
@@ -173,7 +177,7 @@ const result = await rateLimitRepo.checkAndIncrement(
   userId,
   '/api/conversations',
   60, // limit
-  60  // window in seconds
+  60 // window in seconds
 );
 
 if (!result.allowed) {

@@ -76,7 +76,7 @@ export class ServiceAuthManager {
    */
   verifyMetadata(metadata: Metadata): ServiceTokenPayload {
     const authHeader = metadata.get('authorization')[0];
-    
+
     if (!authHeader || typeof authHeader !== 'string') {
       throw new Error('Missing authorization header');
     }

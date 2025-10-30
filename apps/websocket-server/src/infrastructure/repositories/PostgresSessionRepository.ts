@@ -1,9 +1,11 @@
-import { injectable } from 'tsyringe';
-import { Pool } from 'pg';
-import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
-import { Session, SessionEntity } from '../../domain/models/Session';
 import { ConversationState } from '@clone/shared-types';
+import { Pool } from 'pg';
+import { injectable } from 'tsyringe';
 import { v4 as uuidv4 } from 'uuid';
+
+import { Session, SessionEntity } from '../../domain/models/Session';
+import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
+
 
 @injectable()
 export class PostgresSessionRepository implements ISessionRepository {
@@ -14,7 +16,7 @@ export class PostgresSessionRepository implements ISessionRepository {
     this.pool = new Pool({
       host: process.env.POSTGRES_HOST || 'localhost',
       port: parseInt(process.env.POSTGRES_PORT || '5432'),
-      database: process.env.POSTGRES_DB || 'conversational_clone',
+      database: process.env.POSTGRES_DB || 'digitwinline',
       user: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || 'postgres',
       max: 20,
@@ -49,12 +51,7 @@ export class PostgresSessionRepository implements ISessionRepository {
   }
 
   async create(userId: string, connectionId: string): Promise<Session> {
-    const session = new SessionEntity(
-      uuidv4(),
-      userId,
-      connectionId,
-      ConversationState.IDLE
-    );
+    const session = new SessionEntity(uuidv4(), userId, connectionId, ConversationState.IDLE);
 
     const client = await this.pool.connect();
     try {
@@ -68,7 +65,7 @@ export class PostgresSessionRepository implements ISessionRepository {
           session.state,
           JSON.stringify(session.conversationHistory),
           session.createdAt,
-          session.lastActivityAt
+          session.lastActivityAt,
         ]
       );
     } finally {
@@ -106,7 +103,7 @@ export class PostgresSessionRepository implements ISessionRepository {
           session.state,
           JSON.stringify(session.conversationHistory),
           session.lastActivityAt,
-          session.id
+          session.id,
         ]
       );
     } finally {
@@ -131,7 +128,7 @@ export class PostgresSessionRepository implements ISessionRepository {
         [userId]
       );
 
-      return result.rows.map(row => this.mapRowToSession(row));
+      return result.rows.map((row) => this.mapRowToSession(row));
     } finally {
       client.release();
     }

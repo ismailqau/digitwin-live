@@ -25,7 +25,7 @@ Visual guide to all documentation in the Conversational Clone platform.
 │   └── docs/ENVIRONMENT-SETUP.md           → OAuth setup section
 │
 ├── 🏗️ ARCHITECTURE
-│   ├── .kiro/specs/real-time-conversational-clone/
+│   ├── .kiro/specs/real-time-digitwin-live/
 │   │   ├── design.md                       → Complete system design
 │   │   ├── requirements.md                 → System requirements
 │   │   └── tasks.md                        → Implementation tasks
@@ -49,6 +49,7 @@ Visual guide to all documentation in the Conversational Clone platform.
 ## 🎯 Navigation Paths
 
 ### Path 1: New Developer Setup
+
 ```
 README.md
   → docs/GETTING-STARTED.md
@@ -57,6 +58,7 @@ README.md
 ```
 
 ### Path 2: Authentication Implementation
+
 ```
 README.md
   → apps/api-gateway/docs/authentication-flow.md
@@ -65,14 +67,16 @@ README.md
 ```
 
 ### Path 3: Architecture Understanding
+
 ```
 README.md
-  → .kiro/specs/real-time-conversational-clone/design.md
+  → .kiro/specs/real-time-digitwin-live/design.md
     → docs/CACHING-ARCHITECTURE.md
-      → .kiro/specs/real-time-conversational-clone/requirements.md
+      → .kiro/specs/real-time-digitwin-live/requirements.md
 ```
 
 ### Path 4: Configuration Reference
+
 ```
 README.md
   → docs/GETTING-STARTED.md
@@ -83,24 +87,28 @@ README.md
 ## 📊 Documentation by Type
 
 ### Guides (Action-Oriented)
+
 - ✅ Getting Started Guide
 - ✅ Environment Setup Guide
 - ✅ Authentication Flow Guide
 - ✅ RBAC Implementation Guide
 
 ### References (Lookup)
+
 - ✅ Environment Variables Reference
 - ✅ Quick Reference Card
 - ✅ API Documentation
 - ✅ Documentation Index
 
 ### Architecture (Understanding)
+
 - ✅ System Design Document
 - ✅ Caching Architecture
 - ✅ Requirements Document
 - ✅ Implementation Tasks
 
 ### Tools (Utilities)
+
 - ✅ Scripts Documentation
 - ✅ Secret Generator
 - ✅ Config Validator
@@ -108,41 +116,44 @@ README.md
 ## 🔍 Find Documentation By...
 
 ### By Task
-| Task | Document |
-|------|----------|
-| Set up project | [Getting Started](./GETTING-STARTED.md) |
-| Configure environment | [Environment Setup](./ENVIRONMENT-SETUP.md) |
-| Implement auth | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
-| Understand caching | [Caching Architecture](./CACHING-ARCHITECTURE.md) |
-| Generate secrets | [Scripts README](../scripts/README.md) |
+
+| Task                  | Document                                                               |
+| --------------------- | ---------------------------------------------------------------------- |
+| Set up project        | [Getting Started](./GETTING-STARTED.md)                                |
+| Configure environment | [Environment Setup](./ENVIRONMENT-SETUP.md)                            |
+| Implement auth        | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
+| Understand caching    | [Caching Architecture](./CACHING-ARCHITECTURE.md)                      |
+| Generate secrets      | [Scripts README](../scripts/README.md)                                 |
 
 ### By Role
-| Role | Start Here |
-|------|------------|
-| Developer | [Getting Started](./GETTING-STARTED.md) |
-| DevOps | [Environment Setup](./ENVIRONMENT-SETUP.md) |
-| Security | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
-| Architect | [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) |
+
+| Role      | Start Here                                                             |
+| --------- | ---------------------------------------------------------------------- |
+| Developer | [Getting Started](./GETTING-STARTED.md)                                |
+| DevOps    | [Environment Setup](./ENVIRONMENT-SETUP.md)                            |
+| Security  | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
+| Architect | [Design Document](../.kiro/specs/real-time-digitwin-live/design.md)    |
 
 ### By Topic
-| Topic | Documents |
-|-------|-----------|
-| Setup | Getting Started, Environment Setup |
-| Config | Environment Variables, Quick Reference, Setup Guide |
-| Auth | Authentication Flow, RBAC Guide, Implementation Summary |
-| Architecture | Design Doc, Caching Architecture, Requirements |
-| Tools | Scripts README, API Docs |
+
+| Topic        | Documents                                               |
+| ------------ | ------------------------------------------------------- |
+| Setup        | Getting Started, Environment Setup                      |
+| Config       | Environment Variables, Quick Reference, Setup Guide     |
+| Auth         | Authentication Flow, RBAC Guide, Implementation Summary |
+| Architecture | Design Doc, Caching Architecture, Requirements          |
+| Tools        | Scripts README, API Docs                                |
 
 ## 📏 Documentation Metrics
 
-| Metric | Value |
-|--------|-------|
-| Total Documents | 13 |
-| Total Lines | ~3,500 |
-| Code Examples | 100+ |
-| Environment Variables | 100+ |
-| Setup Steps | 5 |
-| Troubleshooting Sections | 8 |
+| Metric                   | Value  |
+| ------------------------ | ------ |
+| Total Documents          | 13     |
+| Total Lines              | ~3,500 |
+| Code Examples            | 100+   |
+| Environment Variables    | 100+   |
+| Setup Steps              | 5      |
+| Troubleshooting Sections | 8      |
 
 ## 🎨 Visual Legend
 

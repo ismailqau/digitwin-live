@@ -1,6 +1,6 @@
 /**
  * Service Communication Manager
- * 
+ *
  * High-level API for inter-service communication with built-in
  * authentication, service discovery, retry, and circuit breaker support
  */
@@ -74,100 +74,70 @@ export class ServiceCommunicationManager {
    * Create ASR service client
    */
   createASRClient(config: ServiceConfig, permissions: string[] = ['asr:read']): any {
-    return this.clientFactory.createClient(
-      'asr.proto',
-      'asr',
-      'ASRService',
-      config,
-      {
-        serviceId: this.config.serviceId,
-        serviceName: this.config.serviceName,
-        permissions,
-        enableAuth: true,
-        enableRetry: true,
-        enableCircuitBreaker: true,
-      }
-    );
+    return this.clientFactory.createClient('asr.proto', 'asr', 'ASRService', config, {
+      serviceId: this.config.serviceId,
+      serviceName: this.config.serviceName,
+      permissions,
+      enableAuth: true,
+      enableRetry: true,
+      enableCircuitBreaker: true,
+    });
   }
 
   /**
    * Create LLM service client
    */
   createLLMClient(config: ServiceConfig, permissions: string[] = ['llm:read']): any {
-    return this.clientFactory.createClient(
-      'llm.proto',
-      'llm',
-      'LLMService',
-      config,
-      {
-        serviceId: this.config.serviceId,
-        serviceName: this.config.serviceName,
-        permissions,
-        enableAuth: true,
-        enableRetry: true,
-        enableCircuitBreaker: true,
-      }
-    );
+    return this.clientFactory.createClient('llm.proto', 'llm', 'LLMService', config, {
+      serviceId: this.config.serviceId,
+      serviceName: this.config.serviceName,
+      permissions,
+      enableAuth: true,
+      enableRetry: true,
+      enableCircuitBreaker: true,
+    });
   }
 
   /**
    * Create RAG service client
    */
   createRAGClient(config: ServiceConfig, permissions: string[] = ['rag:read', 'rag:write']): any {
-    return this.clientFactory.createClient(
-      'rag.proto',
-      'rag',
-      'RAGService',
-      config,
-      {
-        serviceId: this.config.serviceId,
-        serviceName: this.config.serviceName,
-        permissions,
-        enableAuth: true,
-        enableRetry: true,
-        enableCircuitBreaker: true,
-      }
-    );
+    return this.clientFactory.createClient('rag.proto', 'rag', 'RAGService', config, {
+      serviceId: this.config.serviceId,
+      serviceName: this.config.serviceName,
+      permissions,
+      enableAuth: true,
+      enableRetry: true,
+      enableCircuitBreaker: true,
+    });
   }
 
   /**
    * Create TTS service client
    */
   createTTSClient(config: ServiceConfig, permissions: string[] = ['tts:read']): any {
-    return this.clientFactory.createClient(
-      'tts.proto',
-      'tts',
-      'TTSService',
-      config,
-      {
-        serviceId: this.config.serviceId,
-        serviceName: this.config.serviceName,
-        permissions,
-        enableAuth: true,
-        enableRetry: true,
-        enableCircuitBreaker: true,
-      }
-    );
+    return this.clientFactory.createClient('tts.proto', 'tts', 'TTSService', config, {
+      serviceId: this.config.serviceId,
+      serviceName: this.config.serviceName,
+      permissions,
+      enableAuth: true,
+      enableRetry: true,
+      enableCircuitBreaker: true,
+    });
   }
 
   /**
    * Create Lip-sync service client
    */
   createLipSyncClient(config: ServiceConfig, permissions: string[] = ['lipsync:read']): any {
-    return this.clientFactory.createClient(
-      'lipsync.proto',
-      'lipsync',
-      'LipSyncService',
-      config,
-      {
-        serviceId: this.config.serviceId,
-        serviceName: this.config.serviceName,
-        permissions,
-        enableAuth: true,
-        enableRetry: true,
-        enableCircuitBreaker: true,
-      }
-    );
+    return this.clientFactory.createClient('lipsync.proto', 'lipsync', 'LipSyncService', config, {
+      serviceId: this.config.serviceId,
+      serviceName: this.config.serviceName,
+      permissions,
+      enableAuth: true,
+      enableRetry: true,
+      enableCircuitBreaker: true,
+    });
   }
 
   /**
@@ -210,10 +180,7 @@ export class ServiceCommunicationManager {
   /**
    * Execute a service call with circuit breaker and retry
    */
-  async executeServiceCall<T>(
-    serviceName: string,
-    operation: () => Promise<T>
-  ): Promise<T> {
+  async executeServiceCall<T>(serviceName: string, operation: () => Promise<T>): Promise<T> {
     const circuitBreaker = this.getCircuitBreaker(serviceName);
     const retryPolicy = this.getRetryPolicy(serviceName);
 

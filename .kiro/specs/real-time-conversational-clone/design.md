@@ -16,12 +16,14 @@ The Real-Time Conversational Clone System is a distributed, cloud-native applica
 ### Technology Stack
 
 **Frontend:**
+
 - React Native (iOS/Android)
 - WebSocket client (Socket.io)
 - React Native Audio Recorder
 - React Native Video Player
 
 **Backend (GCP):**
+
 - Cloud Run (WebSocket server, API gateway)
 - Cloud Functions (document processing, async tasks)
 - Vertex AI (Gemini models)
@@ -30,19 +32,20 @@ The Real-Time Conversational Clone System is a distributed, cloud-native applica
 - Cloud SQL (metadata, user profiles)
 
 **AI Services:**
+
 - Google Chirp (ASR)
 - Gemini 2.5 Flash / GPT-4 Turbo (LLM)
 - XTTS-v2 / Google Cloud TTS / OpenAI TTS (voice synthesis)
 - Pinecone or Weaviate (vector database)
 
 **Infrastructure:**
+
 - GKE Autopilot (GPU workloads for TTS and lip-sync)
 - Cloud Load Balancing
 - Cloud Armor (DDoS protection)
 - Cloud Monitoring & Logging
 
 ## Architecture
-
 
 ### High-Level Architecture Diagram
 
@@ -119,7 +122,7 @@ graph TB
     WSServer --> WSClient
     WSClient --> AudioOut
     WSClient --> VideoPlayer
-    
+
     %% Face Cloning Flow
     UI --> Camera
     Camera --> Gateway
@@ -131,7 +134,7 @@ graph TB
     FaceEmbedding --> FaceModelTrainer
     FaceModelTrainer --> FaceModelStorage
     FaceModelStorage --> CloudStorage
-    
+
     %% Data & Storage
     Gateway --> CloudSQL
     RAG --> Cache
@@ -229,12 +232,12 @@ graph TB
    - Client synchronizes audio and video playback
    - Client plays audio and displays video in real-time
 
-
 ## Components and Interfaces
 
 ### 1. Mobile App (React Native)
 
 **Responsibilities:**
+
 - Capture and stream user audio
 - Display conversation UI and video
 - Play synthesized audio responses
@@ -244,6 +247,7 @@ graph TB
 **Key Modules:**
 
 **AudioManager**
+
 ```typescript
 interface AudioManager {
   startRecording(): Promise<void>;
@@ -255,6 +259,7 @@ interface AudioManager {
 ```
 
 **WebSocketClient**
+
 ```typescript
 interface WebSocketClient {
   connect(token: string): Promise<void>;
@@ -268,6 +273,7 @@ interface WebSocketClient {
 ```
 
 **ConversationStateManager**
+
 ```typescript
 enum ConversationState {
   IDLE = 'idle',
@@ -275,7 +281,7 @@ enum ConversationState {
   PROCESSING = 'processing',
   SPEAKING = 'speaking',
   INTERRUPTED = 'interrupted',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 interface ConversationStateManager {
@@ -286,6 +292,7 @@ interface ConversationStateManager {
 ```
 
 **VideoRenderer**
+
 ```typescript
 interface VideoRenderer {
   renderFrame(frame: VideoFrame): void;
@@ -297,6 +304,7 @@ interface VideoRenderer {
 ### 2. WebSocket Server (Cloud Run)
 
 **Responsibilities:**
+
 - Maintain persistent connections with mobile clients
 - Route messages between clients and AI services
 - Handle authentication and session management
@@ -305,6 +313,7 @@ interface VideoRenderer {
 **Key Components:**
 
 **ConnectionManager**
+
 ```typescript
 interface ConnectionManager {
   handleConnection(socket: WebSocket, token: string): Promise<Session>;
@@ -315,6 +324,7 @@ interface ConnectionManager {
 ```
 
 **SessionManager**
+
 ```typescript
 interface Session {
   id: string;
@@ -335,6 +345,7 @@ interface SessionManager {
 ```
 
 **MessageRouter**
+
 ```typescript
 interface MessageRouter {
   routeAudioChunk(sessionId: string, chunk: AudioChunkMessage): void;
@@ -346,10 +357,10 @@ interface MessageRouter {
 }
 ```
 
-
 ### 3. ASR Service (Google Chirp)
 
 **Responsibilities:**
+
 - Convert streaming audio to text in real-time
 - Provide interim and final transcripts
 - Handle multiple languages with auto-detection
@@ -384,6 +395,7 @@ interface TranscriptResult {
 ```
 
 **Chirp Integration:**
+
 - Use Chirp model for optimal streaming performance
 - Enable automatic punctuation and capitalization
 - Configure for conversational speech recognition
@@ -392,6 +404,7 @@ interface TranscriptResult {
 ### 4. RAG Pipeline
 
 **Responsibilities:**
+
 - Embed user queries
 - Search vector database for relevant knowledge
 - Rank and filter results
@@ -400,6 +413,7 @@ interface TranscriptResult {
 **Components:**
 
 **EmbeddingService**
+
 ```typescript
 interface EmbeddingService {
   embedQuery(text: string): Promise<number[]>;
@@ -408,6 +422,7 @@ interface EmbeddingService {
 ```
 
 **VectorSearchService**
+
 ```typescript
 interface VectorSearchService {
   search(embedding: number[], topK: number, filter?: Filter): Promise<SearchResult[]>;
@@ -430,6 +445,7 @@ interface Filter {
 ```
 
 **ContextAssembler**
+
 ```typescript
 interface ContextAssembler {
   assembleContext(
@@ -450,21 +466,17 @@ interface LLMContext {
 ```
 
 **RAG Orchestrator**
+
 ```typescript
 interface RAGOrchestrator {
-  processQuery(
-    sessionId: string,
-    query: string
-  ): Promise<LLMContext>;
-  
-  updateKnowledgeBase(
-    userId: string,
-    documents: Document[]
-  ): Promise<void>;
+  processQuery(sessionId: string, query: string): Promise<LLMContext>;
+
+  updateKnowledgeBase(userId: string, documents: Document[]): Promise<void>;
 }
 ```
 
 **Vector Database Schema (Pinecone):**
+
 ```typescript
 interface VectorMetadata {
   userId: string;
@@ -478,10 +490,10 @@ interface VectorMetadata {
 }
 ```
 
-
 ### 5. LLM Service
 
 **Responsibilities:**
+
 - Generate contextual responses using retrieved knowledge
 - Stream tokens for low latency
 - Support multiple LLM providers
@@ -491,15 +503,9 @@ interface VectorMetadata {
 
 ```typescript
 interface LLMService {
-  generateResponse(
-    context: LLMContext,
-    config: LLMConfig
-  ): AsyncGenerator<string>;
-  
-  selectProvider(
-    preferredProvider: LLMProvider,
-    fallbackProviders: LLMProvider[]
-  ): LLMProvider;
+  generateResponse(context: LLMContext, config: LLMConfig): AsyncGenerator<string>;
+
+  selectProvider(preferredProvider: LLMProvider, fallbackProviders: LLMProvider[]): LLMProvider;
 }
 
 interface LLMConfig {
@@ -516,7 +522,7 @@ enum LLMProvider {
   GEMINI_PRO = 'gemini-pro',
   GPT4_TURBO = 'gpt4-turbo',
   GPT4 = 'gpt4',
-  GROQ_LLAMA = 'groq-llama'
+  GROQ_LLAMA = 'groq-llama',
 }
 ```
 
@@ -537,6 +543,7 @@ interface GroqAdapter {
 ```
 
 **Prompt Template:**
+
 ```typescript
 const CLONE_PROMPT_TEMPLATE = `You are {userName}'s AI clone with their personality and knowledge.
 
@@ -564,6 +571,7 @@ Response:`;
 ### 6. TTS Service (Multi-Provider)
 
 **Responsibilities:**
+
 - Synthesize speech in user's cloned voice
 - Stream audio chunks for low latency
 - Support multiple TTS providers
@@ -573,17 +581,14 @@ Response:`;
 
 ```typescript
 interface TTSService {
-  synthesize(
-    text: string,
-    voiceConfig: VoiceConfig
-  ): AsyncGenerator<AudioBuffer>;
-  
+  synthesize(text: string, voiceConfig: VoiceConfig): AsyncGenerator<AudioBuffer>;
+
   trainVoiceModel(
     userId: string,
     audioSamples: AudioBuffer[],
     provider: TTSProvider
   ): Promise<VoiceModel>;
-  
+
   getVoiceModel(userId: string): Promise<VoiceModel>;
 }
 
@@ -598,7 +603,7 @@ interface VoiceConfig {
 enum TTSProvider {
   XTTS_V2 = 'xtts-v2',
   GOOGLE_CLOUD_TTS = 'google-cloud-tts',
-  OPENAI_TTS = 'openai-tts'
+  OPENAI_TTS = 'openai-tts',
 }
 
 interface VoiceModel {
@@ -615,32 +620,26 @@ interface VoiceModel {
 **Provider-Specific Implementations:**
 
 **XTTS-v2 Service:**
+
 ```typescript
 interface XTTSService {
   loadModel(voiceModelPath: string): Promise<void>;
-  synthesizeStreaming(
-    text: string,
-    speakerEmbedding: number[]
-  ): AsyncGenerator<AudioBuffer>;
+  synthesizeStreaming(text: string, speakerEmbedding: number[]): AsyncGenerator<AudioBuffer>;
   trainSpeaker(audioSamples: AudioBuffer[]): Promise<number[]>;
 }
 ```
 
 **Google Cloud TTS Service:**
+
 ```typescript
 interface GoogleTTSService {
-  synthesizeWithCustomVoice(
-    text: string,
-    voiceName: string
-  ): AsyncGenerator<AudioBuffer>;
-  createCustomVoice(
-    userId: string,
-    audioSamples: AudioBuffer[]
-  ): Promise<string>;
+  synthesizeWithCustomVoice(text: string, voiceName: string): AsyncGenerator<AudioBuffer>;
+  createCustomVoice(userId: string, audioSamples: AudioBuffer[]): Promise<string>;
 }
 ```
 
 **OpenAI TTS Service:**
+
 ```typescript
 interface OpenAITTSService {
   synthesize(
@@ -653,10 +652,10 @@ interface OpenAITTSService {
 type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
 ```
 
-
 ### 7. Lip-sync and Face Cloning Service
 
 **Responsibilities:**
+
 - Create personalized face models from user photos/videos
 - Generate video frames synchronized with audio
 - Maintain low latency for real-time streaming
@@ -667,18 +666,12 @@ type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
 
 ```typescript
 interface LipSyncService {
-  generateFrames(
-    audioChunk: AudioBuffer,
-    faceModel: FaceModel
-  ): AsyncGenerator<VideoFrame>;
-  
+  generateFrames(audioChunk: AudioBuffer, faceModel: FaceModel): AsyncGenerator<VideoFrame>;
+
   loadFaceModel(userId: string): Promise<FaceModel>;
-  
-  createFaceModel(
-    userId: string,
-    referenceMedia: ReferenceMedia
-  ): Promise<FaceModel>;
-  
+
+  createFaceModel(userId: string, referenceMedia: ReferenceMedia): Promise<FaceModel>;
+
   validateFaceQuality(media: ReferenceMedia): FaceQualityResult;
 }
 
@@ -772,17 +765,12 @@ interface ExpressionTemplate {
 interface VideoGenerator {
   // Initialize with pre-loaded face model
   initialize(faceModel: FaceModel): Promise<void>;
-  
+
   // Generate frame from audio features
-  generateFrame(
-    audioFeatures: AudioFeatures,
-    previousFrame?: VideoFrame
-  ): Promise<VideoFrame>;
-  
+  generateFrame(audioFeatures: AudioFeatures, previousFrame?: VideoFrame): Promise<VideoFrame>;
+
   // Batch generation for efficiency
-  generateFrameBatch(
-    audioFeaturesBatch: AudioFeatures[]
-  ): Promise<VideoFrame[]>;
+  generateFrameBatch(audioFeaturesBatch: AudioFeatures[]): Promise<VideoFrame[]>;
 }
 
 interface AudioFeatures {
@@ -832,7 +820,7 @@ interface AudioFeatures {
 interface FaceModelStorage {
   // Store in Cloud Storage
   basePath: string; // gs://clone-face-models/{userId}/
-  
+
   files: {
     neutralPose: string; // neutral_pose.jpg
     keypoints: string; // keypoints.json
@@ -848,15 +836,9 @@ interface FaceModelStorage {
 
 ```typescript
 interface FaceModelValidator {
-  validateCreation(
-    referenceMedia: ReferenceMedia,
-    generatedModel: FaceModel
-  ): ValidationResult;
-  
-  testGeneration(
-    model: FaceModel,
-    testAudio: AudioBuffer
-  ): Promise<TestResult>;
+  validateCreation(referenceMedia: ReferenceMedia, generatedModel: FaceModel): ValidationResult;
+
+  testGeneration(model: FaceModel, testAudio: AudioBuffer): Promise<TestResult>;
 }
 
 interface ValidationResult {
@@ -878,6 +860,7 @@ interface TestResult {
 ### 8. Document Processing Service
 
 **Responsibilities:**
+
 - Extract text from uploaded documents
 - Chunk content for embedding
 - Generate and store embeddings
@@ -887,23 +870,13 @@ interface TestResult {
 
 ```typescript
 interface DocumentProcessor {
-  processDocument(
-    userId: string,
-    file: File
-  ): Promise<ProcessedDocument>;
-  
+  processDocument(userId: string, file: File): Promise<ProcessedDocument>;
+
   extractText(file: File): Promise<string>;
-  
-  chunkText(
-    text: string,
-    chunkSize: number,
-    overlap: number
-  ): TextChunk[];
-  
-  embedAndStore(
-    userId: string,
-    chunks: TextChunk[]
-  ): Promise<void>;
+
+  chunkText(text: string, chunkSize: number, overlap: number): TextChunk[];
+
+  embedAndStore(userId: string, chunks: TextChunk[]): Promise<void>;
 }
 
 interface ProcessedDocument {
@@ -928,6 +901,7 @@ interface TextChunk {
 ```
 
 **Processing Pipeline:**
+
 1. Upload to Cloud Storage
 2. Trigger Cloud Function
 3. Extract text (PDF.js, Mammoth, etc.)
@@ -936,7 +910,6 @@ interface TextChunk {
 6. Generate embeddings (batch)
 7. Upsert to vector database
 8. Update metadata in Cloud SQL
-
 
 ## Data Models
 
@@ -949,23 +922,23 @@ interface UserProfile {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Personality configuration
   personalityTraits: string[];
   speakingStyle: string;
-  
+
   // Voice configuration
   voiceModels: VoiceModelReference[];
   activeVoiceModelId: string;
-  
+
   // AI provider preferences
   preferredLLMProvider: LLMProvider;
   preferredTTSProvider: TTSProvider;
-  
+
   // Usage and limits
   conversationMinutesUsed: number;
   subscriptionTier: 'free' | 'pro' | 'enterprise';
-  
+
   // Settings
   settings: UserSettings;
 }
@@ -995,21 +968,21 @@ interface ConversationSession {
   startedAt: Date;
   endedAt?: Date;
   durationSeconds: number;
-  
+
   // State
   state: ConversationState;
   currentTurnId?: string;
-  
+
   // Configuration
   llmProvider: LLMProvider;
   ttsProvider: TTSProvider;
   voiceModelId: string;
-  
+
   // Metrics
   totalTurns: number;
   averageLatencyMs: number;
   totalCost: number;
-  
+
   // History
   turns: ConversationTurn[];
 }
@@ -1018,24 +991,24 @@ interface ConversationTurn {
   id: string;
   sessionId: string;
   timestamp: Date;
-  
+
   // User input
   userAudioDurationMs: number;
   userTranscript: string;
   transcriptConfidence: number;
-  
+
   // System response
   retrievedChunks: string[];
   llmResponse: string;
   responseAudioDurationMs: number;
-  
+
   // Performance metrics
   asrLatencyMs: number;
   ragLatencyMs: number;
   llmLatencyMs: number;
   ttsLatencyMs: number;
   totalLatencyMs: number;
-  
+
   // Costs
   asrCost: number;
   llmCost: number;
@@ -1055,21 +1028,21 @@ interface KnowledgeDocument {
   sizeBytes: number;
   uploadedAt: Date;
   processedAt?: Date;
-  
+
   // Content
   textContent: string;
   chunkCount: number;
-  
+
   // Metadata
   title?: string;
   author?: string;
   sourceUrl?: string;
   tags: string[];
-  
+
   // Processing status
   status: 'pending' | 'processing' | 'completed' | 'failed';
   errorMessage?: string;
-  
+
   // Storage
   storagePath: string;
   vectorIds: string[];
@@ -1160,72 +1133,83 @@ interface TurnMetrics {
 }
 ```
 
-
 ## Error Handling
 
 ### Error Categories
 
 **1. Network Errors**
+
 - WebSocket connection failures
 - Timeout errors
 - Packet loss
 
 **Strategy:**
+
 - Exponential backoff reconnection (1s, 2s, 4s, 8s, 16s, 30s max)
 - Queue messages during disconnection
 - Display connection status to user
 - Automatic resume when reconnected
 
 **2. ASR Errors**
+
 - Audio quality too low
 - Unsupported language
 - Service unavailable
 
 **Strategy:**
+
 - Retry with different ASR configuration
 - Prompt user to speak more clearly
 - Fallback to text input if persistent
 - Log audio quality metrics
 
 **3. RAG Errors**
+
 - Vector database unavailable
 - No relevant knowledge found
 - Embedding service failure
 
 **Strategy:**
+
 - Return cached responses for common queries
 - Gracefully inform user of knowledge gap
 - Continue conversation without context if needed
 - Fallback to general knowledge mode
 
 **4. LLM Errors**
+
 - Rate limit exceeded
 - Model unavailable
 - Generation timeout
 
 **Strategy:**
+
 - Automatic fallback to alternative provider
 - Queue request and retry
 - Use cached response if available
 - Inform user of delay
 
 **5. TTS Errors**
+
 - Voice model not found
 - GPU resources unavailable
 - Generation failure
 
 **Strategy:**
+
 - Fallback to default voice
 - Queue on GPU wait list
 - Use simpler TTS model
 - Provide text response as fallback
 
 **6. Lip-sync Errors**
+
 - GPU unavailable
 - Model loading failure
 - Frame generation timeout
 
 **Strategy:**
+
 - Fallback to audio-only mode
 - Use static image with audio
 - Reduce video quality
@@ -1261,7 +1245,7 @@ enum FallbackStrategy {
   CACHED_RESPONSE = 'cached_response',
   TEXT_ONLY = 'text_only',
   AUDIO_ONLY = 'audio_only',
-  QUEUE_AND_RETRY = 'queue_and_retry'
+  QUEUE_AND_RETRY = 'queue_and_retry',
 }
 ```
 
@@ -1273,7 +1257,7 @@ interface CircuitBreaker {
   failureCount: number;
   failureThreshold: number;
   resetTimeout: number;
-  
+
   execute<T>(operation: () => Promise<T>): Promise<T>;
   recordSuccess(): void;
   recordFailure(): void;
@@ -1282,17 +1266,18 @@ interface CircuitBreaker {
 ```
 
 Implement circuit breakers for:
+
 - External API calls (Chirp, Gemini, OpenAI)
 - Vector database queries
 - GPU service calls
 - Cloud Storage operations
-
 
 ## Testing Strategy
 
 ### Unit Testing
 
 **Components to Test:**
+
 - Audio processing utilities
 - Message serialization/deserialization
 - State machine transitions
@@ -1302,6 +1287,7 @@ Implement circuit breakers for:
 - Error handling logic
 
 **Tools:**
+
 - Jest (TypeScript/JavaScript)
 - pytest (Python services)
 - Mock external API calls
@@ -1343,6 +1329,7 @@ Implement circuit breakers for:
    - Validate voice quality
 
 **Tools:**
+
 - Postman/Newman for API testing
 - WebSocket test clients
 - Synthetic audio/video data
@@ -1373,6 +1360,7 @@ Implement circuit breakers for:
    - Network bandwidth
 
 **Load Testing Scenarios:**
+
 - 10 concurrent conversations (baseline)
 - 100 concurrent conversations (MVP target)
 - 1000 concurrent conversations (production target)
@@ -1380,6 +1368,7 @@ Implement circuit breakers for:
 - Soak test: 100 users for 2 hours
 
 **Tools:**
+
 - k6 for load testing
 - Grafana for visualization
 - Cloud Monitoring for GCP metrics
@@ -1388,18 +1377,21 @@ Implement circuit breakers for:
 ### Quality Testing
 
 **Voice Quality:**
+
 - Mean Opinion Score (MOS) testing
 - Voice similarity measurement (cosine similarity of embeddings)
 - A/B testing different TTS providers
 - User feedback collection
 
 **Conversation Quality:**
+
 - Answer accuracy against knowledge base
 - Response relevance scoring
 - Conversation naturalness rating
 - Interruption handling smoothness
 
 **Video Quality:**
+
 - Lip-sync accuracy measurement
 - Frame rate consistency
 - Audio-video synchronization offset
@@ -1408,6 +1400,7 @@ Implement circuit breakers for:
 ### Security Testing
 
 **Test Cases:**
+
 - Authentication bypass attempts
 - Unauthorized access to other users' data
 - SQL injection in metadata queries
@@ -1417,6 +1410,7 @@ Implement circuit breakers for:
 - Data encryption verification
 
 **Tools:**
+
 - OWASP ZAP
 - Burp Suite
 - Custom security scripts
@@ -1425,6 +1419,7 @@ Implement circuit breakers for:
 ### User Acceptance Testing
 
 **Test Scenarios:**
+
 1. First-time user onboarding
 2. Voice model training and selection
 3. Document upload and knowledge base creation
@@ -1434,23 +1429,25 @@ Implement circuit breakers for:
 7. Multi-device usage
 
 **Success Criteria:**
+
 - 90%+ task completion rate
 - 4.5/5.0+ user satisfaction
 - < 5% error rate
 - < 10% support ticket rate
-
 
 ## Performance Optimization
 
 ### Latency Optimization
 
 **1. ASR Optimization**
+
 - Use Chirp model for lowest latency
 - Enable streaming mode with interim results
 - Optimize audio chunk size (100ms)
 - Pre-warm ASR connections
 
 **2. RAG Optimization**
+
 - Cache embeddings for common queries
 - Use approximate nearest neighbor search (HNSW)
 - Limit vector search to top-k=5
@@ -1458,6 +1455,7 @@ Implement circuit breakers for:
 - Implement query result caching (PostgreSQL with indexed cache tables)
 
 **3. LLM Optimization**
+
 - Use streaming mode for token-by-token delivery
 - Optimize prompt length (< 4K tokens)
 - Use faster models (Gemini Flash, Groq)
@@ -1465,6 +1463,7 @@ Implement circuit breakers for:
 - Pre-warm model connections
 
 **4. TTS Optimization**
+
 - Stream audio generation sentence-by-sentence
 - Pre-load voice models in memory
 - Use GPU batching for multiple requests
@@ -1472,6 +1471,7 @@ Implement circuit breakers for:
 - Optimize sample rate (22050 Hz sufficient)
 
 **5. Lip-sync Optimization**
+
 - Use lightweight model (TPSM)
 - Reduce resolution (256x256 or 512x512)
 - Generate at 15-20 FPS (not 30)
@@ -1480,6 +1480,7 @@ Implement circuit breakers for:
 - Batch frame generation
 
 **6. Network Optimization**
+
 - Use Opus codec for audio (efficient compression)
 - Use H.264 for video streaming
 - Implement adaptive bitrate
@@ -1499,14 +1500,14 @@ interface CacheStrategy {
     commonResponses: Map<string, string>;
     voiceModels: Map<string, VoiceModel>;
   };
-  
+
   // L2: Database cache (PostgreSQL with indexed cache tables)
   l2Cache: {
     vectorSearchResults: Map<string, SearchResult[]>;
     llmResponses: Map<string, string>;
     audioChunks: Map<string, AudioBuffer>;
   };
-  
+
   // L3: Cloud Storage
   l3Cache: {
     processedDocuments: string;
@@ -1517,6 +1518,7 @@ interface CacheStrategy {
 ```
 
 **Cache Invalidation:**
+
 - Time-based expiration (TTL)
 - Event-based invalidation (document update)
 - LRU eviction for memory management
@@ -1525,12 +1527,14 @@ interface CacheStrategy {
 ### Resource Pooling
 
 **Connection Pools:**
+
 - WebSocket connection pool (1000 connections per instance)
 - Database connection pool (50 connections)
 - HTTP client pool for API calls
 - GPU worker pool (auto-scaling)
 
 **Model Preloading:**
+
 - Keep voice models in memory for active users
 - Pre-warm LLM connections
 - Cache face models for lip-sync
@@ -1539,6 +1543,7 @@ interface CacheStrategy {
 ### Auto-Scaling Configuration
 
 **Cloud Run (WebSocket Server):**
+
 ```yaml
 minInstances: 2
 maxInstances: 100
@@ -1549,13 +1554,14 @@ cpu: 2
 ```
 
 **GKE Autopilot (GPU Workloads):**
+
 ```yaml
 TTS Service:
   minReplicas: 1
   maxReplicas: 20
   targetGPUUtilization: 70%
   gpuType: nvidia-tesla-t4
-  
+
 Lip-sync Service:
   minReplicas: 1
   maxReplicas: 15
@@ -1564,6 +1570,7 @@ Lip-sync Service:
 ```
 
 **Scaling Triggers:**
+
 - Active conversation count
 - GPU utilization
 - Request queue depth
@@ -1572,12 +1579,14 @@ Lip-sync Service:
 ### Cost Optimization
 
 **1. Compute Costs**
+
 - Use preemptible/spot instances for GPU (60-70% savings)
 - Auto-scale down during low usage
 - Use Cloud Run for stateless services (pay per request)
 - Optimize container images for faster cold starts
 
 **2. AI Service Costs**
+
 - Use Gemini Flash over Pro (10x cheaper)
 - Implement response caching (reduce LLM calls)
 - Use Groq for free tier when possible
@@ -1585,18 +1594,21 @@ Lip-sync Service:
 - Optimize prompt length
 
 **3. Storage Costs**
+
 - Use lifecycle policies for old data
 - Compress audio/video before storage
 - Use Nearline/Coldline for archives
 - Implement data retention policies
 
 **4. Network Costs**
+
 - Use Cloud CDN for static content
 - Optimize payload sizes
 - Enable compression
 - Use regional resources when possible
 
 **Cost Monitoring:**
+
 ```typescript
 interface CostTracker {
   trackConversationCost(sessionId: string): {
@@ -1608,19 +1620,19 @@ interface CostTracker {
     networkCost: number;
     totalCost: number;
   };
-  
+
   getAverageCostPerMinute(): number;
   getCostByProvider(): Map<string, number>;
   alertOnCostThreshold(threshold: number): void;
 }
 ```
 
-
 ## Security and Privacy
 
 ### Authentication and Authorization
 
 **Authentication Flow:**
+
 1. User logs in via Mobile App (Firebase Auth or OAuth)
 2. Backend issues JWT token with user claims
 3. Mobile App includes JWT in WebSocket connection
@@ -1628,6 +1640,7 @@ interface CostTracker {
 5. Token refresh handled automatically
 
 **JWT Claims:**
+
 ```typescript
 interface JWTClaims {
   userId: string;
@@ -1640,6 +1653,7 @@ interface JWTClaims {
 ```
 
 **Authorization Rules:**
+
 - Users can only access their own conversations
 - Users can only query their own knowledge base
 - Users can only manage their own voice models
@@ -1649,18 +1663,21 @@ interface JWTClaims {
 ### Data Encryption
 
 **In Transit:**
+
 - TLS 1.3 for all WebSocket connections
 - HTTPS for all API calls
 - Encrypted connections to databases
 - VPC peering for internal services
 
 **At Rest:**
+
 - Cloud Storage encryption (AES-256)
 - Cloud SQL encryption
 - Encrypted vector database
 - Encrypted voice model storage
 
 **Key Management:**
+
 - Google Cloud KMS for key management
 - Automatic key rotation (90 days)
 - Separate keys per data type
@@ -1678,7 +1695,7 @@ interface DataRetentionPolicy {
     retentionDays: 0;
     requiresConsent: true;
   };
-  
+
   // Transcripts
   transcripts: {
     stored: true; // For conversation history
@@ -1686,7 +1703,7 @@ interface DataRetentionPolicy {
     requiresConsent: true;
     deletable: true;
   };
-  
+
   // Knowledge base
   knowledgeBase: {
     stored: true;
@@ -1694,7 +1711,7 @@ interface DataRetentionPolicy {
     requiresConsent: false; // User uploaded
     deletable: true;
   };
-  
+
   // Voice models
   voiceModels: {
     stored: true;
@@ -1702,7 +1719,7 @@ interface DataRetentionPolicy {
     requiresConsent: true;
     deletable: true;
   };
-  
+
   // Conversation history
   conversationHistory: {
     stored: true;
@@ -1714,6 +1731,7 @@ interface DataRetentionPolicy {
 ```
 
 **User Rights:**
+
 - Right to access all stored data
 - Right to delete all data
 - Right to export data (GDPR compliance)
@@ -1721,6 +1739,7 @@ interface DataRetentionPolicy {
 - Right to revoke consent
 
 **Data Isolation:**
+
 - User data isolated by userId
 - No cross-user data access
 - Separate vector namespaces per user
@@ -1729,6 +1748,7 @@ interface DataRetentionPolicy {
 ### Content Safety
 
 **Input Filtering:**
+
 ```typescript
 interface ContentFilter {
   checkUserInput(text: string): ContentSafetyResult;
@@ -1745,6 +1765,7 @@ interface ContentSafetyResult {
 ```
 
 **Safety Measures:**
+
 - Perspective API for toxicity detection
 - Custom keyword filtering
 - LLM output validation
@@ -1754,6 +1775,7 @@ interface ContentSafetyResult {
 ### Rate Limiting
 
 **Per-User Limits:**
+
 ```typescript
 interface RateLimits {
   free: {
@@ -1762,14 +1784,14 @@ interface RateLimits {
     voiceModelsPerAccount: 1;
     requestsPerMinute: 10;
   };
-  
+
   pro: {
     conversationMinutesPerDay: null; // Unlimited
     documentsPerMonth: 100;
     voiceModelsPerAccount: 5;
     requestsPerMinute: 60;
   };
-  
+
   enterprise: {
     conversationMinutesPerDay: null;
     documentsPerMonth: null;
@@ -1780,6 +1802,7 @@ interface RateLimits {
 ```
 
 **Implementation:**
+
 - PostgreSQL-based rate limiting with indexed rate_limits table
 - Token bucket algorithm
 - Per-endpoint limits
@@ -1789,6 +1812,7 @@ interface RateLimits {
 ### DDoS Protection
 
 **Cloud Armor Configuration:**
+
 - Rate limiting rules
 - Geographic restrictions (optional)
 - IP reputation filtering
@@ -1796,6 +1820,7 @@ interface RateLimits {
 - Custom security rules
 
 **Application-Level Protection:**
+
 - Connection throttling
 - Request validation
 - Payload size limits
@@ -1805,6 +1830,7 @@ interface RateLimits {
 ### Audit Logging
 
 **Events to Log:**
+
 ```typescript
 interface AuditLog {
   timestamp: Date;
@@ -1819,6 +1845,7 @@ interface AuditLog {
 ```
 
 **Logged Actions:**
+
 - User authentication
 - Document uploads
 - Voice model training
@@ -1828,17 +1855,18 @@ interface AuditLog {
 - Security events
 
 **Log Storage:**
+
 - Cloud Logging for all logs
 - 90-day retention for audit logs
 - Export to BigQuery for analysis
 - Alerting on suspicious activity
-
 
 ## Monitoring and Observability
 
 ### Metrics Collection
 
 **System Metrics:**
+
 ```typescript
 interface SystemMetrics {
   // Performance
@@ -1848,29 +1876,29 @@ interface SystemMetrics {
   llmLatency: Histogram;
   ttsLatency: Histogram;
   lipSyncLatency: Histogram;
-  
+
   // Throughput
   activeConversations: Gauge;
   messagesPerSecond: Counter;
   conversationsStarted: Counter;
   conversationsCompleted: Counter;
-  
+
   // Quality
   transcriptAccuracy: Gauge;
   voiceSimilarity: Gauge;
   audioVideoSyncOffset: Histogram;
-  
+
   // Errors
   errorRate: Counter;
   errorsByType: Counter;
   retryCount: Counter;
-  
+
   // Resources
   cpuUtilization: Gauge;
   memoryUtilization: Gauge;
   gpuUtilization: Gauge;
   networkBandwidth: Gauge;
-  
+
   // Costs
   costPerConversation: Histogram;
   costByProvider: Counter;
@@ -1879,23 +1907,24 @@ interface SystemMetrics {
 ```
 
 **Business Metrics:**
+
 ```typescript
 interface BusinessMetrics {
   // Adoption
   dailyActiveUsers: Gauge;
   newUserSignups: Counter;
   conversationStarts: Counter;
-  
+
   // Engagement
   averageConversationDuration: Histogram;
   conversationsPerUser: Histogram;
   returnUserRate: Gauge;
-  
+
   // Quality
   userSatisfactionScore: Gauge;
   conversationCompletionRate: Gauge;
   interruptionRate: Gauge;
-  
+
   // Monetization
   subscriptionConversions: Counter;
   revenuePerUser: Gauge;
@@ -1906,12 +1935,14 @@ interface BusinessMetrics {
 ### Logging Strategy
 
 **Log Levels:**
+
 - ERROR: System failures, unrecoverable errors
 - WARN: Degraded performance, fallback activations
 - INFO: Normal operations, state changes
 - DEBUG: Detailed execution flow (dev/staging only)
 
 **Structured Logging:**
+
 ```typescript
 interface LogEntry {
   timestamp: string;
@@ -1926,6 +1957,7 @@ interface LogEntry {
 ```
 
 **Log Aggregation:**
+
 - Cloud Logging for centralized logs
 - Log-based metrics for alerting
 - Export to BigQuery for analysis
@@ -1934,6 +1966,7 @@ interface LogEntry {
 ### Distributed Tracing
 
 **Trace Implementation:**
+
 ```typescript
 interface TraceContext {
   traceId: string;
@@ -1954,6 +1987,7 @@ interface Span {
 ```
 
 **Traced Operations:**
+
 - WebSocket message flow
 - ASR processing
 - Vector search
@@ -1963,6 +1997,7 @@ interface Span {
 - End-to-end conversation turn
 
 **Tools:**
+
 - Cloud Trace for GCP services
 - OpenTelemetry for custom instrumentation
 - Jaeger for visualization (dev/staging)
@@ -1972,6 +2007,7 @@ interface Span {
 **Alert Definitions:**
 
 **Critical Alerts (Page immediately):**
+
 - Service down (any component)
 - Error rate > 5%
 - P95 latency > 3 seconds
@@ -1979,6 +2015,7 @@ interface Span {
 - Database connection failures
 
 **Warning Alerts (Notify team):**
+
 - Error rate > 2%
 - P95 latency > 2.5 seconds
 - Active conversations > 80% capacity
@@ -1986,12 +2023,14 @@ interface Span {
 - Disk usage > 80%
 
 **Info Alerts (Log only):**
+
 - Fallback provider activated
 - Cache miss rate > 50%
 - Unusual traffic patterns
 - New user signups spike
 
 **Alert Channels:**
+
 - PagerDuty for critical alerts
 - Slack for warnings
 - Email for daily summaries
@@ -2000,6 +2039,7 @@ interface Span {
 ### Dashboards
 
 **Operations Dashboard:**
+
 - Active conversations (real-time)
 - System health status
 - Latency breakdown (p50, p95, p99)
@@ -2008,6 +2048,7 @@ interface Span {
 - Cost tracking
 
 **Business Dashboard:**
+
 - Daily/weekly/monthly active users
 - Conversation metrics
 - User satisfaction scores
@@ -2015,6 +2056,7 @@ interface Span {
 - Revenue tracking
 
 **Performance Dashboard:**
+
 - Latency heatmaps
 - Throughput graphs
 - Provider comparison
@@ -2022,6 +2064,7 @@ interface Span {
 - GPU utilization
 
 **Tools:**
+
 - Grafana for custom dashboards
 - Cloud Monitoring for GCP metrics
 - Looker for business analytics
@@ -2030,6 +2073,7 @@ interface Span {
 ### Health Checks
 
 **Endpoint Health:**
+
 ```typescript
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -2055,39 +2099,41 @@ interface ComponentHealth {
 ```
 
 **Health Check Endpoints:**
+
 - `/health` - Overall system health
 - `/health/live` - Liveness probe
 - `/health/ready` - Readiness probe
 - `/health/components` - Detailed component status
 
 **Monitoring Frequency:**
+
 - Liveness: Every 10 seconds
 - Readiness: Every 30 seconds
 - Component health: Every 60 seconds
 - Deep health check: Every 5 minutes
-
 
 ## Deployment Strategy
 
 ### Infrastructure as Code
 
 **Terraform Configuration:**
+
 ```hcl
 # GCP Project Setup
 resource "google_project" "clone_system" {
-  name       = "conversational-clone"
-  project_id = "conversational-clone-prod"
+  name       = "digitwin-live"
+  project_id = "digitwin-live-prod"
 }
 
 # Cloud Run - WebSocket Server
 resource "google_cloud_run_service" "websocket_server" {
   name     = "websocket-server"
   location = "us-central1"
-  
+
   template {
     spec {
       containers {
-        image = "gcr.io/conversational-clone/websocket-server:latest"
+        image = "gcr.io/digitwin-live/websocket-server:latest"
         resources {
           limits = {
             cpu    = "2000m"
@@ -2098,7 +2144,7 @@ resource "google_cloud_run_service" "websocket_server" {
       container_concurrency = 50
     }
   }
-  
+
   autogenerate_revision_name = true
 }
 
@@ -2106,12 +2152,12 @@ resource "google_cloud_run_service" "websocket_server" {
 resource "google_container_cluster" "gpu_cluster" {
   name     = "gpu-workloads"
   location = "us-central1"
-  
+
   enable_autopilot = true
-  
+
   node_config {
     machine_type = "n1-standard-4"
-    
+
     guest_accelerator {
       type  = "nvidia-tesla-t4"
       count = 1
@@ -2124,10 +2170,10 @@ resource "google_sql_database_instance" "main" {
   name             = "clone-system-db"
   database_version = "POSTGRES_15"
   region           = "us-central1"
-  
+
   settings {
     tier = "db-custom-4-16384"
-    
+
     backup_configuration {
       enabled    = true
       start_time = "03:00"
@@ -2139,7 +2185,7 @@ resource "google_sql_database_instance" "main" {
 resource "google_storage_bucket" "voice_models" {
   name     = "clone-voice-models"
   location = "US"
-  
+
   lifecycle_rule {
     condition {
       age = 90
@@ -2154,6 +2200,7 @@ resource "google_storage_bucket" "voice_models" {
 ### CI/CD Pipeline
 
 **GitHub Actions Workflow:**
+
 ```yaml
 name: Deploy to Production
 
@@ -2170,7 +2217,7 @@ jobs:
         run: npm test
       - name: Run integration tests
         run: npm run test:integration
-  
+
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -2178,13 +2225,13 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build Docker images
         run: |
-          docker build -t gcr.io/conversational-clone/websocket-server:${{ github.sha }} .
-          docker build -t gcr.io/conversational-clone/tts-service:${{ github.sha }} ./services/tts
+          docker build -t gcr.io/digitwin-live/websocket-server:${{ github.sha }} .
+          docker build -t gcr.io/digitwin-live/tts-service:${{ github.sha }} ./services/tts
       - name: Push to GCR
         run: |
-          docker push gcr.io/conversational-clone/websocket-server:${{ github.sha }}
-          docker push gcr.io/conversational-clone/tts-service:${{ github.sha }}
-  
+          docker push gcr.io/digitwin-live/websocket-server:${{ github.sha }}
+          docker push gcr.io/digitwin-live/tts-service:${{ github.sha }}
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -2192,17 +2239,18 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy websocket-server \
-            --image gcr.io/conversational-clone/websocket-server:${{ github.sha }} \
+            --image gcr.io/digitwin-live/websocket-server:${{ github.sha }} \
             --region us-central1
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/tts-service \
-            tts-service=gcr.io/conversational-clone/tts-service:${{ github.sha }}
+            tts-service=gcr.io/digitwin-live/tts-service:${{ github.sha }}
 ```
 
 ### Environment Configuration
 
 **Development:**
+
 - Single region (us-central1)
 - Minimal instances (1-2)
 - Shared GPU resources
@@ -2210,6 +2258,7 @@ jobs:
 - No rate limiting
 
 **Staging:**
+
 - Single region (us-central1)
 - Auto-scaling (1-10 instances)
 - Dedicated GPU pool
@@ -2218,6 +2267,7 @@ jobs:
 - Production-like data (anonymized)
 
 **Production:**
+
 - Multi-region (us-central1, us-east1, europe-west1)
 - Auto-scaling (2-100 instances)
 - Dedicated GPU pools per region
@@ -2229,6 +2279,7 @@ jobs:
 ### Rollout Strategy
 
 **Blue-Green Deployment:**
+
 1. Deploy new version to "green" environment
 2. Run smoke tests on green
 3. Route 10% traffic to green
@@ -2240,6 +2291,7 @@ jobs:
 9. Decommission blue
 
 **Canary Deployment (Alternative):**
+
 1. Deploy to 5% of instances
 2. Monitor for 1 hour
 3. Increase to 25%
@@ -2249,6 +2301,7 @@ jobs:
 7. Complete rollout to 100%
 
 **Rollback Procedure:**
+
 1. Detect issue (automated or manual)
 2. Route traffic back to previous version
 3. Investigate root cause
@@ -2258,6 +2311,7 @@ jobs:
 ### Database Migrations
 
 **Migration Strategy:**
+
 ```typescript
 // Use Prisma or similar ORM for migrations
 // migrations/001_initial_schema.sql
@@ -2295,6 +2349,7 @@ CREATE TABLE knowledge_documents (
 ```
 
 **Migration Process:**
+
 1. Test migration on staging
 2. Create database backup
 3. Run migration during low-traffic window
@@ -2305,33 +2360,37 @@ CREATE TABLE knowledge_documents (
 ### Disaster Recovery
 
 **Backup Strategy:**
+
 - Database: Daily automated backups, 30-day retention
 - Voice models: Replicated across regions
 - Knowledge base: Vector DB snapshots daily
 - Configuration: Version controlled in Git
 
 **Recovery Time Objectives (RTO):**
+
 - Critical services: < 15 minutes
 - Database: < 30 minutes
 - Full system: < 1 hour
 
 **Recovery Point Objectives (RPO):**
+
 - User data: < 5 minutes (continuous replication)
 - Conversation history: < 1 hour
 - Knowledge base: < 24 hours
 
 **Disaster Scenarios:**
+
 1. **Region Failure**: Automatic failover to secondary region
 2. **Database Corruption**: Restore from latest backup
 3. **Service Outage**: Activate fallback providers
 4. **Data Loss**: Restore from replicated storage
-
 
 ## Implementation Considerations
 
 ### Technology Choices Rationale
 
 **Why Google Chirp for ASR:**
+
 - Optimized for streaming with lowest latency
 - Excellent accuracy for conversational speech
 - Built-in multilingual support
@@ -2339,6 +2398,7 @@ CREATE TABLE knowledge_documents (
 - Cost-effective for high volume
 
 **Why Multiple LLM Providers:**
+
 - Flexibility to optimize cost vs. quality
 - Fallback options for reliability
 - Ability to A/B test providers
@@ -2346,12 +2406,14 @@ CREATE TABLE knowledge_documents (
 - Leverage best-in-class for different use cases
 
 **Why XTTS-v2 + Cloud Options for TTS:**
+
 - XTTS-v2: Best voice cloning quality, self-hosted cost savings
 - Google Cloud TTS: Enterprise reliability, good quality
 - OpenAI TTS: Fast, high quality, easy integration
 - Provider choice based on user preference and budget
 
 **Why Pinecone/Weaviate for Vector DB:**
+
 - Purpose-built for vector search
 - Low latency queries (< 100ms)
 - Horizontal scalability
@@ -2359,6 +2421,7 @@ CREATE TABLE knowledge_documents (
 - Self-hosted option (Weaviate)
 
 **Why React Native for Mobile:**
+
 - Cross-platform (iOS + Android)
 - Large ecosystem and community
 - Good performance for real-time apps
@@ -2366,6 +2429,7 @@ CREATE TABLE knowledge_documents (
 - Faster development than native
 
 **Why Cloud Run for WebSocket Server:**
+
 - Automatic scaling to zero
 - Pay-per-use pricing
 - Handles WebSocket connections well
@@ -2373,6 +2437,7 @@ CREATE TABLE knowledge_documents (
 - Easy deployment
 
 **Why GKE for GPU Workloads:**
+
 - Flexible GPU management
 - Auto-scaling based on load
 - Support for custom containers
@@ -2382,22 +2447,26 @@ CREATE TABLE knowledge_documents (
 ### Scalability Considerations
 
 **Horizontal Scaling:**
+
 - Stateless services scale independently
 - WebSocket connections distributed via load balancer
 - GPU workers scale based on queue depth
 - Database read replicas for query scaling
 
 **Vertical Scaling:**
+
 - GPU instances sized for workload (T4 for TTS/lip-sync)
 - Memory-optimized instances for vector search
 - CPU-optimized for WebSocket handling
 
 **Data Partitioning:**
+
 - Vector database sharded by user ID
 - Conversation history partitioned by date
 - Voice models distributed across storage buckets
 
 **Bottleneck Mitigation:**
+
 - GPU availability: Queue requests, show wait time
 - Vector search: Implement caching, use approximate search
 - LLM rate limits: Multiple providers, request queuing
@@ -2407,17 +2476,18 @@ CREATE TABLE knowledge_documents (
 
 **Target: 2000ms end-to-end**
 
-| Component | Target | Buffer | Notes |
-|-----------|--------|--------|-------|
-| Network (client → server) | 50ms | 20ms | Depends on user connection |
-| ASR (streaming) | 300ms | 50ms | Chirp optimized |
-| RAG (embedding + search) | 200ms | 50ms | Cached embeddings help |
-| LLM (first token) | 1000ms | 200ms | Streaming reduces perceived latency |
-| TTS (first chunk) | 500ms | 100ms | Sentence-level streaming |
-| Network (server → client) | 50ms | 20ms | Depends on user connection |
-| **Total** | **2100ms** | **440ms** | **Includes buffer** |
+| Component                 | Target     | Buffer    | Notes                               |
+| ------------------------- | ---------- | --------- | ----------------------------------- |
+| Network (client → server) | 50ms       | 20ms      | Depends on user connection          |
+| ASR (streaming)           | 300ms      | 50ms      | Chirp optimized                     |
+| RAG (embedding + search)  | 200ms      | 50ms      | Cached embeddings help              |
+| LLM (first token)         | 1000ms     | 200ms     | Streaming reduces perceived latency |
+| TTS (first chunk)         | 500ms      | 100ms     | Sentence-level streaming            |
+| Network (server → client) | 50ms       | 20ms      | Depends on user connection          |
+| **Total**                 | **2100ms** | **440ms** | **Includes buffer**                 |
 
 **Optimization Priorities:**
+
 1. LLM latency (biggest contributor)
 2. TTS latency (second biggest)
 3. RAG latency (caching helps most)
@@ -2427,18 +2497,19 @@ CREATE TABLE knowledge_documents (
 
 **Per 10-Minute Conversation:**
 
-| Service | Cost | Notes |
-|---------|------|-------|
-| ASR (Chirp) | $0.06 | $0.006/min × 10 min |
-| LLM (Gemini Flash) | $0.02 | ~20K tokens @ $0.001/1K |
-| TTS (XTTS-v2) | $0.03 | GPU time, self-hosted |
-| Lip-sync | $0.05 | GPU time, self-hosted |
-| Vector search | $0.01 | Pinecone queries |
-| Bandwidth | $0.01 | Audio/video streaming |
-| Infrastructure | $0.02 | Cloud Run, storage, etc. |
-| **Total** | **$0.20** | **Target: < $0.15** |
+| Service            | Cost      | Notes                    |
+| ------------------ | --------- | ------------------------ |
+| ASR (Chirp)        | $0.06     | $0.006/min × 10 min      |
+| LLM (Gemini Flash) | $0.02     | ~20K tokens @ $0.001/1K  |
+| TTS (XTTS-v2)      | $0.03     | GPU time, self-hosted    |
+| Lip-sync           | $0.05     | GPU time, self-hosted    |
+| Vector search      | $0.01     | Pinecone queries         |
+| Bandwidth          | $0.01     | Audio/video streaming    |
+| Infrastructure     | $0.02     | Cloud Run, storage, etc. |
+| **Total**          | **$0.20** | **Target: < $0.15**      |
 
 **Cost Optimization Opportunities:**
+
 - Use Groq (free tier) for LLM: Save $0.02
 - Reduce video quality: Save $0.02 on bandwidth
 - Optimize GPU utilization: Save $0.03
@@ -2446,15 +2517,16 @@ CREATE TABLE knowledge_documents (
 
 **Monthly Cost Projections:**
 
-| Scenario | Users | Conversations/User/Month | Total Cost |
-|----------|-------|--------------------------|------------|
-| MVP | 100 | 10 | $130 |
-| Growth | 1,000 | 15 | $1,950 |
-| Scale | 10,000 | 20 | $26,000 |
+| Scenario | Users  | Conversations/User/Month | Total Cost |
+| -------- | ------ | ------------------------ | ---------- |
+| MVP      | 100    | 10                       | $130       |
+| Growth   | 1,000  | 15                       | $1,950     |
+| Scale    | 10,000 | 20                       | $26,000    |
 
 ### Development Phases
 
 **Phase 1: Core Infrastructure (Weeks 1-2)**
+
 - WebSocket server setup
 - Authentication and session management
 - Basic message routing
@@ -2465,6 +2537,7 @@ CREATE TABLE knowledge_documents (
 **Deliverable:** Voice conversation without knowledge base
 
 **Phase 2: RAG System (Weeks 3-4)**
+
 - Vector database setup (Pinecone)
 - Document upload and processing
 - Embedding generation
@@ -2475,6 +2548,7 @@ CREATE TABLE knowledge_documents (
 **Deliverable:** Conversations with personalized knowledge
 
 **Phase 3: Voice Cloning (Weeks 5-6)**
+
 - Voice sample recording
 - XTTS-v2 integration
 - Voice model training pipeline
@@ -2484,6 +2558,7 @@ CREATE TABLE knowledge_documents (
 **Deliverable:** Conversations in user's cloned voice
 
 **Phase 4: Video & Polish (Weeks 7-8)**
+
 - Lip-sync service (TPSM)
 - Face model creation
 - Video streaming
@@ -2495,6 +2570,7 @@ CREATE TABLE knowledge_documents (
 **Deliverable:** Full video conversation experience
 
 **Phase 5: Testing & Launch (Weeks 9-10)**
+
 - Load testing
 - Security testing
 - User acceptance testing
@@ -2521,18 +2597,18 @@ sequenceDiagram
     MobileApp->>API: POST /face-model/upload
     API->>Storage: Store raw media
     API->>FaceService: Trigger processing
-    
+
     FaceService->>Storage: Retrieve media
     FaceService->>FaceService: Validate quality
     FaceService->>GPU: Detect faces & landmarks
     GPU-->>FaceService: Facial keypoints
-    
+
     FaceService->>GPU: Generate embeddings
     GPU-->>FaceService: Face embeddings
-    
+
     FaceService->>GPU: Extract expressions
     GPU-->>FaceService: Expression templates
-    
+
     FaceService->>Storage: Save face model
     FaceService->>API: Model ready
     API->>MobileApp: Notify completion
@@ -2552,13 +2628,13 @@ sequenceDiagram
     TTS->>LipSync: Audio chunk + timestamp
     LipSync->>FaceModel: Load user's face model
     FaceModel-->>LipSync: Face data & templates
-    
+
     LipSync->>GPU: Generate frame (audio features + face)
     GPU->>GPU: Warp face based on audio
     GPU->>GPU: Apply lip movements
     GPU->>GPU: Add natural head motion
     GPU-->>LipSync: Video frame
-    
+
     LipSync->>Client: Stream video frame
     Client->>Client: Sync with audio
     Client->>Client: Display video
@@ -2566,16 +2642,17 @@ sequenceDiagram
 
 **Face Model Quality Tiers:**
 
-| Tier | Input Required | Processing Time | Quality | Use Case |
-|------|----------------|-----------------|---------|----------|
-| Basic | 3-5 photos | 2-3 minutes | Good | Quick setup, acceptable quality |
-| Standard | 5-10 photos | 5-10 minutes | Very Good | Recommended for most users |
-| Premium | 30-60s video | 15-30 minutes | Excellent | Best quality, natural expressions |
-| Custom | Multiple videos | 1-2 hours | Outstanding | Fine-tuned model, highest fidelity |
+| Tier     | Input Required  | Processing Time | Quality     | Use Case                           |
+| -------- | --------------- | --------------- | ----------- | ---------------------------------- |
+| Basic    | 3-5 photos      | 2-3 minutes     | Good        | Quick setup, acceptable quality    |
+| Standard | 5-10 photos     | 5-10 minutes    | Very Good   | Recommended for most users         |
+| Premium  | 30-60s video    | 15-30 minutes   | Excellent   | Best quality, natural expressions  |
+| Custom   | Multiple videos | 1-2 hours       | Outstanding | Fine-tuned model, highest fidelity |
 
 ### Future Enhancements
 
 **Post-MVP Features:**
+
 1. **3D face modeling**: Full 3D avatar for better angles and expressions
 2. **Emotion-aware expressions**: Clone shows emotions based on conversation context
 3. **Multi-language support**: Automatic translation during conversation
@@ -2595,27 +2672,28 @@ sequenceDiagram
 
 **Technical Risks:**
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| GPU availability | High | Medium | Queue system, multiple regions, fallback to CPU |
-| LLM rate limits | High | Medium | Multiple providers, request queuing, caching |
-| Voice quality poor | High | Low | Multiple TTS options, quality validation, user feedback |
-| Latency > 2s | Medium | Medium | Aggressive optimization, streaming, caching |
-| WebSocket scaling | Medium | Low | Load testing, Cloud Run auto-scaling |
-| Cost overruns | Medium | Medium | Cost monitoring, optimization, usage limits |
+| Risk               | Impact | Probability | Mitigation                                              |
+| ------------------ | ------ | ----------- | ------------------------------------------------------- |
+| GPU availability   | High   | Medium      | Queue system, multiple regions, fallback to CPU         |
+| LLM rate limits    | High   | Medium      | Multiple providers, request queuing, caching            |
+| Voice quality poor | High   | Low         | Multiple TTS options, quality validation, user feedback |
+| Latency > 2s       | Medium | Medium      | Aggressive optimization, streaming, caching             |
+| WebSocket scaling  | Medium | Low         | Load testing, Cloud Run auto-scaling                    |
+| Cost overruns      | Medium | Medium      | Cost monitoring, optimization, usage limits             |
 
 **Business Risks:**
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Low user adoption | High | Medium | User research, beta testing, marketing |
-| Privacy concerns | High | Low | Clear policies, data controls, compliance |
-| Competition | Medium | High | Unique features, quality focus, fast iteration |
-| Regulatory changes | Medium | Low | Legal review, compliance monitoring |
+| Risk               | Impact | Probability | Mitigation                                     |
+| ------------------ | ------ | ----------- | ---------------------------------------------- |
+| Low user adoption  | High   | Medium      | User research, beta testing, marketing         |
+| Privacy concerns   | High   | Low         | Clear policies, data controls, compliance      |
+| Competition        | Medium | High        | Unique features, quality focus, fast iteration |
+| Regulatory changes | Medium | Low         | Legal review, compliance monitoring            |
 
 ### Success Metrics
 
 **Technical Metrics:**
+
 - ✓ End-to-end latency < 2 seconds (95th percentile)
 - ✓ Voice similarity > 85%
 - ✓ Transcription accuracy > 95%
@@ -2623,6 +2701,7 @@ sequenceDiagram
 - ✓ Cost per conversation < $0.15
 
 **User Metrics:**
+
 - ✓ 30% of users try conversation feature in first month
 - ✓ Average conversation duration > 5 minutes
 - ✓ User satisfaction rating > 4.5/5.0
@@ -2630,6 +2709,7 @@ sequenceDiagram
 - ✓ < 5% error rate reported by users
 
 **Business Metrics:**
+
 - ✓ 100 active users in first month (MVP)
 - ✓ 10% conversion to paid tier
 - ✓ < $5,000 monthly infrastructure cost (MVP)

@@ -28,10 +28,7 @@ export class QueryBus {
   /**
    * Register a query handler
    */
-  register<TQuery extends Query>(
-    queryType: QueryType,
-    handler: QueryHandler<TQuery, any>
-  ): void {
+  register<TQuery extends Query>(queryType: QueryType, handler: QueryHandler<TQuery, any>): void {
     if (this.handlers.has(queryType)) {
       throw new Error(`Handler already registered for query type: ${queryType}`);
     }
@@ -77,9 +74,7 @@ export class QueryBus {
   /**
    * Execute multiple queries in parallel
    */
-  async executeMany<TQuery extends AllQueries>(
-    queries: TQuery[]
-  ): Promise<QueryResult[]> {
+  async executeMany<TQuery extends AllQueries>(queries: TQuery[]): Promise<QueryResult[]> {
     return Promise.all(queries.map((query) => this.execute(query)));
   }
 

@@ -11,6 +11,7 @@ Successfully implemented a comprehensive database layer for the Real-Time Conver
 Created a complete database schema with the following tables:
 
 #### Core Tables
+
 - **users**: User accounts with personality traits, preferences, and subscription tiers
 - **voice_models**: Voice cloning model metadata and references
 - **face_models**: Face cloning model metadata and references
@@ -19,11 +20,13 @@ Created a complete database schema with the following tables:
 - **knowledge_documents**: User knowledge base documents with processing status
 
 #### Cache Tables (L2 Cache)
+
 - **embedding_cache**: Cached query embeddings (TTL: 1 hour)
 - **vector_search_cache**: Cached vector search results (TTL: 30 minutes)
 - **llm_response_cache**: Cached LLM responses for FAQs (TTL: 1 hour)
 
 #### System Tables
+
 - **rate_limits**: Token bucket rate limiting implementation
 - **audit_logs**: Comprehensive audit trail for security and compliance
 
@@ -43,6 +46,7 @@ Implemented 8 repositories with clean separation of concerns:
 ### 3. Key Features
 
 #### Soft Delete Support
+
 - Implemented for users, voice models, face models, and knowledge documents
 - `deletedAt` timestamp field (NULL = not deleted)
 - Automatic filtering in queries
@@ -50,6 +54,7 @@ Implemented 8 repositories with clean separation of concerns:
 - `hardDelete()` method for permanent deletion
 
 #### Connection Management
+
 - Singleton pattern for Prisma client
 - Connection pooling with configurable limits
 - Health check functionality
@@ -57,6 +62,7 @@ Implemented 8 repositories with clean separation of concerns:
 - Error handling with custom error types
 
 #### Caching Strategy
+
 - PostgreSQL-based L2 cache
 - TTL-based expiration
 - Cache hit tracking for LLM responses
@@ -64,6 +70,7 @@ Implemented 8 repositories with clean separation of concerns:
 - Cache statistics and monitoring
 
 #### Rate Limiting
+
 - Token bucket algorithm
 - Per-user, per-endpoint limits
 - Configurable time windows
@@ -71,6 +78,7 @@ Implemented 8 repositories with clean separation of concerns:
 - Usage statistics
 
 #### Audit Logging
+
 - Comprehensive action tracking
 - User, action, resource, result logging
 - IP address and user agent capture
@@ -80,6 +88,7 @@ Implemented 8 repositories with clean separation of concerns:
 ### 4. Database Seeding
 
 Created seed script with:
+
 - 2 test users (free and pro tiers)
 - Voice and face models
 - Knowledge documents
@@ -96,6 +105,7 @@ Created comprehensive documentation:
 4. **DATABASE-ARCHITECTURE.md**: Detailed architecture documentation
 
 Updated root documentation:
+
 - Added database package to README
 - Updated documentation index
 - Added database architecture link
@@ -109,6 +119,7 @@ Updated root documentation:
 ## Technical Decisions
 
 ### Why Prisma ORM?
+
 - Type-safe database access with auto-generated types
 - Excellent TypeScript integration
 - Built-in migration system
@@ -116,6 +127,7 @@ Updated root documentation:
 - Good performance with connection pooling
 
 ### Why Repository Pattern?
+
 - Clean separation of data access logic
 - Easy to test with mocks
 - Centralized query logic
@@ -123,6 +135,7 @@ Updated root documentation:
 - Flexibility to swap implementations
 
 ### Why PostgreSQL for Caching?
+
 - Shared cache across application instances
 - ACID guarantees for cache consistency
 - No additional infrastructure needed
@@ -130,6 +143,7 @@ Updated root documentation:
 - Automatic cleanup with scheduled jobs
 
 ### Why Soft Delete?
+
 - Data recovery for user mistakes
 - Compliance and audit requirements
 - Better user experience (undo operations)
@@ -201,24 +215,22 @@ const embedding = await cacheRepo.getEmbedding('query-hash');
 
 // Rate limiting
 const rateLimitRepo = factory.getRateLimitRepository();
-const result = await rateLimitRepo.checkAndIncrement(
-  userId,
-  '/api/conversations',
-  60,
-  60
-);
+const result = await rateLimitRepo.checkAndIncrement(userId, '/api/conversations', 60, 60);
 ```
 
 ## Performance Characteristics
 
 ### Query Performance
+
 - User lookup by email: < 5ms (indexed)
 - Session retrieval with turns: < 20ms (with includes)
 - Cache lookup: < 10ms (indexed)
 - Rate limit check: < 5ms (indexed)
 
 ### Indexes
+
 All foreign keys and frequently queried fields are indexed:
+
 - users.email, users.deletedAt
 - voice_models.userId, voice_models.isActive
 - conversation_sessions.userId, conversation_sessions.startedAt
@@ -227,6 +239,7 @@ All foreign keys and frequently queried fields are indexed:
 - rate_limits has composite index on (userId, endpoint, windowStart)
 
 ### Connection Pooling
+
 - Default pool size: Based on database configuration
 - Connection timeout: 10 seconds
 - Pool timeout: 10 seconds
@@ -235,6 +248,7 @@ All foreign keys and frequently queried fields are indexed:
 ## Testing
 
 ### Manual Testing
+
 ```bash
 # Build package
 pnpm build
@@ -253,7 +267,9 @@ pnpm prisma:studio
 ```
 
 ### Integration Testing
+
 The repositories can be tested with:
+
 - In-memory SQLite for unit tests
 - Test PostgreSQL database for integration tests
 - Mock Prisma client for isolated tests
@@ -261,6 +277,7 @@ The repositories can be tested with:
 ## Migration Strategy
 
 ### Development
+
 1. Modify `schema.prisma`
 2. Run `pnpm prisma migrate dev --name migration_name`
 3. Review generated SQL
@@ -268,6 +285,7 @@ The repositories can be tested with:
 5. Commit migration files
 
 ### Production
+
 1. Test on staging
 2. Create backup
 3. Run `pnpm prisma migrate deploy`
@@ -277,17 +295,20 @@ The repositories can be tested with:
 ## Security Considerations
 
 ### Data Encryption
+
 - At rest: Cloud SQL automatic encryption (AES-256)
 - In transit: TLS 1.3 for all connections
 - Key management: Google Cloud KMS
 
 ### Access Control
+
 - Principle of least privilege
 - Service accounts per service
 - IP whitelisting for production
 - Row-level security by userId
 
 ### Audit Trail
+
 - All sensitive operations logged
 - IP address and user agent captured
 - 90-day retention for audit logs
@@ -296,6 +317,7 @@ The repositories can be tested with:
 ## Monitoring
 
 ### Key Metrics to Monitor
+
 - Connection pool utilization
 - Query latency (p50, p95, p99)
 - Error rate
@@ -304,6 +326,7 @@ The repositories can be tested with:
 - Backup status
 
 ### Alerts
+
 - Critical: Database down, backup failed
 - Warning: High latency, high connection usage
 - Info: Slow queries, cache misses
@@ -335,12 +358,14 @@ The repositories can be tested with:
 ## Compliance
 
 ### GDPR
+
 - User data isolation by userId
 - Soft delete for data retention
 - Data export functionality (via repositories)
 - Right to be forgotten (hard delete)
 
 ### SOC 2
+
 - Comprehensive audit logging
 - Access control and authentication
 - Data encryption at rest and in transit
@@ -349,6 +374,7 @@ The repositories can be tested with:
 ## Conclusion
 
 The database layer is production-ready with:
+
 - ✅ Complete schema for all entities
 - ✅ Repository pattern for clean architecture
 - ✅ Soft delete support
@@ -361,6 +387,7 @@ The database layer is production-ready with:
 - ✅ Seeding for development
 
 The implementation follows best practices for:
+
 - Type safety (TypeScript + Prisma)
 - Performance (indexes, connection pooling, caching)
 - Security (encryption, access control, audit logging)

@@ -36,10 +36,10 @@ export class ServiceRegistry {
     };
 
     const existing = this.services.get(endpoint.serviceName) || [];
-    
+
     // Check if this exact endpoint already exists
     const existingIndex = existing.findIndex(
-      e => e.host === endpoint.host && e.port === endpoint.port
+      (e) => e.host === endpoint.host && e.port === endpoint.port
     );
 
     if (existingIndex >= 0) {
@@ -60,9 +60,7 @@ export class ServiceRegistry {
     const endpoints = this.services.get(serviceName);
     if (!endpoints) return;
 
-    const filtered = endpoints.filter(
-      e => !(e.host === host && e.port === port)
-    );
+    const filtered = endpoints.filter((e) => !(e.host === host && e.port === port));
 
     if (filtered.length === 0) {
       this.services.delete(serviceName);
@@ -76,7 +74,7 @@ export class ServiceRegistry {
    */
   getEndpoints(serviceName: string): ServiceEndpoint[] {
     const endpoints = this.services.get(serviceName) || [];
-    return endpoints.filter(e => e.healthy);
+    return endpoints.filter((e) => e.healthy);
   }
 
   /**
@@ -110,7 +108,7 @@ export class ServiceRegistry {
     const endpoints = this.services.get(serviceName);
     if (!endpoints) return;
 
-    const endpoint = endpoints.find(e => e.host === host && e.port === port);
+    const endpoint = endpoints.find((e) => e.host === host && e.port === port);
     if (endpoint) {
       endpoint.healthy = false;
       endpoint.lastHealthCheck = new Date();
@@ -124,7 +122,7 @@ export class ServiceRegistry {
     const endpoints = this.services.get(serviceName);
     if (!endpoints) return;
 
-    const endpoint = endpoints.find(e => e.host === host && e.port === port);
+    const endpoint = endpoints.find((e) => e.host === host && e.port === port);
     if (endpoint) {
       endpoint.healthy = true;
       endpoint.lastHealthCheck = new Date();

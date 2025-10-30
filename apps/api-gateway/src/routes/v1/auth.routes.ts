@@ -1,17 +1,18 @@
 import { Router, type Router as RouterType } from 'express';
 import { body } from 'express-validator';
-import { 
-  register, 
-  login, 
-  refreshToken, 
-  loginWithGoogle, 
-  loginWithApple, 
+
+import {
+  register,
+  login,
+  refreshToken,
+  loginWithGoogle,
+  loginWithApple,
   logout,
-  getCurrentUser 
+  getCurrentUser,
 } from '../../controllers/auth.controller';
-import { validate } from '../../middleware/validation.middleware';
-import { authLimiter } from '../../middleware/rateLimit.middleware';
 import { authMiddleware } from '../../middleware/auth.middleware';
+import { authLimiter } from '../../middleware/rateLimit.middleware';
+import { validate } from '../../middleware/validation.middleware';
 
 const router: RouterType = Router();
 
@@ -24,53 +25,26 @@ router.post(
   validate([
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 8 }),
-    body('name').trim().notEmpty()
+    body('name').trim().notEmpty(),
   ]),
   register
 );
 
 router.post(
   '/login',
-  validate([
-    body('email').isEmail().normalizeEmail(),
-    body('password').notEmpty()
-  ]),
+  validate([body('email').isEmail().normalizeEmail(), body('password').notEmpty()]),
   login
 );
 
 // OAuth endpoints
-router.post(
-  '/oauth/google',
-  validate([
-    body('token').notEmpty()
-  ]),
-  loginWithGoogle
-);
+router.post('/oauth/google', validate([body('token').notEmpty()]), loginWithGoogle);
 
-router.post(
-  '/oauth/apple',
-  validate([
-    body('token').notEmpty()
-  ]),
-  loginWithApple
-);
+router.post('/oauth/apple', validate([body('token').notEmpty()]), loginWithApple);
 
 // Token management
-router.post(
-  '/refresh',
-  validate([
-    body('refreshToken').notEmpty()
-  ]),
-  refreshToken
-);
+router.post('/refresh', validate([body('refreshToken').notEmpty()]), refreshToken);
 
-router.post(
-  '/logout',
-  validate([
-    body('refreshToken').notEmpty()
-  ]),
-  logout
-);
+router.post('/logout', validate([body('refreshToken').notEmpty()]), logout);
 
 // User profile
 router.get('/me', authMiddleware, getCurrentUser);

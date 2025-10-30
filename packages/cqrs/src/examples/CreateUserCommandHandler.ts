@@ -8,7 +8,10 @@ import { v4 as uuidv4 } from 'uuid';
  * Example: Create User Command Handler
  * Demonstrates how to implement a command handler with validation and event emission
  */
-export class CreateUserCommandHandler extends BaseCommandHandler<CreateUserCommand, { userId: string }> {
+export class CreateUserCommandHandler extends BaseCommandHandler<
+  CreateUserCommand,
+  { userId: string }
+> {
   /**
    * Validate the command
    */

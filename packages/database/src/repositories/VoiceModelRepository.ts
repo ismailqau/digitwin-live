@@ -1,4 +1,5 @@
 import { PrismaClient, VoiceModel, Prisma } from '@prisma/client';
+
 import { BaseRepository } from './BaseRepository';
 
 /**

@@ -46,7 +46,7 @@ export class GetUserProfileQueryHandler extends BaseQueryHandler<
     try {
       // In a real implementation, this would query the materialized view
       // SELECT * FROM user_profile_view WHERE id = $1
-      
+
       // Simulated data for example
       const profile: UserProfileDTO = {
         id: query.payload.userId,

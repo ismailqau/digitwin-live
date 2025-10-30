@@ -52,4 +52,32 @@ Thumbs.db
 # Terraform
 *.tfstate
 *.tfstate.backup
+*.tfplan
 .terraform/
+.terraform.lock.hcl
+
+# Logs (keep directory structure with .gitkeep)
+logs/
+*.log
+!logs/.gitkeep
+
+# Uploads and temporary files (keep directory structure with .gitkeep)
+uploads/
+tmp/
+!uploads/.gitkeep
+!tmp/.gitkeep
+
+# Cache directories (keep directory structure with .gitkeep)
+cache/
+!cache/.gitkeep
+
+# Service account keys and secrets
+*.json
+!package.json
+!package-lock.json
+!tsconfig*.json
+!.vscode/*.json
+terraform-key-*.json
+
+# Generated files
+*.tfvars.json

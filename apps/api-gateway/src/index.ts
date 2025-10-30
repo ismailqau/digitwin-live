@@ -1,12 +1,13 @@
-import express, { type Express } from 'express';
 import cors from 'cors';
+import express, { type Express } from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
+
 import { swaggerSpec } from './config/swagger';
-import v1Routes from './routes/v1';
-import { correlationIdMiddleware, requestLogger } from './middleware/requestLogger.middleware';
-import { apiLimiter } from './middleware/rateLimit.middleware';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.middleware';
+import { apiLimiter } from './middleware/rateLimit.middleware';
+import { correlationIdMiddleware, requestLogger } from './middleware/requestLogger.middleware';
+import v1Routes from './routes/v1';
 
 const PORT = process.env.PORT || 3000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
@@ -15,10 +16,12 @@ const app: Express = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: CORS_ORIGIN,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: CORS_ORIGIN,
+    credentials: true,
+  })
+);
 
 // Request parsing
 app.use(express.json());
@@ -37,16 +40,20 @@ app.get('/health', (_req, res) => {
     status: 'healthy',
     service: 'api-gateway',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Conversational Clone API Documentation'
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Conversational Clone API Documentation',
+  })
+);
 
 // Serve OpenAPI spec as JSON
 app.get('/api-docs.json', (_req, res) => {

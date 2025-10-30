@@ -1,4 +1,5 @@
 import { PrismaClient, AuditLog } from '@prisma/client';
+
 import { PaginatedResult, PaginationOptions } from './BaseRepository';
 
 /**
@@ -173,10 +174,13 @@ export class AuditLogRepository {
     const successfulActions = logs.filter((l) => l.result === 'success').length;
     const failedActions = logs.filter((l) => l.result === 'failure').length;
 
-    const actionsByType = logs.reduce((acc, l) => {
-      acc[l.action] = (acc[l.action] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const actionsByType = logs.reduce(
+      (acc, l) => {
+        acc[l.action] = (acc[l.action] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const recentFailures = logs.filter((l) => l.result === 'failure').slice(0, 10);
 
@@ -192,9 +196,7 @@ export class AuditLogRepository {
   /**
    * Get system-wide audit statistics
    */
-  async getSystemStatistics(
-    daysBack = 7
-  ): Promise<{
+  async getSystemStatistics(daysBack = 7): Promise<{
     totalActions: number;
     successRate: number;
     topActions: Array<{ action: string; count: number }>;
@@ -215,10 +217,13 @@ export class AuditLogRepository {
     const successRate = totalActions > 0 ? successfulActions / totalActions : 0;
 
     // Count by action
-    const actionCounts = logs.reduce((acc, l) => {
-      acc[l.action] = (acc[l.action] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const actionCounts = logs.reduce(
+      (acc, l) => {
+        acc[l.action] = (acc[l.action] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const topActions = Object.entries(actionCounts)
       .map(([action, count]) => ({ action, count }))
@@ -226,10 +231,13 @@ export class AuditLogRepository {
       .slice(0, 10);
 
     // Count by user
-    const userCounts = logs.reduce((acc, l) => {
-      acc[l.userId] = (acc[l.userId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const userCounts = logs.reduce(
+      (acc, l) => {
+        acc[l.userId] = (acc[l.userId] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const topUsers = Object.entries(userCounts)
       .map(([userId, count]) => ({ userId, count }))

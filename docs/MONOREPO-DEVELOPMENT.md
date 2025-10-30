@@ -5,13 +5,17 @@ Guide for working with the Conversational Clone monorepo using Turborepo and pnp
 ## 📁 Directory Structure
 
 ### Apps (`apps/`)
+
 Deployable applications that run independently:
+
 - **api-gateway** - REST API with OpenAPI docs
 - **websocket-server** - Real-time WebSocket server
 - **mobile-app** - React Native app (iOS/Android)
 
 ### Services (`services/`)
+
 Backend microservices deployed as containers:
+
 - **asr-service** - Speech recognition (Google Chirp)
 - **rag-service** - Retrieval-Augmented Generation
 - **llm-service** - LLM integration (multi-provider)
@@ -20,7 +24,9 @@ Backend microservices deployed as containers:
 - **face-processing-service** - Face detection and models
 
 ### Packages (`packages/`)
+
 Shared internal libraries:
+
 - **shared-types** - TypeScript types and interfaces
 - **config** - Environment configuration
 - **logger** - Structured logging (Winston)
@@ -33,6 +39,7 @@ Shared internal libraries:
 ## 🏷️ Package Naming
 
 All internal packages use the `@clone/` scope:
+
 ```json
 {
   "name": "@clone/shared-types",
@@ -57,6 +64,7 @@ Use `workspace:*` protocol to link local packages:
 ## 🛠️ Common Commands
 
 ### Install Dependencies
+
 ```bash
 # Install all dependencies
 pnpm install
@@ -66,6 +74,7 @@ pnpm --filter @clone/websocket-server install
 ```
 
 ### Build
+
 ```bash
 # Build all packages
 pnpm build
@@ -78,6 +87,7 @@ pnpm --filter @clone/api-gateway... build
 ```
 
 ### Development
+
 ```bash
 # Run all dev servers
 pnpm dev
@@ -88,6 +98,7 @@ pnpm --filter @clone/api-gateway dev
 ```
 
 ### Testing
+
 ```bash
 # Run all tests
 pnpm test
@@ -100,6 +111,7 @@ pnpm --filter @clone/utils test --watch
 ```
 
 ### Linting & Formatting
+
 ```bash
 # Lint all code
 pnpm lint
@@ -112,6 +124,7 @@ pnpm type-check
 ```
 
 ### Add Dependencies
+
 ```bash
 # Add to specific package
 pnpm --filter @clone/api-gateway add express
@@ -135,12 +148,14 @@ Turborepo automatically handles build order based on dependencies:
 ## 📝 Adding a New Package
 
 ### 1. Create Directory Structure
+
 ```bash
 mkdir -p packages/my-package/src
 cd packages/my-package
 ```
 
 ### 2. Create `package.json`
+
 ```json
 {
   "name": "@clone/my-package",
@@ -161,6 +176,7 @@ cd packages/my-package
 ```
 
 ### 3. Create `tsconfig.json`
+
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -174,6 +190,7 @@ cd packages/my-package
 ```
 
 ### 4. Add Path Alias (in root `tsconfig.base.json`)
+
 ```json
 {
   "paths": {
@@ -183,12 +200,14 @@ cd packages/my-package
 ```
 
 ### 5. Create Source Files
+
 ```bash
 # Create main file
 echo "export const hello = () => 'Hello';" > src/index.ts
 ```
 
 ### 6. Install and Build
+
 ```bash
 # From root
 pnpm install
@@ -200,23 +219,28 @@ pnpm --filter @clone/my-package build
 Turborepo caches build outputs for faster subsequent builds.
 
 ### Cache Location
+
 ```bash
 .turbo/          # Cache directory
 ```
 
 ### Clear Cache
+
 ```bash
 rm -rf .turbo
 pnpm clean
 ```
 
 ### Force Rebuild (Skip Cache)
+
 ```bash
 turbo run build --force
 ```
 
 ### Cache Configuration
+
 Cache settings are in `turbo.json`:
+
 ```json
 {
   "pipeline": {
@@ -231,7 +255,9 @@ Cache settings are in `turbo.json`:
 ## 🧪 Testing Strategy
 
 ### Unit Tests
+
 Place tests alongside source files:
+
 ```
 src/
 ├── utils.ts
@@ -239,7 +265,9 @@ src/
 ```
 
 ### Integration Tests
+
 Create dedicated test directories:
+
 ```
 tests/
 ├── integration/
@@ -247,6 +275,7 @@ tests/
 ```
 
 ### Run Tests
+
 ```bash
 # All tests
 pnpm test
@@ -264,12 +293,15 @@ pnpm test --coverage
 ## 🎯 Best Practices
 
 ### 1. Keep Packages Focused
+
 Each package should have a single, well-defined purpose.
 
 ### 2. Minimize Dependencies
+
 Only add necessary dependencies. Prefer shared packages over duplication.
 
 ### 3. Use TypeScript Strictly
+
 ```typescript
 // ✅ Good
 export function add(a: number, b: number): number {
@@ -283,6 +315,7 @@ export function add(a: any, b: any): any {
 ```
 
 ### 4. Document Public APIs
+
 ```typescript
 /**
  * Adds two numbers together
@@ -296,6 +329,7 @@ export function add(a: number, b: number): number {
 ```
 
 ### 5. Handle Errors Properly
+
 ```typescript
 import { AppError } from '@clone/errors';
 
@@ -303,6 +337,7 @@ throw new AppError('Invalid input', 400);
 ```
 
 ### 6. Log Consistently
+
 ```typescript
 import { logger } from '@clone/logger';
 
@@ -310,12 +345,13 @@ logger.info('Processing request', { userId: '123' });
 ```
 
 ### 7. Validate Input
+
 ```typescript
 import { z } from 'zod';
 
 const schema = z.object({
   email: z.string().email(),
-  age: z.number().min(0)
+  age: z.number().min(0),
 });
 
 const data = schema.parse(input);
@@ -326,12 +362,14 @@ const data = schema.parse(input);
 ### Build Errors
 
 **TypeScript can't find shared package**
+
 ```bash
 # Build dependencies first
 pnpm --filter @clone/shared-types build
 ```
 
 **Module resolution errors**
+
 ```bash
 # Check path aliases in tsconfig.base.json
 # Ensure package names match
@@ -340,6 +378,7 @@ pnpm --filter @clone/shared-types build
 ### Dependency Issues
 
 **Dependency not found**
+
 ```bash
 # Reinstall all dependencies
 rm -rf node_modules
@@ -347,6 +386,7 @@ pnpm install
 ```
 
 **Version conflicts**
+
 ```bash
 # Dedupe dependencies
 pnpm dedupe
@@ -355,6 +395,7 @@ pnpm dedupe
 ### Cache Issues
 
 **Stale build outputs**
+
 ```bash
 # Clear everything and rebuild
 rm -rf .turbo
@@ -363,6 +404,7 @@ pnpm build
 ```
 
 **Turborepo not detecting changes**
+
 ```bash
 # Force rebuild
 turbo run build --force
