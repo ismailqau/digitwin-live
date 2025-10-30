@@ -167,7 +167,7 @@ export class AuthService {
 
       // Generate new token pair
       return this.generateTokenPair(user);
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired refresh token');
     }
   }
@@ -175,7 +175,7 @@ export class AuthService {
   verifyAccessToken(token: string): JWTPayload {
     try {
       return jwt.verify(token, this.JWT_SECRET) as JWTPayload;
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired access token');
     }
   }
@@ -184,7 +184,7 @@ export class AuthService {
     try {
       const decoded = jwt.verify(refreshToken, this.REFRESH_SECRET) as RefreshTokenPayload;
       this.refreshTokens.delete(decoded.tokenId);
-    } catch (error) {
+    } catch {
       // Token already invalid, nothing to revoke
     }
   }

@@ -86,7 +86,7 @@ export const optionalAuthMiddleware = (
     }
 
     next();
-  } catch (error) {
+  } catch {
     // Ignore auth errors for optional auth
     next();
   }

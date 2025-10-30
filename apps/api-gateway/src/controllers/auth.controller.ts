@@ -432,7 +432,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     res.json({
       message: 'Logout successful',
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: {
         code: 'LOGOUT_FAILED',
@@ -481,7 +481,7 @@ export const getCurrentUser = async (req: AuthRequest, res: Response): Promise<v
       permissions: req.user.permissions,
       roles: req.user.roles,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: {
         code: 'FETCH_USER_FAILED',

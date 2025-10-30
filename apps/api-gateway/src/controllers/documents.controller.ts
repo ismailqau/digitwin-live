@@ -28,7 +28,7 @@ export const getDocuments = async (_req: AuthRequest, res: Response): Promise<vo
     res.json({
       documents: [],
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: {
         code: 'FETCH_DOCUMENTS_FAILED',
@@ -77,7 +77,7 @@ export const getDocumentById = async (req: AuthRequest, res: Response): Promise<
       status: 'completed',
       chunkCount: 10,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: {
         code: 'FETCH_DOCUMENT_FAILED',
@@ -128,7 +128,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       status: 'pending',
       chunkCount: 0,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: {
         code: 'UPLOAD_FAILED',
@@ -161,7 +161,7 @@ export const deleteDocument = async (_req: AuthRequest, res: Response): Promise<
   try {
     // TODO: Delete document from database and storage
     res.status(204).send();
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: {
         code: 'DELETE_FAILED',
