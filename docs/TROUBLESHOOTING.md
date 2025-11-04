@@ -1,6 +1,105 @@
 # Troubleshooting Guide
 
-Common issues and their solutions for the Conversational Clone System.
+Common issues and their solutions for the DigitWin Live System.
+
+## Vector Database Issues
+
+### Issue: pgvector Extension Not Found
+
+**Symptoms:**
+```bash
+ERROR: could not open extension control file "/path/to/vector.control": No such file or directory
+```
+
+**Solutions:**
+
+1. **Install pgvector for your PostgreSQL version:**
+   ```bash
+   # macOS with Homebrew
+   brew install pgvector
+   
+   # Ubuntu/Debian
+   sudo apt install postgresql-15-pgvector
+   
+   # From source
+   git clone https://github.com/pgvector/pgvector.git
+   cd pgvector && make && sudo make install
+   ```
+
+2. **Check PostgreSQL version compatibility:**
+   ```bash
+   psql -c "SELECT version();"
+   # Ensure pgvector supports your PostgreSQL version
+   ```
+
+3. **Use Weaviate as alternative:**
+   ```bash
+   # Update .env
+   WEAVIATE_ENABLED=true
+   WEAVIATE_URL=http://localhost:8080
+   
+   # Start Weaviate
+   docker run -d --name weaviate -p 8080:8080 \
+     -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+     semitechnologies/weaviate:latest
+   ```
+
+### Issue: Weaviate Connection Failed
+
+**Symptoms:**
+```bash
+Error: connect ECONNREFUSED 127.0.0.1:8080
+```
+
+**Solutions:**
+
+1. **Check if Weaviate is running:**
+   ```bash
+   curl http://localhost:8080/v1/meta
+   docker ps | grep weaviate
+   ```
+
+2. **Start Weaviate:**
+   ```bash
+   docker run -d --name weaviate -p 8080:8080 \
+     -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+     semitechnologies/weaviate:latest
+   ```
+
+3. **Check Docker is running:**
+   ```bash
+   docker --version
+   docker info
+   ```
+
+### Issue: Vector Database Migration Failed
+
+**Symptoms:**
+```bash
+Error: P1010: User was denied access on the database
+```
+
+**Solutions:**
+
+1. **Check database credentials:**
+   ```bash
+   # Test connection
+   psql "$DATABASE_URL"
+   
+   # Update DATABASE_URL with correct credentials
+   DATABASE_URL=postgresql://correct_user@localhost:5432/dbname
+   ```
+
+2. **Create database if it doesn't exist:**
+   ```bash
+   createdb digitwinline_dev
+   ```
+
+3. **Run migrations:**
+   ```bash
+   pnpm db:migrate
+   pnpm db:generate
+   ```
 
 ## Environment Variables
 
@@ -243,20 +342,20 @@ pnpm build
 **Symptoms:**
 
 ```bash
-error: database "conversational_clone_dev" does not exist
+error: database "digitwin_live_dev" does not exist
 ```
 
 **Solution:**
 
 ```bash
 # Create database
-createdb conversational_clone_dev
+createdb digitwin_live_dev
 
 # Or using psql
-psql -U postgres -c "CREATE DATABASE conversational_clone_dev;"
+psql -U postgres -c "CREATE DATABASE digitwin_live_dev;"
 
 # Verify
-psql -U postgres -l | grep conversational_clone
+psql -U postgres -l | grep digitwin_live
 ```
 
 ### Issue: Migration Failed
@@ -271,8 +370,8 @@ Error: Migration failed to apply
 
 ```bash
 # Reset database (development only!)
-dropdb conversational_clone_dev
-createdb conversational_clone_dev
+dropdb digitwin_live_dev
+createdb digitwin_live_dev
 
 # Run migrations
 cd packages/database
@@ -302,7 +401,7 @@ rm -rf infrastructure/terraform/.terraform
 ./infrastructure/scripts/init-terraform.sh dev
 
 # Verify backend bucket exists
-gsutil ls gs://conversational-clone-dev-tfstate
+gsutil ls gs://digitwin-live-dev-tfstate
 ```
 
 ### Issue: GCP Authentication Failed
@@ -406,10 +505,10 @@ Error: connect ECONNREFUSED (test database)
 
 ```bash
 # Create test database
-createdb conversational_clone_test
+createdb digitwin_live_test
 
 # Set test database URL
-export TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/conversational_clone_test"
+export TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/digitwin_live_test"
 
 # Run migrations on test database
 cd packages/database

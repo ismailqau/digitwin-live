@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Real-Time Conversational Clone system implements the CQRS (Command Query Responsibility Segregation) pattern to achieve scalability and performance. This architecture separates read and write operations, allowing each to be optimized independently.
+The Real-Time DigitWin Live system implements the CQRS (Command Query Responsibility Segregation) pattern to achieve scalability and performance. This architecture separates read and write operations, allowing each to be optimized independently.
 
 ## Architecture Diagram
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to set up environment variables for the Conversational Clone platform across different environments.
+This guide explains how to set up environment variables for the DigitWin Live platform across different environments.
 
 ## Quick Start
 
@@ -135,8 +135,8 @@ gcloud services enable sqladmin.googleapis.com
 
 # Create instance
 gcloud sql instances create clone-db-prod \
-  --database-version=POSTGRES_15 \
-  --tier=db-custom-4-16384 \
+  --database-version=POSTGRES_17 \
+  --tier=db-perf-optimized-N-4 \
   --region=us-central1
 
 # Create database
@@ -149,7 +149,9 @@ gcloud sql instances describe clone-db-prod \
 
 # Set environment variables
 CLOUD_SQL_CONNECTION_NAME=project:region:instance
+CLOUD_SQL_CONNECTION_NAME=digitwinlive:us-central1:clone-db-prod
 DATABASE_URL=postgresql://user:pass@/db?host=/cloudsql/project:region:instance
+DATABASE_URL=postgresql://user:pass@/db?host=/cloudsql/digitwinlive:us-central1:clone-db-prod
 ```
 
 ### Caching Setup
@@ -262,16 +264,28 @@ GOOGLE_APPLICATION_CREDENTIALS=./secrets/gcp-service-account.json
 
 ### Vector Database
 
-#### Pinecone
+#### PostgreSQL with pgvector (Recommended)
 
-1. Sign up at [Pinecone](https://www.pinecone.io/)
-2. Create index
-3. Get API key
+The application uses PostgreSQL with the pgvector extension for vector storage and similarity search. This provides:
 
+- **Cost-effective**: No separate vector database service needed
+- **Simplified infrastructure**: Single database for all data
+- **ACID compliance**: Transactional consistency
+- **High performance**: Sub-5ms vector similarity searches with proper indexing
+
+**Setup:**
+
+1. Install pgvector extension in your PostgreSQL database:
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+2. The vector tables will be created automatically by the application migrations.
+
+3. Configuration (uses existing DATABASE_URL):
 ```bash
-PINECONE_API_KEY=your-pinecone-api-key
-PINECONE_ENVIRONMENT=us-west1-gcp
-PINECONE_INDEX_NAME=digitwin-live
+VECTOR_DIMENSIONS=768  # Google text-embedding-004 dimension
+VECTOR_INDEX_LISTS=100  # IVFFlat index parameter
 ```
 
 #### Weaviate (Self-hosted)

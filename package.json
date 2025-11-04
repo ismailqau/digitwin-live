@@ -2,7 +2,7 @@
   "name": "digitwin-live",
   "version": "1.0.0",
   "private": true,
-  "description": "Real-Time Conversational Clone System - Monorepo",
+  "description": "DigitWin Live - Real-Time Conversational AI System - Monorepo",
   "workspaces": [
     "apps/*",
     "services/*",
@@ -15,7 +15,12 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "turbo run clean && rm -rf node_modules",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "db:generate": "pnpm --filter @clone/database prisma:generate",
+    "db:migrate": "pnpm --filter @clone/database prisma:migrate",
+    "db:migrate:deploy": "pnpm --filter @clone/database prisma:migrate:deploy",
+    "db:studio": "pnpm --filter @clone/database prisma:studio",
+    "db:seed": "pnpm --filter @clone/database prisma:seed"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",

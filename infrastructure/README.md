@@ -1,6 +1,6 @@
 # Infrastructure
 
-This directory contains all infrastructure-as-code (IaC) configurations for the Real-Time Conversational Clone System.
+This directory contains all infrastructure-as-code (IaC) configurations for the Real-Time DigitWin Live System.
 
 ## Structure
 
@@ -36,6 +36,8 @@ infrastructure/
 - Google Cloud SDK (gcloud CLI)
 - GCP project with billing enabled
 - Service account with appropriate permissions
+
+**📖 Installation Help**: See [Tool Installation Guide](../docs/TOOL-INSTALLATION.md) for installing Terraform and gcloud CLI.
 
 ### Deploy Infrastructure
 

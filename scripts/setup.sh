@@ -63,9 +63,9 @@ GOOGLE_CLOUD_API_KEY=your-google-api-key
 OPENAI_API_KEY=your-openai-api-key
 GROQ_API_KEY=your-groq-api-key
 
-# Vector Database
-PINECONE_API_KEY=your-pinecone-api-key
-PINECONE_ENVIRONMENT=your-pinecone-environment
+# Vector Database - PostgreSQL with pgvector (uses same DATABASE_URL)
+VECTOR_DIMENSIONS=768
+VECTOR_INDEX_LISTS=100
 
 # Storage
 CLOUD_STORAGE_BUCKET=your-storage-bucket

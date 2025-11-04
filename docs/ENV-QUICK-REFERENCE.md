@@ -60,14 +60,15 @@ GOOGLE_TTS_API_KEY=<key>
 ### Vector Database
 
 ```bash
-# Pinecone
-PINECONE_API_KEY=<key>
-PINECONE_ENVIRONMENT=us-west1-gcp
-PINECONE_INDEX_NAME=digitwin-live
+# Option A: PostgreSQL with pgvector (uses same DATABASE_URL)
+VECTOR_DIMENSIONS=768
+VECTOR_INDEX_LISTS=100
+WEAVIATE_ENABLED=false
 
-# Weaviate
+# Option B: Weaviate (self-hosted)
 WEAVIATE_URL=http://localhost:8080
-WEAVIATE_API_KEY=<key>
+WEAVIATE_API_KEY=  # Leave empty for anonymous access
+WEAVIATE_ENABLED=true
 ```
 
 ### Caching & Rate Limiting
@@ -121,6 +122,13 @@ REFRESH_SECRET=dev-refresh-secret-change-me
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app_dev
 API_GATEWAY_PORT=3000
 WEBSOCKET_PORT=3001
+
+# Vector Database (choose one)
+WEAVIATE_ENABLED=true  # Use Weaviate (easier setup)
+WEAVIATE_URL=http://localhost:8080
+# OR
+WEAVIATE_ENABLED=false  # Use PostgreSQL + pgvector
+VECTOR_DIMENSIONS=768
 ```
 
 ### Production Minimum

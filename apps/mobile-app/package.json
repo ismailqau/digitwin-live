@@ -2,7 +2,7 @@
   "name": "@clone/mobile-app",
   "version": "1.0.0",
   "private": true,
-  "description": "React Native mobile application for conversational clone",
+  "description": "React Native mobile application for DigitWin Live",
   "main": "index.js",
   "scripts": {
     "start": "expo start",

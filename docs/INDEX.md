@@ -1,14 +1,17 @@
 # Documentation Index
 
-Complete index of all documentation for the Conversational Clone platform.
+Complete index of all documentation for the DigitWin Live platform.
 
 ## 📁 Documentation Structure
 
 ```
 docs/
 ├── GETTING-STARTED.md           # Quick setup guide
+├── TOOL-INSTALLATION.md         # Tool installation guide (Node, PostgreSQL, Terraform, etc.)
 ├── ENVIRONMENT-SETUP.md         # Comprehensive configuration
 ├── ENV-QUICK-REFERENCE.md       # Environment variables cheat sheet
+├── TROUBLESHOOTING.md           # Common issues and solutions
+├── GCP-INFRASTRUCTURE.md        # GCP infrastructure documentation
 ├── CACHING-ARCHITECTURE.md      # PostgreSQL caching design
 ├── DATABASE-ARCHITECTURE.md     # Database schema and repository pattern
 └── README.md                    # Documentation hub
@@ -33,9 +36,14 @@ Root:
 
 ### Setup & Configuration
 
+- [Tool Installation](./TOOL-INSTALLATION.md) - Install Node.js, PostgreSQL, Terraform, and more
 - [Getting Started](./GETTING-STARTED.md) - 5-step quick setup
 - [Environment Setup](./ENVIRONMENT-SETUP.md) - Detailed setup guide
 - [Quick Reference](./ENV-QUICK-REFERENCE.md) - Variables cheat sheet
+- [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
+- [Vector Database Migration](./VECTOR-DATABASE-MIGRATION.md) - Pinecone to PostgreSQL migration guide
+- [Vector Database Setup](./VECTOR-DATABASE-SETUP.md) - Complete setup guide for vector databases
+- [Migration Checklist](./MIGRATION-CHECKLIST.md) - Verification checklist for the vector database migration
 
 ### Authentication & Security
 
@@ -43,11 +51,21 @@ Root:
 - [RBAC Guide](../apps/api-gateway/docs/RBAC-GUIDE.md) - Access control
 - [Implementation Summary](../apps/api-gateway/docs/IMPLEMENTATION-SUMMARY.md) - What's implemented
 
+### Infrastructure & Deployment
+
+- [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - Complete GCP setup guide
+- [Infrastructure Setup](../infrastructure/SETUP-GUIDE.md) - Step-by-step Terraform deployment
+- [Infrastructure Quick Reference](../infrastructure/QUICK-REFERENCE.md) - Common commands
+- [Directory Structure](../infrastructure/DIRECTORY-STRUCTURE.md) - Directory preservation guide
+
 ### Architecture & Design
 
-- [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
+- [Caching Summary](./CACHING-SUMMARY.md) - Why PostgreSQL instead of Redis
+- [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching implementation
 - [Database Architecture](./DATABASE-ARCHITECTURE.md) - Database schema and repository pattern
 - [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus and event sourcing
+- [CQRS Architecture](./CQRS-ARCHITECTURE.md) - Command Query Responsibility Segregation
+- [Microservices Communication](./microservices-communication.md) - gRPC and service discovery
 - [Design Document](../.kiro/specs/real-time-digitwin-live/design.md) - System design
 - [Requirements](../.kiro/specs/real-time-digitwin-live/requirements.md) - Requirements
 - [Tasks](../.kiro/specs/real-time-digitwin-live/tasks.md) - Implementation tasks

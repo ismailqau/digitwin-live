@@ -1,4 +1,4 @@
-# Conversational Clone System
+# DigitWin Live
 
 A real-time conversational AI system that enables natural voice conversations with personalized digital twins, featuring voice cloning, face animation, and knowledge-based responses.
 
@@ -38,9 +38,12 @@ digitwin-live/
 
 ### Prerequisites
 
-- **Node.js** 18+
-- **PostgreSQL** 15+
+- **Node.js** 18+ (v20 recommended)
 - **pnpm** 8+
+- **PostgreSQL** 15+ (with pgvector extension) OR **Docker** (for Weaviate)
+- **Git**
+
+**📖 Installation Help**: See [Tool Installation Guide](./docs/TOOL-INSTALLATION.md) for detailed setup instructions.
 
 ### Installation
 
@@ -59,10 +62,21 @@ cp .env.development .env
 node scripts/generate-secrets.js
 # Copy generated secrets to .env
 
-# 4. Create database
+# 4. Set up database
 createdb digitwinline_dev
+pnpm db:migrate
+pnpm db:generate
 
-# 5. Validate and start
+# 5. Set up vector database (choose one)
+# Option A: PostgreSQL with pgvector (recommended)
+# See docs/VECTOR-DATABASE-SETUP.md for pgvector installation
+
+# Option B: Weaviate (free alternative, currently configured)
+docker run -d --name weaviate -p 8080:8080 \
+  -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+  semitechnologies/weaviate:latest
+
+# 6. Validate and start
 node scripts/validate-env.js
 pnpm dev
 ```
@@ -157,7 +171,7 @@ The system follows a microservices architecture with the following key component
 - **Backend**: Node.js, TypeScript, Express, Socket.io
 - **AI Services**: Google Chirp, Gemini, OpenAI, Groq, XTTS-v2
 - **Infrastructure**: Google Cloud Platform (Cloud Run, GKE, Cloud SQL)
-- **Vector Database**: Pinecone
+- **Vector Database**: PostgreSQL with pgvector extension OR Weaviate (self-hosted)
 - **Caching**: PostgreSQL (indexed cache tables)
 - **Build Tool**: Turborepo
 - **Package Manager**: pnpm
@@ -173,6 +187,8 @@ The system follows a microservices architecture with the following key component
 
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive setup guide
 - **[Quick Reference](./docs/ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
+- **[Vector Database Setup](./docs/VECTOR-DATABASE-SETUP.md)** - PostgreSQL pgvector or Weaviate setup
+- **[Vector Database Migration](./docs/VECTOR-DATABASE-MIGRATION.md)** - Pinecone to PostgreSQL migration
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
 
@@ -261,8 +277,18 @@ pnpm build
 JWT_SECRET=<generated-secret>
 REFRESH_SECRET=<generated-secret>
 
-# Database (includes caching)
+# Database (includes caching and vector storage)
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
+
+# Vector Database (choose one)
+# Option A: PostgreSQL with pgvector (uses DATABASE_URL above)
+VECTOR_DIMENSIONS=768
+VECTOR_INDEX_LISTS=100
+WEAVIATE_ENABLED=false
+
+# Option B: Weaviate (self-hosted)
+WEAVIATE_URL=http://localhost:8080
+WEAVIATE_ENABLED=true
 
 # Application
 NODE_ENV=development

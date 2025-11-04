@@ -1,9 +1,9 @@
 # Documentation Map
 
-Visual guide to all documentation in the Conversational Clone platform.
+Visual guide to all documentation in the DigitWin Live platform.
 
 ```
-📦 Conversational Clone Documentation
+📦 DigitWin Live Documentation
 │
 ├── 🚀 GETTING STARTED
 │   ├── README.md (root)                    → Project overview

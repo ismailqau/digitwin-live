@@ -186,7 +186,7 @@
 ## Phase 4: RAG Pipeline and Knowledge Base
 
 - [ ] 4. Implement RAG pipeline foundation
-  - Set up Pinecone vector database in `services/rag-service`
+  - Set up PostgreSQL with pgvector extension in Cloud SQL
   - Integrate Google text-embedding-004 for embeddings
   - Create embedding service for query and document embedding
   - Implement vector search with cosine similarity filtering (> 0.7)

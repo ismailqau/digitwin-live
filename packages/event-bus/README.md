@@ -1,6 +1,6 @@
 # @clone/event-bus
 
-Event-driven architecture implementation using Google Cloud Pub/Sub for the Conversational Clone system.
+Event-driven architecture implementation using Google Cloud Pub/Sub for the DigitWin Live system.
 
 ## Features
 

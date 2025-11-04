@@ -1,6 +1,6 @@
 # Documentation Overview
 
-Quick reference for all documentation in the Conversational Clone platform.
+Quick reference for all documentation in the DigitWin Live platform.
 
 ## 📁 Documentation Files (11 Total)
 

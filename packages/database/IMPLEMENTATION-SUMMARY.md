@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a comprehensive database layer for the Real-Time Conversational Clone System using PostgreSQL 15+ with Prisma ORM and the repository pattern.
+Successfully implemented a comprehensive database layer for the Real-Time DigitWin Live System using PostgreSQL 15+ with Prisma ORM and the repository pattern.
 
 ## What Was Implemented
 

@@ -208,12 +208,36 @@ model KnowledgeDocument {
   deletedAt DateTime? @map("deleted_at") // Soft delete
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks DocumentChunk[]
 
   @@index([userId, uploadedAt])
   @@index([status])
   @@index([deletedAt])
   @@map("knowledge_documents")
+}
+
+// ============================================================================
+// Vector Storage (PostgreSQL with pgvector extension)
+// ============================================================================
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  documentId String   @map("document_id")
+  userId     String   @map("user_id")
+  chunkIndex Int      @map("chunk_index")
+  content    String   @db.Text
+  embedding  String   @db.Text // Stored as text representation of vector for pgvector
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([userId])
+  @@index([documentId])
+  @@map("document_chunks")
 }
 
 // ============================================================================

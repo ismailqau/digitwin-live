@@ -1,6 +1,6 @@
 # Documentation
 
-Complete documentation for the Conversational Clone platform.
+Complete documentation for the DigitWin Live platform.
 
 **📋 [Overview](./DOCUMENTATION-OVERVIEW.md)** | **📑 [Index](./INDEX.md)** | **🗺️ [Map](./DOCUMENTATION-MAP.md)**
 

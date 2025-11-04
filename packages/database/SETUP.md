@@ -1,6 +1,6 @@
 # Database Setup Guide
 
-Quick guide to set up the database for the Conversational Clone System.
+Quick guide to set up the database for the DigitWin Live System.
 
 ## Prerequisites
 

@@ -1,6 +1,6 @@
 # @clone/cqrs
 
-CQRS (Command Query Responsibility Segregation) pattern implementation for the Real-Time Conversational Clone system.
+CQRS (Command Query Responsibility Segregation) pattern implementation for the Real-Time DigitWin Live system.
 
 ## Overview
 

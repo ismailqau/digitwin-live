@@ -36,7 +36,7 @@ The Real-Time Conversational Clone System is a distributed, cloud-native applica
 - Google Chirp (ASR)
 - Gemini 2.5 Flash / GPT-4 Turbo (LLM)
 - XTTS-v2 / Google Cloud TTS / OpenAI TTS (voice synthesis)
-- Pinecone or Weaviate (vector database)
+- PostgreSQL with pgvector extension (vector database)
 
 **Infrastructure:**
 
@@ -475,18 +475,55 @@ interface RAGOrchestrator {
 }
 ```
 
-**Vector Database Schema (Pinecone):**
+**Vector Database Schema (PostgreSQL with pgvector):**
+
+```sql
+-- Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Create embeddings table with vector column
+CREATE TABLE embeddings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  document_id UUID REFERENCES knowledge_documents(id),
+  chunk_index INTEGER NOT NULL,
+  source_type VARCHAR(50) NOT NULL CHECK (source_type IN ('document', 'faq', 'conversation')),
+  content TEXT NOT NULL,
+  embedding vector(768), -- Google text-embedding-004 produces 768-dimensional vectors
+  metadata JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create indexes for efficient vector search
+CREATE INDEX idx_embeddings_user_id ON embeddings(user_id);
+CREATE INDEX idx_embeddings_document_id ON embeddings(document_id);
+CREATE INDEX idx_embeddings_source_type ON embeddings(source_type);
+CREATE INDEX idx_embeddings_vector ON embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+-- Create GIN index for metadata JSONB queries
+CREATE INDEX idx_embeddings_metadata ON embeddings USING gin(metadata);
+```
+
+**TypeScript Interface:**
 
 ```typescript
-interface VectorMetadata {
+interface EmbeddingRecord {
+  id: string;
   userId: string;
   documentId: string;
   chunkIndex: number;
   sourceType: 'document' | 'faq' | 'conversation';
   content: string;
-  timestamp: number;
-  title?: string;
-  url?: string;
+  embedding: number[];
+  metadata: {
+    title?: string;
+    url?: string;
+    timestamp?: number;
+    [key: string]: any;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
@@ -2412,13 +2449,16 @@ CREATE TABLE knowledge_documents (
 - OpenAI TTS: Fast, high quality, easy integration
 - Provider choice based on user preference and budget
 
-**Why Pinecone/Weaviate for Vector DB:**
+**Why PostgreSQL with pgvector for Vector DB:**
 
-- Purpose-built for vector search
-- Low latency queries (< 100ms)
-- Horizontal scalability
-- Managed service option (Pinecone)
-- Self-hosted option (Weaviate)
+- Unified database for all data (vectors, metadata, cache, user data)
+- Excellent performance with proper indexing (< 100ms queries)
+- ACID compliance and transactional consistency
+- Native GCP integration with Cloud SQL
+- Cost-effective (no separate vector database service)
+- Mature ecosystem and tooling
+- Supports HNSW and IVFFlat indexes for fast similarity search
+- JSONB support for flexible metadata queries
 
 **Why React Native for Mobile:**
 
@@ -2503,7 +2543,7 @@ CREATE TABLE knowledge_documents (
 | LLM (Gemini Flash) | $0.02     | ~20K tokens @ $0.001/1K  |
 | TTS (XTTS-v2)      | $0.03     | GPU time, self-hosted    |
 | Lip-sync           | $0.05     | GPU time, self-hosted    |
-| Vector search      | $0.01     | Pinecone queries         |
+| Vector search      | $0.00     | PostgreSQL (included)    |
 | Bandwidth          | $0.01     | Audio/video streaming    |
 | Infrastructure     | $0.02     | Cloud Run, storage, etc. |
 | **Total**          | **$0.20** | **Target: < $0.15**      |
@@ -2538,7 +2578,7 @@ CREATE TABLE knowledge_documents (
 
 **Phase 2: RAG System (Weeks 3-4)**
 
-- Vector database setup (Pinecone)
+- Vector database setup (PostgreSQL pgvector)
 - Document upload and processing
 - Embedding generation
 - Knowledge retrieval

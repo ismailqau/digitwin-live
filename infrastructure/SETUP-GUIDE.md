@@ -1,6 +1,6 @@
 # GCP Infrastructure Setup Guide
 
-This guide walks you through setting up the complete GCP infrastructure for the Real-Time Conversational Clone System from scratch.
+This guide walks you through setting up the complete GCP infrastructure for the Real-Time DigitWin Live System from scratch.
 
 ## Prerequisites Checklist
 
@@ -66,9 +66,9 @@ gcloud version
 export ORG_ID="your-org-id"  # Optional
 
 # Create projects for each environment
-gcloud projects create digitwin-live-dev --name="Conversational Clone Dev"
-gcloud projects create digitwin-live-staging --name="Conversational Clone Staging"
-gcloud projects create digitwin-live-prod --name="Conversational Clone Prod"
+gcloud projects create digitwin-live-dev --name="DigitWin Live Dev"
+gcloud projects create digitwin-live-staging --name="DigitWin Live Staging"
+gcloud projects create digitwin-live-prod --name="DigitWin Live Prod"
 ```
 
 ### Link Billing Account

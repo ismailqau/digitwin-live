@@ -1,6 +1,6 @@
 # Database Architecture
 
-This document describes the database architecture for the Real-Time Conversational Clone System.
+This document describes the database architecture for the Real-Time DigitWin Live System.
 
 ## Overview
 

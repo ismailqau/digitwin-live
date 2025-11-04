@@ -11,7 +11,7 @@ The Real-Time Conversational Clone System enables users to engage in natural voi
 - **WebSocket Server**: The persistent connection handler running on Cloud Run
 - **ASR Service**: Automatic Speech Recognition service that converts speech to text (Google Chirp or Speech-to-Text API)
 - **RAG Pipeline**: Retrieval-Augmented Generation system combining vector search and LLM
-- **Vector Database**: The database storing embedded knowledge chunks (Pinecone or Weaviate)
+- **Vector Database**: PostgreSQL with pgvector extension for storing and searching embedded knowledge chunks
 - **LLM**: Large Language Model (Gemini Flash, Groq, or GPT-4) for response generation
 - **TTS Service**: Text-to-Speech service using voice cloning (XTTS-v2, Google Cloud TTS with custom voices, or OpenAI TTS)
 - **Lip-sync Service**: Service generating synchronized video frames (TPSM or Audio2Head)

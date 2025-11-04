@@ -1,6 +1,6 @@
 # Microservices Communication
 
-This document describes the microservices communication infrastructure for the Real-Time Conversational Clone system.
+This document describes the microservices communication infrastructure for the Real-Time DigitWin Live system.
 
 ## Overview
 

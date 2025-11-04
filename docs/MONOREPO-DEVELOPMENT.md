@@ -1,6 +1,6 @@
 # Monorepo Development Guide
 
-Guide for working with the Conversational Clone monorepo using Turborepo and pnpm workspaces.
+Guide for working with the DigitWin Live monorepo using Turborepo and pnpm workspaces.
 
 ## 📁 Directory Structure
 

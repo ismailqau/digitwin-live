@@ -1,12 +1,17 @@
 # Getting Started
 
-Quick guide to set up and run the Conversational Clone platform locally.
+Quick guide to set up and run the DigitWin Live platform locally.
 
 ## Prerequisites
 
-- **Node.js** 18+ and npm
-- **PostgreSQL** 15+
+Before starting, ensure you have these tools installed:
+
+- **Node.js** 18+ (v20 recommended)
+- **pnpm** 8+
+- **PostgreSQL** 15+ (with pgvector extension) OR **Docker** (for Weaviate)
 - **Git**
+
+**📖 Need help installing?** See the [Tool Installation Guide](./TOOL-INSTALLATION.md) for detailed instructions for your platform.
 
 ## Quick Setup
 
@@ -15,7 +20,7 @@ Quick guide to set up and run the Conversational Clone platform locally.
 ```bash
 git clone <repository-url>
 cd digitwin-live
-npm install
+pnpm install
 ```
 
 ### 2. Configure Environment
@@ -37,21 +42,58 @@ node scripts/generate-secrets.js
 # Create database
 createdb digitwinline_dev
 
+# Run database migrations
+pnpm db:migrate
+pnpm db:generate
+
 # Set DATABASE_URL in .env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinline_dev
+DATABASE_URL=postgresql://username@localhost:5432/digitwinline_dev
 ```
 
-### 4. Validate Configuration
+### 4. Set Up Vector Database
+
+Choose one of the following options:
+
+**Option A: PostgreSQL with pgvector (Recommended)**
+```bash
+# Install pgvector extension (see VECTOR-DATABASE-SETUP.md for details)
+# Then enable in your database:
+psql $DATABASE_URL -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+# Configure in .env:
+VECTOR_DIMENSIONS=768
+VECTOR_INDEX_LISTS=100
+WEAVIATE_ENABLED=false
+```
+
+**Option B: Weaviate (Free Alternative)**
+```bash
+# Start Weaviate with Docker
+docker run -d --name weaviate -p 8080:8080 \
+  -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+  semitechnologies/weaviate:latest
+
+# Configure in .env:
+WEAVIATE_URL=http://localhost:8080
+WEAVIATE_ENABLED=true
+```
+
+**📖 Detailed Setup**: See [Vector Database Setup Guide](./VECTOR-DATABASE-SETUP.md)
+
+### 5. Validate Configuration
 
 ```bash
 node scripts/validate-env.js
 ```
 
-### 5. Start Development
+### 6. Start Development
 
 ```bash
+# Build all packages first
+pnpm build
+
 # Start all services
-npm run dev
+pnpm dev
 
 # API Gateway: http://localhost:3000
 # WebSocket Server: http://localhost:3001
@@ -77,6 +119,7 @@ curl http://localhost:3000/health
 ## Next Steps
 
 - **[Environment Setup](./ENVIRONMENT-SETUP.md)** - Detailed configuration
+- **[Vector Database Setup](./VECTOR-DATABASE-SETUP.md)** - Complete vector database guide
 - **[Authentication Guide](../apps/api-gateway/docs/authentication-flow.md)** - Learn about auth
 - **[API Documentation](http://localhost:3000/api-docs)** - Explore the API
 

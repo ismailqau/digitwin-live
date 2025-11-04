@@ -19,7 +19,8 @@
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
     "@google-cloud/aiplatform": "^3.0.0",
-    "@pinecone-database/pinecone": "^1.1.0"
+    "pg": "^8.11.0",
+    "@types/pg": "^8.10.0"
   },
   "devDependencies": {
     "@types/node": "^24.9.2",
