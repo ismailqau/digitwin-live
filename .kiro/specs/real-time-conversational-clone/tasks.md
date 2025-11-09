@@ -196,25 +196,57 @@
 - Use WebSocket for real-time audio streaming (already configured)
 - Cache audio chunks in PostgreSQL cache_audio_chunks table
 - Store processed audio in GCS bucket: digitwin-live-uploads
+- Audio format: 16 kHz, mono, 16-bit PCM (optimal for ASR and TTS)
+- Chunk size: 100ms for low latency streaming
+- VAD threshold: Configurable sensitivity for speech detection
+
+### 🎯 Audio Pipeline Overview
+```
+Mobile App → WebSocket → Backend → ASR Service → Transcript
+     ↓                                                ↓
+  Record                                         RAG + LLM
+     ↓                                                ↓
+  Chunk                                          TTS Service
+     ↓                                                ↓
+  Stream                                        Audio Chunks
+     ↓                                                ↓
+  Cache ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← Playback
+```
 
 - [ ] 3. Implement audio capture and streaming in mobile app
   - Implement audio recording in React Native using react-native-audio-recorder-player
   - Configure audio capture at 16 kHz, mono, 16-bit PCM format
   - Implement Voice Activity Detection (VAD) for speech detection
-  - Create audio chunking logic (100ms chunks)
+  - Create audio chunking logic (100ms chunks for low latency)
   - Implement audio streaming over WebSocket with sequence numbers
-  - Create audio quality monitoring
+  - Create audio quality monitoring (volume, SNR, clipping detection)
+  - Implement noise reduction/cancellation (optional, device-dependent)
+  - Create audio format validation before streaming
+  - Implement audio recording state management (idle, recording, paused)
+  - Create audio buffer overflow handling
+  - Implement microphone permission handling with user-friendly prompts
+  - Create audio recording error recovery (device busy, permission denied)
   - _Requirements: 1_
+  - _Note: This is for user speech input, NOT voice cloning (see Phase 6.2)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 3.1 Implement audio playback in mobile app
-  - Integrate audio player in React Native
-  - Implement audio chunk buffering for smooth playback
-  - Create audio-video synchronization logic
-  - Handle audio playback interruptions
-  - Implement audio session management for iOS
-  - Implement audio focus handling for Android
+  - Integrate audio player in React Native using react-native-audio-recorder-player
+  - Implement audio chunk buffering for smooth playback (200-500ms buffer)
+  - Create audio-video synchronization logic (< 50ms offset)
+  - Handle audio playback interruptions (phone calls, notifications)
+  - Implement audio session management for iOS (AVAudioSession)
+  - Implement audio focus handling for Android (AudioManager)
+  - Create audio playback queue management for streaming chunks
+  - Implement audio playback state management (playing, paused, stopped, buffering)
+  - Create audio volume control and mute functionality
+  - Implement audio playback speed control (0.5x - 2x)
+  - Create audio crossfade for smooth transitions
+  - Implement audio ducking for background audio
+  - Create audio playback error recovery (buffer underrun, decode errors)
+  - Implement audio output device selection (speaker, headphones, Bluetooth)
   - _Requirements: 7_
+  - _Note: This plays TTS-generated audio from Phase 6, NOT user recordings_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 3.2 Integrate Google Chirp ASR service
@@ -223,8 +255,40 @@
   - Configure automatic punctuation and interim results
   - Create ASR result handler that sends transcripts to client
   - Implement error handling and retry logic for ASR failures
-  - Create ASR performance monitoring
+  - Create ASR performance monitoring (latency, accuracy, cost)
+  - Implement ASR language detection and multi-language support
+  - Create ASR confidence scoring and low-confidence handling
+  - Implement ASR profanity filtering (optional)
+  - Create ASR custom vocabulary for domain-specific terms
+  - Implement ASR speaker diarization (optional, for multi-speaker)
+  - Create ASR result caching for repeated phrases
+  - Implement ASR quota management and rate limiting
   - _Requirements: 2_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 3.3 Implement audio preprocessing and enhancement
+  - Create audio normalization service (volume leveling)
+  - Implement silence detection and trimming
+  - Create audio quality assessment (SNR, clarity score)
+  - Implement echo cancellation for better ASR accuracy
+  - Create audio format conversion service (if needed)
+  - Implement audio compression for efficient storage/transmission
+  - Create audio metadata extraction (duration, sample rate, channels)
+  - Implement audio validation (corrupt file detection)
+  - _Requirements: 1, 2_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 3.4 Implement audio caching and storage strategy
+  - Create cache_audio_chunks table in PostgreSQL
+  - Implement audio chunk caching with TTL (CACHE_TTL_SHORT = 300s)
+  - Create audio storage service for GCS bucket (digitwin-live-uploads)
+  - Implement audio retrieval with signed URLs
+  - Create audio cleanup job for expired cache entries
+  - Implement audio deduplication (hash-based)
+  - Create audio archive strategy for conversation history
+  - Implement audio compression before storage (Opus codec)
+  - _Requirements: 1, 7_
+  - _Note: Follow PostgreSQL caching architecture (see docs/CACHING-ARCHITECTURE.md)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 4: RAG Pipeline and Knowledge Base
@@ -304,33 +368,105 @@
 - Cache active voice models in memory for fast access
 - Use GKE with GPU nodes (T4) - can be stopped with `pnpm gcp:stop-all`
 - Track voice model metadata in PostgreSQL voice_models table
+- Voice sample requirements: 1-5 minutes of clean audio, 16 kHz, mono
+- Training time: 10-30 minutes depending on sample quality and length
+
+### 🎯 Voice Cloning Pipeline
+```
+Voice Samples → Preprocessing → Training → Voice Model → TTS
+      ↓              ↓             ↓           ↓          ↓
+   Upload        Validate      XTTS-v2     Storage    Synthesis
+      ↓              ↓             ↓           ↓          ↓
+   GCS Bucket    Quality       GPU Node    Cache      Audio Chunks
+```
 
 - [ ] 6. Implement voice cloning and TTS service
   - Set up GKE cluster with GPU nodes (T4) for TTS workloads
   - Integrate XTTS-v2 model for voice cloning in `services/tts-service`
   - Implement voice model training pipeline from audio samples
-  - Create TTS streaming service that generates audio chunks
+  - Create TTS streaming service that generates audio chunks (100ms chunks)
   - Implement voice model storage and retrieval from Cloud Storage
-  - Create voice model caching for active users
+  - Create voice model caching for active users (in-memory + PostgreSQL)
+  - Implement voice model versioning and updates
+  - Create voice model quality scoring (similarity, naturalness, clarity)
+  - Implement voice model A/B testing for quality comparison
+  - Create voice model fallback (use previous version if new fails)
+  - Implement TTS latency optimization (< 500ms first chunk)
+  - Create TTS cost tracking per synthesis request
+  - Implement TTS queue management for concurrent requests
+  - Create TTS error handling and retry logic
   - _Requirements: 5, 16_
+  - _Note: Voice cloning is separate from user speech recording (Phase 3)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 6.1 Implement multi-provider TTS support
   - Integrate Google Cloud TTS with custom voice API
-  - Integrate OpenAI TTS API with voice options
-  - Create TTS provider abstraction layer
-  - Implement provider selection based on user preference
+  - Integrate OpenAI TTS API with voice options (alloy, echo, fable, onyx, nova, shimmer)
+  - Integrate ElevenLabs API for high-quality voice cloning (optional)
+  - Create TTS provider abstraction layer with unified interface
+  - Implement provider selection based on user preference and cost
   - Create voice quality validation and similarity scoring
+  - Implement provider fallback on failure (XTTS-v2 → OpenAI → Google)
+  - Create provider cost comparison and optimization
+  - Implement provider-specific voice model mapping
+  - Create provider performance monitoring (latency, quality, cost)
+  - Implement provider quota management
   - _Requirements: 5, 16_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 6.2 Implement voice sample recording and upload
-  - Create voice recording UI in mobile app
-  - Implement audio quality validation (SNR > 20 dB)
-  - Create voice sample upload endpoint
+  - Create voice recording UI in mobile app with guided prompts
+  - Implement audio quality validation (SNR > 20 dB, no clipping, no background noise)
+  - Create voice sample upload endpoint with chunked upload support
   - Implement progress tracking for voice model training
   - Create voice model preview and testing functionality
+  - Implement voice sample requirements validation (duration, format, quality)
+  - Create voice sample preprocessing (noise reduction, normalization)
+  - Implement multiple voice sample collection (3-10 samples recommended)
+  - Create voice sample review and re-record functionality
+  - Implement voice sample storage in GCS bucket (digitwin-live-voice-models/samples/)
+  - Create voice sample metadata tracking (duration, quality score, language)
+  - Implement voice sample deletion and privacy controls
   - _Requirements: 16_
+  - _Note: This is for creating voice models, NOT conversation audio (Phase 3)_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 6.3 Implement voice model training pipeline
+  - Create training job queue with Bull/BullMQ
+  - Implement XTTS-v2 fine-tuning on user voice samples
+  - Create training progress tracking and status updates
+  - Implement training validation and quality checks
+  - Create training failure handling and retry logic
+  - Implement training cost estimation and tracking
+  - Create training job cancellation functionality
+  - Implement training result notification (push, email)
+  - Create training logs and debugging information
+  - Implement training optimization (batch processing, GPU utilization)
+  - _Requirements: 16_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 6.4 Implement voice model management
+  - Create voice model CRUD operations (create, read, update, delete)
+  - Implement voice model activation/deactivation
+  - Create voice model comparison and selection UI
+  - Implement voice model sharing (optional, for teams)
+  - Create voice model export functionality
+  - Implement voice model backup and restore
+  - Create voice model analytics (usage, quality, cost)
+  - Implement voice model expiration and cleanup
+  - _Requirements: 16_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 6.5 Implement TTS optimization and caching
+  - Cache TTS results in PostgreSQL cache_tts_responses table
+  - Implement TTS result deduplication (same text + voice = cached audio)
+  - Create TTS pregeneration for common phrases
+  - Implement TTS streaming optimization (chunk-based generation)
+  - Create TTS quality vs latency trade-off configuration
+  - Implement TTS audio post-processing (normalization, enhancement)
+  - Create TTS cost optimization (cache hits, provider selection)
+  - _Requirements: 5_
+  - _Note: Follow PostgreSQL caching architecture (see docs/CACHING-ARCHITECTURE.md)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 7: Face Cloning and Model Creation
