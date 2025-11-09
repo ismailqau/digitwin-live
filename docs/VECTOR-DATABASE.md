@@ -16,12 +16,14 @@ Complete guide for vector database setup, migration, and verification.
 This project uses vector databases for storing and searching document embeddings. You have two options:
 
 ### PostgreSQL with pgvector (Recommended for Production)
+
 - **Cost-effective**: No separate service fees
 - **High performance**: Sub-10ms queries with proper indexing
 - **ACID compliance**: Transactional consistency
 - **Requires**: PostgreSQL 15+ with pgvector extension
 
 ### Weaviate (Free Self-hosted Alternative)
+
 - **Easy setup**: Docker container
 - **Free**: No licensing costs
 - **Good performance**: 5-20ms queries
@@ -73,16 +75,19 @@ pnpm verify:vector-db
 #### Installation
 
 **macOS**:
+
 ```bash
 brew install pgvector
 ```
 
 **Ubuntu/Debian**:
+
 ```bash
 sudo apt install postgresql-15-pgvector
 ```
 
 **From Source**:
+
 ```bash
 git clone https://github.com/pgvector/pgvector.git
 cd pgvector
@@ -93,11 +98,13 @@ sudo make install
 #### Configuration
 
 1. **Enable extension**:
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 2. **Environment variables**:
+
 ```bash
 DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
 VECTOR_DIMENSIONS=768
@@ -106,6 +113,7 @@ WEAVIATE_ENABLED=false
 ```
 
 3. **Run migrations**:
+
 ```bash
 pnpm db:migrate
 pnpm db:generate
@@ -114,6 +122,7 @@ pnpm db:generate
 #### Performance Tuning
 
 Add to `postgresql.conf`:
+
 ```ini
 shared_buffers = 256MB
 effective_cache_size = 1GB
@@ -126,6 +135,7 @@ max_parallel_workers_per_gather = 2
 #### Installation
 
 **Docker (Recommended)**:
+
 ```bash
 docker run -d \
   --name weaviate \
@@ -137,13 +147,14 @@ docker run -d \
 ```
 
 **Docker Compose**:
+
 ```yaml
 version: '3.4'
 services:
   weaviate:
     image: semitechnologies/weaviate:latest
     ports:
-      - "8080:8080"
+      - '8080:8080'
     environment:
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
@@ -157,6 +168,7 @@ volumes:
 #### Configuration
 
 **Environment variables**:
+
 ```bash
 WEAVIATE_URL=http://localhost:8080
 WEAVIATE_API_KEY=  # Leave empty for anonymous access
@@ -186,18 +198,19 @@ docker restart weaviate
 
 ### Why Migrate?
 
-| Feature | Pinecone | PostgreSQL + pgvector | Weaviate |
-|---------|----------|----------------------|----------|
-| Query Latency | 10-50ms | 2-10ms | 5-20ms |
-| Cost (1M vectors) | ~$70/month | ~$20/month | Free |
-| Setup Complexity | Medium | Low | Very Low |
-| ACID Transactions | ❌ | ✅ | ❌ |
+| Feature           | Pinecone   | PostgreSQL + pgvector | Weaviate |
+| ----------------- | ---------- | --------------------- | -------- |
+| Query Latency     | 10-50ms    | 2-10ms                | 5-20ms   |
+| Cost (1M vectors) | ~$70/month | ~$20/month            | Free     |
+| Setup Complexity  | Medium     | Low                   | Very Low |
+| ACID Transactions | ❌         | ✅                    | ❌       |
 
 ### Migration Steps
 
 1. **Update environment variables**:
 
 **Remove**:
+
 ```bash
 PINECONE_API_KEY=...
 PINECONE_ENVIRONMENT=...
@@ -205,6 +218,7 @@ PINECONE_INDEX_NAME=...
 ```
 
 **Add**:
+
 ```bash
 # For PostgreSQL
 VECTOR_DIMENSIONS=768
@@ -217,6 +231,7 @@ WEAVIATE_ENABLED=true
 ```
 
 2. **Update dependencies**:
+
 ```bash
 cd services/rag-service
 pnpm remove @pinecone-database/pinecone
@@ -224,12 +239,14 @@ pnpm add pg @types/pg  # For PostgreSQL
 ```
 
 3. **Run database migrations**:
+
 ```bash
 pnpm db:migrate
 pnpm db:generate
 ```
 
 4. **Verify setup**:
+
 ```bash
 pnpm verify:vector-db
 ```
@@ -262,16 +279,20 @@ pnpm health:vector-db
 ### Verification Scripts
 
 #### `pnpm verify:local`
+
 **Purpose**: Quick daily checks
 **Checks**:
+
 - Prerequisites (Node.js, Docker, psql)
 - PostgreSQL connection
 - Weaviate accessibility
 - Basic configuration
 
 #### `pnpm verify:vector-db`
+
 **Purpose**: Comprehensive verification
 **Checks**:
+
 - All environment variables
 - PostgreSQL + pgvector extension
 - Weaviate connectivity and schema
@@ -280,9 +301,11 @@ pnpm health:vector-db
 - Database schema
 
 #### `pnpm health:vector-db`
+
 **Purpose**: Production monitoring
 **Output formats**: JSON, text, Prometheus
 **Checks**:
+
 - Database connectivity
 - Response time
 - Basic operations
@@ -290,6 +313,7 @@ pnpm health:vector-db
 ### Expected Output
 
 **Successful verification**:
+
 ```bash
 🔍 Vector Database Verification
 
@@ -323,6 +347,7 @@ pnpm test:gcp
 ```
 
 **Tests**:
+
 - GCP authentication
 - Cloud SQL with pgvector
 - Weaviate in GKE
@@ -334,9 +359,11 @@ pnpm test:gcp
 ### PostgreSQL Issues
 
 #### pgvector extension not found
+
 **Error**: `could not open extension control file`
 
 **Solution**:
+
 ```bash
 # Install pgvector for your PostgreSQL version
 brew install pgvector  # macOS
@@ -347,9 +374,11 @@ psql $DATABASE_URL -c "CREATE EXTENSION IF NOT EXISTS vector;"
 ```
 
 #### Database connection failed
+
 **Error**: `database does not exist`
 
 **Solution**:
+
 ```bash
 # Create database
 createdb digitwinline_dev
@@ -360,9 +389,11 @@ pnpm db:generate
 ```
 
 #### DocumentChunk table missing
+
 **Error**: `table does not exist`
 
 **Solution**:
+
 ```bash
 pnpm db:migrate
 pnpm db:generate
@@ -371,9 +402,11 @@ pnpm db:generate
 ### Weaviate Issues
 
 #### Connection refused
+
 **Error**: `connect ECONNREFUSED 127.0.0.1:8080`
 
 **Solution**:
+
 ```bash
 # Check if Docker is running
 docker info
@@ -388,9 +421,11 @@ curl http://localhost:8080/v1/meta
 ```
 
 #### Port already in use
+
 **Error**: `port 8080 already in use`
 
 **Solution**:
+
 ```bash
 # Use different port
 docker run -d --name weaviate -p 8081:8080 \
@@ -402,9 +437,11 @@ WEAVIATE_URL=http://localhost:8081
 ```
 
 #### Container already exists
+
 **Error**: `container name already in use`
 
 **Solution**:
+
 ```bash
 # Remove old container
 docker rm weaviate
@@ -418,9 +455,11 @@ docker run -d --name weaviate-dev -p 8080:8080 \
 ### GCP Issues
 
 #### Not authenticated
+
 **Error**: `Not authenticated with gcloud`
 
 **Solution**:
+
 ```bash
 gcloud auth login
 gcloud auth application-default login
@@ -428,9 +467,11 @@ gcloud config set project YOUR_PROJECT_ID
 ```
 
 #### Cloud SQL instance not found
+
 **Error**: `instance not found`
 
 **Solution**:
+
 ```bash
 # Check instance exists
 gcloud sql instances list
@@ -443,28 +484,30 @@ echo $DATABASE_URL
 
 ### Query Performance
 
-| Operation | PostgreSQL + pgvector | Weaviate |
-|-----------|----------------------|----------|
-| Single vector search | 2-10ms | 5-20ms |
-| Batch search (10 queries) | 20-50ms | 50-100ms |
-| Insert 1000 vectors | 1-2s | 2-3s |
+| Operation                 | PostgreSQL + pgvector | Weaviate |
+| ------------------------- | --------------------- | -------- |
+| Single vector search      | 2-10ms                | 5-20ms   |
+| Batch search (10 queries) | 20-50ms               | 50-100ms |
+| Insert 1000 vectors       | 1-2s                  | 2-3s     |
 
 ### Resource Usage
 
-| Metric | PostgreSQL + pgvector | Weaviate |
-|--------|----------------------|----------|
-| Memory (1M vectors) | ~4GB | ~6GB |
-| Disk (1M vectors) | ~2GB | ~3GB |
-| CPU (idle) | <5% | <10% |
+| Metric              | PostgreSQL + pgvector | Weaviate |
+| ------------------- | --------------------- | -------- |
+| Memory (1M vectors) | ~4GB                  | ~6GB     |
+| Disk (1M vectors)   | ~2GB                  | ~3GB     |
+| CPU (idle)          | <5%                   | <10%     |
 
 ## Best Practices
 
 ### Development
+
 - Use Weaviate for quick setup
 - Run `pnpm verify:local` before commits
 - Keep Docker running during development
 
 ### Production
+
 - Use PostgreSQL + pgvector for better performance
 - Set up monitoring with `pnpm health:vector-db`
 - Configure proper backups
@@ -472,6 +515,7 @@ echo $DATABASE_URL
 - Monitor query performance
 
 ### Monitoring
+
 ```bash
 # Add to cron for monitoring
 */5 * * * * pnpm health:vector-db json > /var/log/vector-db-health.log
@@ -480,6 +524,7 @@ echo $DATABASE_URL
 ## Environment Variables Reference
 
 ### PostgreSQL + pgvector
+
 ```bash
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 VECTOR_DIMENSIONS=768
@@ -488,6 +533,7 @@ WEAVIATE_ENABLED=false
 ```
 
 ### Weaviate
+
 ```bash
 WEAVIATE_URL=http://localhost:8080
 WEAVIATE_API_KEY=  # Optional
@@ -505,6 +551,7 @@ WEAVIATE_ENABLED=true
 ## Support
 
 For issues:
+
 1. Run `pnpm verify:vector-db` for detailed diagnostics
 2. Check logs: `docker logs weaviate` or PostgreSQL logs
 3. Review [Troubleshooting Guide](./TROUBLESHOOTING.md)

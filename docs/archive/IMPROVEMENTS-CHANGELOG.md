@@ -5,12 +5,14 @@
 ### 🎉 Major Features
 
 #### 1. Enhanced Cleanup Script
+
 - **Menu-based resource selection** - Select specific resources by number (e.g., 1,3,4)
 - **Three deletion modes** - Interactive menu, y/n prompts, or complete cleanup
 - **Improved user experience** - Clear confirmations and better feedback
 - **Command-line options** - `--menu`, `--selective`, `--all`
 
 #### 2. Stop/Start All Resources
+
 - **Stop all command** - Stop all resources with one command (saves ~$74/month)
 - **Start all command** - Start all resources back up
 - **Cost awareness** - Shows estimated savings
@@ -19,6 +21,7 @@
 ### 📝 New Commands
 
 #### NPM Scripts
+
 ```bash
 # Cleanup options
 pnpm gcp:cleanup-menu       # Menu-based selection (NEW!)
@@ -31,6 +34,7 @@ pnpm gcp:start-all         # Start everything (NEW!)
 ```
 
 #### Direct Script Usage
+
 ```bash
 # Cleanup script
 ./scripts/gcp-cleanup.sh --menu
@@ -45,4 +49,5 @@ pnpm gcp:start-all         # Start everything (NEW!)
 ### 🔧 Technical Improvements
 
 #### Cleanup Script (`scripts/gcp-cleanup.sh`)
+
 - Added `show_reso

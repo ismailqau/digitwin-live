@@ -7,6 +7,7 @@ This directory contains utility scripts for managing the DigitWin Live platform.
 ### Database Scripts
 
 #### Database Migration (`pnpm db:migrate`)
+
 Runs Prisma database migrations to create/update database schema.
 
 ```bash
@@ -14,6 +15,7 @@ pnpm db:migrate
 ```
 
 #### Generate Prisma Client (`pnpm db:generate`)
+
 Generates the Prisma client based on the current schema.
 
 ```bash
@@ -21,6 +23,7 @@ pnpm db:generate
 ```
 
 #### Database Studio (`pnpm db:studio`)
+
 Opens Prisma Studio for visual database management.
 
 ```bash
@@ -28,6 +31,7 @@ pnpm db:studio
 ```
 
 #### Vector Database Setup (`setup-vector-db.sh`)
+
 Sets up pgvector extension and creates vector indexes.
 
 ```bash
@@ -35,6 +39,7 @@ Sets up pgvector extension and creates vector indexes.
 ```
 
 **Prerequisites:**
+
 - PostgreSQL running
 - DATABASE_URL environment variable set
 - pgvector extension installed

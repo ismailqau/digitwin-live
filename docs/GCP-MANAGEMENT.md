@@ -87,6 +87,7 @@ gcloud beta billing projects link YOUR_PROJECT_ID \
 Creates all required GCP resources.
 
 **What it creates**:
+
 - ✅ Enables required APIs
 - ✅ Creates Cloud Storage buckets
 - ✅ Creates service accounts
@@ -95,11 +96,13 @@ Creates all required GCP resources.
 - ✅ Optionally creates GKE cluster
 
 **Usage**:
+
 ```bash
 pnpm gcp:setup
 ```
 
 **Interactive prompts**:
+
 - Create Cloud SQL? (y/N)
 - Create GKE cluster? (y/N)
 
@@ -139,6 +142,7 @@ pnpm gcp:status
 ```
 
 **Output**:
+
 ```
 === GCP Resources Status ===
 
@@ -167,6 +171,7 @@ pnpm gcp:list
 ```
 
 Shows:
+
 - Storage buckets
 - Cloud SQL instances
 - GKE clusters
@@ -186,6 +191,7 @@ Shows:
 ### Start/Stop Resources
 
 **Start resources**:
+
 ```bash
 # Start Cloud SQL
 ./scripts/gcp-manage.sh start sql-instance
@@ -198,6 +204,7 @@ Shows:
 ```
 
 **Stop resources** (to save costs):
+
 ```bash
 # Stop Cloud SQL
 ./scripts/gcp-manage.sh stop sql-instance
@@ -233,6 +240,7 @@ pnpm gcp:cost
 ```
 
 **Output**:
+
 ```
 === Estimated Monthly Costs ===
 
@@ -304,15 +312,17 @@ DATABASE_URL=postgresql://localhost:5432/dev  # Local PostgreSQL
 **Optimize production costs**:
 
 1. **Use Cloud SQL only when needed**:
+
    ```bash
    # Stop during low-traffic hours
    ./scripts/gcp-manage.sh stop sql-instance
-   
+
    # Start before peak hours
    ./scripts/gcp-manage.sh start sql-instance
    ```
 
 2. **Use GKE autoscaling**:
+
    ```bash
    gcloud container clusters update digitwinlive-cluster \
      --enable-autoscaling \
@@ -352,6 +362,7 @@ gcloud billing budgets create \
 **Error**: `API [service] is not enabled`
 
 **Solution**:
+
 ```bash
 ./scripts/gcp-manage.sh enable apis
 ```
@@ -361,6 +372,7 @@ gcloud billing budgets create \
 **Error**: `Permission denied`
 
 **Solution**:
+
 ```bash
 # Check current permissions
 gcloud projects get-iam-policy $GCP_PROJECT_ID \
@@ -375,6 +387,7 @@ gcloud projects get-iam-policy $GCP_PROJECT_ID \
 **Error**: `Quota exceeded`
 
 **Solution**:
+
 1. Check quotas: https://console.cloud.google.com/iam-admin/quotas
 2. Request quota increase
 3. Or reduce resource usage
@@ -384,6 +397,7 @@ gcloud projects get-iam-policy $GCP_PROJECT_ID \
 **Error**: `Connection refused`
 
 **Solution**:
+
 ```bash
 # Check if instance is running
 gcloud sql instances describe digitwinlive-db
@@ -400,6 +414,7 @@ cloud_sql_proxy -instances=PROJECT:REGION:INSTANCE=tcp:5432
 **Error**: `Unable to connect to cluster`
 
 **Solution**:
+
 ```bash
 # Get credentials
 gcloud container clusters get-credentials digitwinlive-cluster \
@@ -501,6 +516,7 @@ pnpm gcp:cleanup-all
 ```
 
 **Menu Selection Example**:
+
 ```
 Select resources to delete:
   1) Weaviate deployment
@@ -530,6 +546,7 @@ pnpm gcp:start-all
 ```
 
 **What gets stopped**:
+
 - Cloud SQL instance (~$50/month savings)
 - GKE cluster (~$24/month savings)
 - Weaviate deployment

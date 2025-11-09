@@ -1,8 +1,50 @@
-node_modules
-dist
-build
-coverage
-.turbo
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.turbo/
+.next/
+out/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
 *.log
-.next
-.expo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Generated files
+*.generated.*
+prisma/migrations/
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation build
+docs/.vitepress/dist/
+docs/.vitepress/cache/

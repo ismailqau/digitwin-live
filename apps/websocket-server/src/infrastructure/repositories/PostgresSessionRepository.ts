@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Session, SessionEntity } from '../../domain/models/Session';
 import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
 
-
 @injectable()
 export class PostgresSessionRepository implements ISessionRepository {
   private pool: Pool;
@@ -150,7 +149,7 @@ export class PostgresSessionRepository implements ISessionRepository {
     }
   }
 
-  private mapRowToSession(row: any): Session {
+  private mapRowToSession(row: Record<string, unknown>): Session {
     return new SessionEntity(
       row.id,
       row.user_id,

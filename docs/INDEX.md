@@ -71,8 +71,11 @@ Root:
 - [Requirements](../.kiro/specs/real-time-digitwinlive/requirements.md) - Requirements
 - [Tasks](../.kiro/specs/real-time-digitwinlive/tasks.md) - Implementation tasks
 
-### Development Tools
+### Development & Quality
 
+- [Code Quality Guide](./CODE-QUALITY-GUIDE.md) - Linting, formatting, and standards
+- [Testing Guide](./TESTING-GUIDE.md) - Comprehensive testing guide (45 workspaces)
+- [Quality Gates Setup](./QUALITY-GATES-SETUP.md) - Pre-commit hooks and CI/CD
 - [Monorepo Development](./MONOREPO-DEVELOPMENT.md) - Turborepo & pnpm guide
 - [Scripts Documentation](../scripts/README.md) - Utility scripts
 - [API Documentation](http://localhost:3000/api-docs) - OpenAPI (when running)
@@ -112,12 +115,13 @@ Root:
 
 ## 📊 Documentation Stats
 
-- **Total Documents**: 16
-- **Setup Guides**: 2
+- **Total Documents**: 20+
+- **Setup Guides**: 3
 - **Configuration Docs**: 2
-- **Development Docs**: 3
+- **Development & Quality Docs**: 5
 - **Security Docs**: 3
 - **Architecture Docs**: 6
+- **GCP Docs**: 4
 
 ## 🔗 External Resources
 

@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-commit hook for code quality checks
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged for staged files (includes linting and formatting)
+pnpm lint-staged
+
+echo "✅ Pre-commit checks passed!"

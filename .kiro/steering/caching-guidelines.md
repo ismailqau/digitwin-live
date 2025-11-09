@@ -40,8 +40,8 @@ CREATE INDEX idx_cache_<type>_expires ON cache_<type>(expires_at);
 const cached = await db.cache_table.findFirst({
   where: {
     cache_key: key,
-    expires_at: { gt: new Date() }
-  }
+    expires_at: { gt: new Date() },
+  },
 });
 
 // Set cache
@@ -49,13 +49,13 @@ await db.cache_table.create({
   data: {
     cache_key: key,
     cache_value: value,
-    expires_at: new Date(Date.now() + ttl * 1000)
-  }
+    expires_at: new Date(Date.now() + ttl * 1000),
+  },
 });
 
 // Delete from cache
 await db.cache_table.deleteMany({
-  where: { cache_key: key }
+  where: { cache_key: key },
 });
 ```
 
@@ -72,7 +72,7 @@ CACHE_TTL_LONG=86400     # 24 hours
 
 ❌ Redis  
 ❌ Memcached  
-❌ In-memory caching libraries (node-cache, etc.) for persistent cache  
+❌ In-memory caching libraries (node-cache, etc.) for persistent cache
 
 ### When to Cache
 
@@ -80,7 +80,7 @@ CACHE_TTL_LONG=86400     # 24 hours
 ✅ LLM responses  
 ✅ Audio chunks  
 ✅ Embeddings  
-✅ API responses  
+✅ API responses
 
 ### Cache Cleanup
 

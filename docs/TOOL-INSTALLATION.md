@@ -22,11 +22,13 @@ Node.js is required for running the application and build tools.
 #### macOS
 
 **Using Homebrew:**
+
 ```bash
 brew install node@20
 ```
 
 **Using nvm (recommended):**
+
 ```bash
 # Install nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
@@ -40,12 +42,14 @@ nvm alias default 20
 #### Linux (Ubuntu/Debian)
 
 **Using NodeSource:**
+
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
 **Using nvm (recommended):**
+
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 source ~/.bashrc
@@ -56,16 +60,19 @@ nvm use 20
 #### Windows
 
 **Using Installer:**
+
 1. Download from [nodejs.org](https://nodejs.org/)
 2. Run the installer
 3. Restart terminal
 
 **Using Chocolatey:**
+
 ```powershell
 choco install nodejs-lts
 ```
 
 **Verify Installation:**
+
 ```bash
 node --version  # Should show v20.x.x or v18.x.x
 npm --version   # Should show 9.x.x or higher
@@ -80,22 +87,26 @@ pnpm is the package manager used for this monorepo.
 #### All Platforms
 
 **Using npm:**
+
 ```bash
 npm install -g pnpm@8
 ```
 
 **Using Homebrew (macOS):**
+
 ```bash
 brew install pnpm
 ```
 
 **Using Corepack (recommended):**
+
 ```bash
 corepack enable
 corepack prepare pnpm@8.10.0 --activate
 ```
 
 **Verify Installation:**
+
 ```bash
 pnpm --version  # Should show 8.x.x
 ```
@@ -109,11 +120,13 @@ Git is required for version control.
 #### macOS
 
 **Using Homebrew:**
+
 ```bash
 brew install git
 ```
 
 **Using Xcode Command Line Tools:**
+
 ```bash
 xcode-select --install
 ```
@@ -128,15 +141,18 @@ sudo apt-get install git
 #### Windows
 
 **Using Installer:**
+
 1. Download from [git-scm.com](https://git-scm.com/)
 2. Run the installer
 
 **Using Chocolatey:**
+
 ```powershell
 choco install git
 ```
 
 **Verify Installation:**
+
 ```bash
 git --version  # Should show 2.x.x
 ```
@@ -152,6 +168,7 @@ PostgreSQL is the primary database for the application.
 #### macOS
 
 **Using Homebrew:**
+
 ```bash
 # Install PostgreSQL
 brew install postgresql@17
@@ -165,6 +182,7 @@ source ~/.zshrc
 ```
 
 **Using Postgres.app:**
+
 1. Download from [postgresapp.com](https://postgresapp.com/)
 2. Drag to Applications
 3. Open and initialize
@@ -188,22 +206,26 @@ sudo systemctl enable postgresql
 #### Windows
 
 **Using Installer:**
+
 1. Download from [postgresql.org](https://www.postgresql.org/download/windows/)
 2. Run the installer
 3. Remember the password you set for the postgres user
 
 **Using Chocolatey:**
+
 ```powershell
 choco install postgresql15
 ```
 
 **Verify Installation:**
+
 ```bash
 psql --version  # Should show 15.x
 pg_isready      # Should show "accepting connections"
 ```
 
 **Create Development Database:**
+
 ```bash
 # Create database
 createdb digitwin_live_dev
@@ -223,6 +245,7 @@ Terraform is used for infrastructure as code (GCP deployment).
 #### macOS
 
 **Using Homebrew:**
+
 ```bash
 brew tap hashicorp/tap
 brew install hashicorp/tap/terraform
@@ -245,15 +268,18 @@ sudo apt-get install terraform
 #### Windows
 
 **Using Chocolatey:**
+
 ```powershell
 choco install terraform
 ```
 
 **Using Installer:**
+
 1. Download from [terraform.io](https://www.terraform.io/downloads)
 2. Extract and add to PATH
 
 **Verify Installation:**
+
 ```bash
 terraform version  # Should show v1.5.x or higher
 ```
@@ -267,11 +293,13 @@ Required for GCP infrastructure deployment.
 #### macOS
 
 **Using Homebrew:**
+
 ```bash
 brew install google-cloud-sdk
 ```
 
 **Using Installer:**
+
 ```bash
 curl https://sdk.cloud.google.com | bash
 exec -l $SHELL
@@ -294,15 +322,18 @@ sudo apt-get install google-cloud-sdk
 #### Windows
 
 **Using Installer:**
+
 1. Download from [cloud.google.com/sdk](https://cloud.google.com/sdk/docs/install)
 2. Run the installer
 
 **Verify Installation:**
+
 ```bash
 gcloud version  # Should show Google Cloud SDK version
 ```
 
 **Initialize gcloud:**
+
 ```bash
 gcloud init
 gcloud auth application-default login
@@ -317,11 +348,13 @@ gcloud auth application-default login
 #### macOS
 
 **Using Homebrew:**
+
 ```bash
 brew install --cask docker
 ```
 
 **Using Installer:**
+
 1. Download Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop)
 2. Install and start Docker Desktop
 
@@ -346,6 +379,7 @@ sudo systemctl enable docker
 2. Install and restart
 
 **Verify Installation:**
+
 ```bash
 docker --version
 docker-compose --version
@@ -443,6 +477,7 @@ gcloud version
 For Windows, we recommend using WSL2 (Windows Subsystem for Linux):
 
 **1. Install WSL2:**
+
 ```powershell
 # Run in PowerShell as Administrator
 wsl --install
@@ -536,6 +571,7 @@ chmod +x verify-setup.sh
 ```
 
 **Expected Output:**
+
 ```
 ✓ Node.js: v20.x.x
 ✓ pnpm: 8.x.x
@@ -553,6 +589,7 @@ chmod +x verify-setup.sh
 After installing all tools:
 
 1. **Clone the repository:**
+
    ```bash
    git clone <repository-url>
    cd digitwinlive

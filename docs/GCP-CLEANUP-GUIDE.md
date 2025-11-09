@@ -32,33 +32,43 @@ pnpm gcp:start-all
 ## 📋 All Cleanup Options
 
 ### 1. Interactive Menu (Recommended)
+
 ```bash
 pnpm gcp:cleanup
 ```
+
 Shows main menu with all cleanup options.
 
 ### 2. Menu-Based Selection
+
 ```bash
 pnpm gcp:cleanup-menu
 ```
+
 Select specific resources from numbered list (e.g., 1,3,4).
 
 ### 3. Interactive Y/N
+
 ```bash
 pnpm gcp:cleanup-selective
 ```
+
 Answer y/n for each resource type.
 
 ### 4. Delete Everything
+
 ```bash
 pnpm gcp:cleanup-all
 ```
+
 Complete cleanup with confirmation.
 
 ### 5. SQL Only
+
 ```bash
 pnpm gcp:cleanup-sql
 ```
+
 Focus only on Cloud SQL instances.
 
 ---
@@ -72,11 +82,13 @@ You have multiple Cloud SQL instances and want to delete only the old/expensive 
 **Steps** (only 3 steps!):
 
 1. **Run cleanup**:
+
 ```bash
 pnpm gcp:cleanup-menu
 ```
 
 2. **Select Cloud SQL**:
+
 ```
 Available resources:
   1) Weaviate deployment
@@ -92,6 +104,7 @@ Enter choices: 3
 ```
 
 3. **Select instances**:
+
 ```
 Found 3 Cloud SQL instance(s):
 
@@ -111,6 +124,7 @@ Enter choices: 1,3  ← Delete expensive and old instances
 ```
 
 4. **Confirm**:
+
 ```
 You selected to delete:
   ✓ clone-db-prod
@@ -126,33 +140,43 @@ Confirm deletion? (yes/NO) yes
 ## 💡 Selection Syntax
 
 ### Single Selection
+
 ```
 Enter choices: 1
 ```
+
 Deletes only item #1.
 
 ### Multiple Selection
+
 ```
 Enter choices: 1,3
 ```
+
 Deletes items #1 and #3.
 
 ### Multiple with Spaces
+
 ```
 Enter choices: 1, 3, 4
 ```
+
 Deletes items #1, #3, and #4 (spaces are trimmed).
 
 ### All Items
+
 ```
 Enter choices: 4
 ```
+
 (When "4) All instances" is shown)
 
 ### Cancel
+
 ```
 Enter choices: 5
 ```
+
 Or just press Enter without typing anything.
 
 ---
@@ -163,7 +187,7 @@ Or just press Enter without typing anything.
 ✅ **Show full details** - See instance info before deletion  
 ✅ **Cancel anytime** - Press Enter or select Cancel  
 ✅ **Clear feedback** - Know exactly what's happening  
-✅ **Error handling** - Continues even if some deletions fail  
+✅ **Error handling** - Continues even if some deletions fail
 
 ---
 
@@ -182,6 +206,7 @@ pnpm gcp:start-all
 ```
 
 **What gets stopped**:
+
 - Cloud SQL instance (~$50/month savings)
 - GKE cluster (~$24/month savings)
 - Weaviate deployment
@@ -190,11 +215,11 @@ pnpm gcp:start-all
 
 ### Cost Comparison
 
-| Action | Monthly Cost | Savings |
-|--------|--------------|---------|
-| Keep all 3 SQL instances | $207 | $0 |
-| Delete 2 instances | $50 | $157 |
-| Stop all resources | $0 | $207 |
+| Action                   | Monthly Cost | Savings |
+| ------------------------ | ------------ | ------- |
+| Keep all 3 SQL instances | $207         | $0      |
+| Delete 2 instances       | $50          | $157    |
+| Stop all resources       | $0           | $207    |
 
 ---
 
@@ -226,6 +251,7 @@ gcloud sql operations list --instance=INSTANCE_NAME --limit=5
 ## 🔧 Common Scenarios
 
 ### Scenario 1: Remove Old Test Instances
+
 ```bash
 pnpm gcp:cleanup-sql
 # Select: 1,3 (test instances)
@@ -233,6 +259,7 @@ pnpm gcp:cleanup-sql
 ```
 
 ### Scenario 2: Delete Expensive Instance
+
 ```bash
 pnpm gcp:cleanup-sql
 # Select: 1 (db-perf-optimized-N-4)
@@ -240,6 +267,7 @@ pnpm gcp:cleanup-sql
 ```
 
 ### Scenario 3: Clean Up After Migration
+
 ```bash
 pnpm gcp:cleanup-sql
 # Select: 3 (POSTGRES_15)
@@ -247,6 +275,7 @@ pnpm gcp:cleanup-sql
 ```
 
 ### Scenario 4: Delete Everything
+
 ```bash
 pnpm gcp:cleanup-all
 ```
@@ -256,6 +285,7 @@ pnpm gcp:cleanup-all
 ## 🚨 Troubleshooting
 
 ### "No instances found"
+
 ```bash
 # Check if you're in the right project
 gcloud config get-value project
@@ -265,6 +295,7 @@ gcloud sql instances list
 ```
 
 ### "Permission denied"
+
 ```bash
 # Check your permissions
 gcloud projects get-iam-policy PROJECT_ID
@@ -273,6 +304,7 @@ gcloud projects get-iam-policy PROJECT_ID
 ```
 
 ### "Instance is in use"
+
 ```bash
 # Check connections
 gcloud sql operations list --instance=INSTANCE_NAME
@@ -282,6 +314,7 @@ gcloud sql instances delete INSTANCE_NAME --force
 ```
 
 ### Script hangs
+
 Press `Ctrl+C` to cancel and try again.
 
 ---
@@ -340,6 +373,7 @@ pnpm verify:vector-db      # Full verification
 ---
 
 **Ready to clean up?**
+
 ```bash
 pnpm gcp:cleanup-sql
 ```

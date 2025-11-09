@@ -132,7 +132,7 @@ README.md
 | Developer | [Getting Started](./GETTING-STARTED.md)                                |
 | DevOps    | [Environment Setup](./ENVIRONMENT-SETUP.md)                            |
 | Security  | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
-| Architect | [Design Document](../.kiro/specs/real-time-digitwinlive/design.md)    |
+| Architect | [Design Document](../.kiro/specs/real-time-digitwinlive/design.md)     |
 
 ### By Topic
 

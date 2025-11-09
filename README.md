@@ -36,16 +36,28 @@ digitwinlive/
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Automated Setup (Recommended)
 
-- **Node.js** 18+ (v20 recommended)
-- **pnpm** 8+
-- **PostgreSQL** 15+ (with pgvector extension) OR **Docker** (for Weaviate)
-- **Git**
+```bash
+# Clone repository
+git clone <repository-url>
+cd digitwinlive
 
-**📖 Installation Help**: See [Tool Installation Guide](./docs/TOOL-INSTALLATION.md) for detailed setup instructions.
+# Run complete setup
+./scripts/setup-all.sh
+```
 
-### Installation
+**📖 Complete Guide**: See [SETUP.md](./SETUP.md) for detailed instructions.
+
+### Manual Setup
+
+**Prerequisites:**
+
+- **Node.js** 20+ ([Download](https://nodejs.org/))
+- **pnpm** 8+ ([Install](https://pnpm.io/installation))
+- **PostgreSQL** 15+ OR **Docker** (for Weaviate)
+
+**Installation:**
 
 ```bash
 # 1. Clone and install
@@ -179,34 +191,42 @@ The system follows a microservices architecture with the following key component
 ## 📚 Documentation
 
 ### 🚀 Getting Started
+
 - **[Getting Started Guide](./docs/GETTING-STARTED.md)** - 5-step quick setup
 - **[Tool Installation](./docs/TOOL-INSTALLATION.md)** - Install Node.js, PostgreSQL, etc.
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Complete configuration guide
 - **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ### ☁️ GCP & Infrastructure
+
 - **[GCP Management](./docs/GCP-MANAGEMENT.md)** - Complete GCP resource management
 - **[GCP Quick Reference](./docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
 - **[GCP Cleanup Guide](./docs/GCP-CLEANUP-GUIDE.md)** - Delete and manage resources
 - **[GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)** - Infrastructure architecture
 
 ### 🗄️ Database & Storage
+
 - **[Vector Database](./docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector / Weaviate setup
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 
 ### 🔐 Security & Authentication
+
 - **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth
 - **[RBAC Guide](./apps/api-gateway/docs/RBAC-GUIDE.md)** - Role-based access control
 
 ### 🏗️ Architecture
+
 - **[Design Document](./.kiro/specs/real-time-digitwinlive/design.md)** - System design
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus
 - **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query separation
 - **[Microservices Communication](./docs/microservices-communication.md)** - gRPC & service discovery
 
 ### 🛠️ Development
+
 - **[Monorepo Development](./docs/MONOREPO-DEVELOPMENT.md)** - Turborepo & pnpm guide
+- **[Code Quality Guide](./docs/CODE-QUALITY-GUIDE.md)** - Linting, testing, and best practices
+- **[Testing Guide](./docs/TESTING-GUIDE.md)** - Comprehensive testing guide
 - **[Scripts Documentation](./scripts/README.md)** - Utility scripts
 - **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
 

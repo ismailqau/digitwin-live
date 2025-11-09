@@ -9,39 +9,44 @@
 ### Advantages
 
 ✅ **Simplified Infrastructure**
+
 - No separate caching service to manage
 - Fewer moving parts = easier deployment
 - Reduced operational complexity
 
 ✅ **Cost Effective**
+
 - No additional Redis/Memcached instances
 - Single database for both data and cache
 - Lower infrastructure costs
 
 ✅ **ACID Compliance**
+
 - Transactional consistency between cache and data
 - No cache invalidation race conditions
 - Reliable cache updates
 
 ✅ **Advanced Querying**
+
 - Complex cache queries with SQL
 - JSONB support for structured cache data
 - Full-text search capabilities
 
 ✅ **Excellent Performance**
+
 - PostgreSQL 15+ with proper indexing is very fast
 - B-tree and GIN indexes for quick lookups
 - Query result caching built-in
 
 ### Performance Characteristics
 
-| Operation | PostgreSQL Cache | Redis |
-|-----------|-----------------|-------|
-| Simple GET | ~1-2ms | ~0.5-1ms |
-| Complex Query | ~2-5ms | N/A (requires app logic) |
-| JSONB Query | ~2-3ms | N/A |
-| Transactional | ✅ Yes | ❌ No |
-| Persistence | ✅ Built-in | ⚠️ Optional |
+| Operation     | PostgreSQL Cache | Redis                    |
+| ------------- | ---------------- | ------------------------ |
+| Simple GET    | ~1-2ms           | ~0.5-1ms                 |
+| Complex Query | ~2-5ms           | N/A (requires app logic) |
+| JSONB Query   | ~2-3ms           | N/A                      |
+| Transactional | ✅ Yes           | ❌ No                    |
+| Persistence   | ✅ Built-in      | ⚠️ Optional              |
 
 ## Implementation
 
@@ -58,9 +63,9 @@ CREATE TABLE cache_vector_searches (
   expires_at TIMESTAMP NOT NULL
 );
 
-CREATE INDEX idx_cache_vector_user_hash 
+CREATE INDEX idx_cache_vector_user_hash
   ON cache_vector_searches(user_id, query_hash);
-CREATE INDEX idx_cache_vector_expires 
+CREATE INDEX idx_cache_vector_expires
   ON cache_vector_searches(expires_at);
 
 -- LLM responses cache
@@ -73,9 +78,9 @@ CREATE TABLE cache_llm_responses (
   expires_at TIMESTAMP NOT NULL
 );
 
-CREATE INDEX idx_cache_llm_hash 
+CREATE INDEX idx_cache_llm_hash
   ON cache_llm_responses(prompt_hash);
-CREATE INDEX idx_cache_llm_expires 
+CREATE INDEX idx_cache_llm_expires
   ON cache_llm_responses(expires_at);
 ```
 
@@ -87,8 +92,8 @@ const cached = await db.cache_vector_searches.findFirst({
   where: {
     user_id: userId,
     query_hash: hash,
-    expires_at: { gt: new Date() }
-  }
+    expires_at: { gt: new Date() },
+  },
 });
 
 // Set cache
@@ -97,8 +102,8 @@ await db.cache_vector_searches.create({
     user_id: userId,
     query_hash: hash,
     results: results,
-    expires_at: new Date(Date.now() + ttl)
-  }
+    expires_at: new Date(Date.now() + ttl),
+  },
 });
 ```
 
@@ -119,6 +124,7 @@ CACHE_TTL_LONG=86400     # 24 hours
 ### No Additional Services Required
 
 Unlike Redis-based caching, no additional services need to be:
+
 - Installed
 - Configured
 - Monitored
@@ -146,7 +152,7 @@ Monitor cache performance using PostgreSQL's built-in tools:
 
 ```sql
 -- Cache hit rate
-SELECT 
+SELECT
   table_name,
   COUNT(*) as total_entries,
   COUNT(*) FILTER (WHERE expires_at > NOW()) as active_entries
@@ -155,7 +161,7 @@ WHERE table_name LIKE 'cache_%'
 GROUP BY table_name;
 
 -- Cache size
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -224,8 +230,8 @@ CREATE INDEX idx_cache_key ON cache_table(cache_key);
 CREATE INDEX idx_cache_data ON cache_table USING GIN(data);
 
 -- Partial indexes for active cache only
-CREATE INDEX idx_cache_active 
-  ON cache_table(cache_key) 
+CREATE INDEX idx_cache_active
+  ON cache_table(cache_key)
   WHERE expires_at > NOW();
 ```
 
@@ -247,7 +253,7 @@ const pool = new Pool({
 const query = {
   name: 'get-cache',
   text: 'SELECT * FROM cache_table WHERE cache_key = $1 AND expires_at > NOW()',
-  values: [key]
+  values: [key],
 };
 ```
 
@@ -257,10 +263,10 @@ const query = {
 
 ```typescript
 const TTL = {
-  SHORT: 300,      // 5 minutes - frequently changing data
-  MEDIUM: 3600,    // 1 hour - moderately stable data
-  LONG: 86400,     // 24 hours - stable data
-  WEEK: 604800,    // 7 days - very stable data
+  SHORT: 300, // 5 minutes - frequently changing data
+  MEDIUM: 3600, // 1 hour - moderately stable data
+  LONG: 86400, // 24 hours - stable data
+  WEEK: 604800, // 7 days - very stable data
 };
 ```
 
@@ -281,13 +287,13 @@ async function getData(key: string) {
   // Try cache first
   const cached = await cache.get(key);
   if (cached) return cached;
-  
+
   // Fetch from source
   const data = await fetchFromSource();
-  
+
   // Store in cache
   await cache.set(key, data, TTL.MEDIUM);
-  
+
   return data;
 }
 ```
@@ -298,7 +304,7 @@ async function getData(key: string) {
 // Pre-populate cache for common queries
 async function warmCache() {
   const commonQueries = await getCommonQueries();
-  
+
   for (const query of commonQueries) {
     const result = await executeQuery(query);
     await cache.set(query.key, result, TTL.LONG);
@@ -319,6 +325,7 @@ async function warmCache() {
 ### Alerting
 
 Set up alerts for:
+
 - Cache hit rate drops below 70%
 - Cache size exceeds 80% of allocated space
 - Cache query time exceeds 10ms (p95)
@@ -327,6 +334,7 @@ Set up alerts for:
 ## Conclusion
 
 PostgreSQL-based caching provides:
+
 - ✅ Simplified infrastructure
 - ✅ Lower costs
 - ✅ ACID compliance

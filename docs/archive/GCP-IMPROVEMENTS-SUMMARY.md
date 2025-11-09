@@ -9,23 +9,27 @@
 The cleanup script now offers **three deletion modes** for maximum flexibility:
 
 #### **Interactive Menu Mode** (Default)
+
 ```bash
 ./scripts/gcp-cleanup.sh
 pnpm gcp:cleanup
 ```
 
 Shows main menu:
+
 1. Delete ALL resources (complete cleanup)
 2. Delete SELECTED resources (interactive)
 3. Cancel
 
 #### **Menu-Based Selection** (NEW!)
+
 ```bash
 ./scripts/gcp-cleanup.sh --menu
 pnpm gcp:cleanup-menu
 ```
 
 Select specific resources from a numbered list:
+
 ```
 Select resources to delete:
   1) Weaviate deployment
@@ -41,17 +45,20 @@ Enter choices (comma-separated, e.g., 1,3,4): 1,3
 ```
 
 **Benefits**:
+
 - Choose exactly what to delete
 - No need to answer y/n for each resource
 - Quick and efficient for specific cleanup tasks
 
 #### **Interactive Y/N Mode**
+
 ```bash
 ./scripts/gcp-cleanup.sh --selective
 pnpm gcp:cleanup-selective
 ```
 
 Answer y/n for each resource type:
+
 ```
 Delete Weaviate deployment? (y/N) y
 Delete GKE cluster? (y/N) n
@@ -62,6 +69,7 @@ Delete Secrets? (y/N) n
 ```
 
 #### **Complete Cleanup Mode**
+
 ```bash
 ./scripts/gcp-cleanup.sh --all
 pnpm gcp:cleanup-all
@@ -76,18 +84,21 @@ Deletes everything with a single confirmation.
 Save costs by stopping all resources when not in use, without deleting them.
 
 #### **Stop All Command**
+
 ```bash
 ./scripts/gcp-manage.sh stop-all
 pnpm gcp:stop-all
 ```
 
 **What it does**:
+
 - Stops Cloud SQL instance (~$50/month savings)
 - Scales GKE cluster to 0 nodes (~$24/month savings)
 - Scales Weaviate to 0 replicas
 - **Total savings: ~$74/month**
 
 **Output**:
+
 ```
 === Stopping All Resources ===
 
@@ -103,18 +114,21 @@ Continue? (y/N)
 ```
 
 #### **Start All Command**
+
 ```bash
 ./scripts/gcp-manage.sh start-all
 pnpm gcp:start-all
 ```
 
 **What it does**:
+
 - Starts Cloud SQL instance
 - Scales GKE cluster to 1 node
 - Scales Weaviate to 1 replica
 - **No data loss** - everything resumes where it left off
 
 **Output**:
+
 ```
 === Starting All Resources ===
 
@@ -133,33 +147,35 @@ Continue? (y/N)
 
 ### Cleanup Script
 
-| Feature | Before | After |
-|---------|--------|-------|
-| Deletion modes | 1 (all or nothing) | 3 (menu, interactive, all) |
-| Resource selection | Manual script editing | Interactive menu |
-| Flexibility | Low | High |
-| User experience | Basic | Professional |
+| Feature            | Before                | After                      |
+| ------------------ | --------------------- | -------------------------- |
+| Deletion modes     | 1 (all or nothing)    | 3 (menu, interactive, all) |
+| Resource selection | Manual script editing | Interactive menu           |
+| Flexibility        | Low                   | High                       |
+| User experience    | Basic                 | Professional               |
 
 ### Resource Management
 
-| Feature | Before | After |
-|---------|--------|-------|
+| Feature                   | Before | After  |
+| ------------------------- | ------ | ------ |
 | Stop individual resources | ✅ Yes | ✅ Yes |
-| Stop all resources | ❌ No | ✅ Yes |
-| Start all resources | ❌ No | ✅ Yes |
-| Cost savings info | ❌ No | ✅ Yes |
-| Confirmation prompts | ✅ Yes | ✅ Yes |
+| Stop all resources        | ❌ No  | ✅ Yes |
+| Start all resources       | ❌ No  | ✅ Yes |
+| Cost savings info         | ❌ No  | ✅ Yes |
+| Confirmation prompts      | ✅ Yes | ✅ Yes |
 
 ---
 
 ## 💰 Cost Optimization
 
 ### Stop All Resources
+
 - **Monthly savings**: ~$74
 - **Annual savings**: ~$888
 - **Use case**: Stop resources overnight, weekends, or during development breaks
 
 ### Example Usage Pattern
+
 ```bash
 # Friday evening - stop everything
 pnpm gcp:stop-all
@@ -175,6 +191,7 @@ pnpm gcp:start-all
 ## 🎯 Use Cases
 
 ### 1. Development Environment
+
 ```bash
 # Daily workflow
 pnpm gcp:start-all      # Morning: start work
@@ -183,6 +200,7 @@ pnpm gcp:stop-all       # Evening: save costs
 ```
 
 ### 2. Selective Cleanup
+
 ```bash
 # Remove only test resources
 pnpm gcp:cleanup-menu
@@ -190,12 +208,14 @@ pnpm gcp:cleanup-menu
 ```
 
 ### 3. Complete Teardown
+
 ```bash
 # Remove everything for project end
 pnpm gcp:cleanup-all
 ```
 
 ### 4. Cost Emergency
+
 ```bash
 # Immediately stop all billing
 pnpm gcp:stop-all
@@ -206,6 +226,7 @@ pnpm gcp:stop-all
 ## 📝 New NPM Scripts
 
 ### Cleanup Scripts
+
 ```json
 {
   "gcp:cleanup": "./scripts/gcp-cleanup.sh",
@@ -216,6 +237,7 @@ pnpm gcp:stop-all
 ```
 
 ### Stop/Start Scripts
+
 ```json
 {
   "gcp:stop-all": "./scripts/gcp-manage.sh stop-all",
@@ -228,12 +250,14 @@ pnpm gcp:stop-all
 ## 🔧 Technical Improvements
 
 ### Cleanup Script Enhancements
+
 1. **Menu-based resource selection** - Choose specific resources by number
 2. **Improved input handling** - Better read command usage
 3. **Clear confirmation messages** - Shows exactly what will be deleted
 4. **Flexible command-line options** - Multiple ways to invoke
 
 ### Management Script Enhancements
+
 1. **Stop all functionality** - Single command to stop everything
 2. **Start all functionality** - Single command to start everything
 3. **Cost savings display** - Shows estimated savings
@@ -245,6 +269,7 @@ pnpm gcp:stop-all
 ## 🎨 User Experience Improvements
 
 ### Better Feedback
+
 ```
 ✅ Success messages with clear actions
 ⚠️  Warning messages for destructive operations
@@ -253,6 +278,7 @@ pnpm gcp:stop-all
 ```
 
 ### Clear Confirmations
+
 ```
 ⚠️  You selected to delete:
   ✓ Weaviate deployment
@@ -262,6 +288,7 @@ Confirm deletion? (yes/NO)
 ```
 
 ### Cost Awareness
+
 ```
 ⚠️  This will stop all running GCP resources to minimize costs:
 
@@ -277,11 +304,13 @@ Confirm deletion? (yes/NO)
 ## 📚 Documentation Updates
 
 ### Updated Files
+
 1. **`docs/GCP-QUICK-REFERENCE.md`** - Added new commands
 2. **`docs/GCP-MANAGEMENT.md`** - Added stop/start all section
 3. **`package.json`** - Added 4 new npm scripts
 
 ### New Documentation
+
 - **`docs/GCP-IMPROVEMENTS-SUMMARY.md`** - This file
 
 ---
@@ -289,6 +318,7 @@ Confirm deletion? (yes/NO)
 ## 🚀 Quick Start Examples
 
 ### Save Costs Overnight
+
 ```bash
 # Before leaving work
 pnpm gcp:stop-all
@@ -298,6 +328,7 @@ pnpm gcp:start-all
 ```
 
 ### Clean Up Test Resources
+
 ```bash
 # Use menu to select specific resources
 pnpm gcp:cleanup-menu
@@ -305,12 +336,14 @@ pnpm gcp:cleanup-menu
 ```
 
 ### Emergency Stop
+
 ```bash
 # Stop everything immediately
 pnpm gcp:stop-all
 ```
 
 ### Complete Project Cleanup
+
 ```bash
 # Delete everything
 pnpm gcp:cleanup-all
@@ -321,6 +354,7 @@ pnpm gcp:cleanup-all
 ## ✅ Testing Results
 
 ### Cleanup Script Tests
+
 ```bash
 # Test menu selection
 ✅ Menu mode works correctly
@@ -339,6 +373,7 @@ pnpm gcp:cleanup-all
 ```
 
 ### Stop/Start All Tests
+
 ```bash
 # Test stop all
 ✅ Shows correct cost savings
@@ -358,18 +393,21 @@ pnpm gcp:cleanup-all
 ## 🎯 Benefits Summary
 
 ### For Developers
+
 - ✅ **Flexible cleanup options** - Choose exactly what to delete
 - ✅ **Cost control** - Stop resources when not in use
 - ✅ **Quick workflows** - Single commands for common tasks
 - ✅ **No data loss** - Stop/start without deletion
 
 ### For Operations
+
 - ✅ **Cost optimization** - Save ~$74/month when stopped
 - ✅ **Professional tooling** - Enterprise-grade management
 - ✅ **Clear feedback** - Always know what's happening
 - ✅ **Safety first** - Multiple confirmation prompts
 
 ### For Teams
+
 - ✅ **Easy onboarding** - Clear, documented commands
 - ✅ **Consistent workflows** - Standard npm scripts
 - ✅ **Cost awareness** - Visible savings information
@@ -380,12 +418,14 @@ pnpm gcp:cleanup-all
 ## 📈 Impact
 
 ### Cost Savings Potential
+
 - **Daily stop/start**: ~$2.50/day savings
 - **Weekend stop**: ~$5/weekend savings
 - **Monthly (weekends only)**: ~$20/month savings
 - **Monthly (nights + weekends)**: ~$50/month savings
 
 ### Time Savings
+
 - **Cleanup time**: Reduced from 5-10 minutes to 30 seconds
 - **Resource management**: Single command vs multiple commands
 - **Decision making**: Clear options vs manual script editing
@@ -395,6 +435,7 @@ pnpm gcp:cleanup-all
 ## 🔮 Future Enhancements
 
 Potential future improvements:
+
 - [ ] Scheduled stop/start (cron jobs)
 - [ ] Cost tracking and reporting
 - [ ] Resource usage analytics
@@ -407,6 +448,7 @@ Potential future improvements:
 ## 📞 Quick Reference
 
 ### Most Common Commands
+
 ```bash
 # Daily use
 pnpm gcp:stop-all          # End of day

@@ -55,6 +55,7 @@ DATABASE_URL=postgresql://username@localhost:5432/digitwinline_dev
 Choose one of the following options:
 
 **Option A: PostgreSQL with pgvector (Recommended)**
+
 ```bash
 # Install pgvector extension (see VECTOR-DATABASE-SETUP.md for details)
 # Then enable in your database:
@@ -67,6 +68,7 @@ WEAVIATE_ENABLED=false
 ```
 
 **Option B: Weaviate (Free Alternative)**
+
 ```bash
 # Start Weaviate with Docker
 docker run -d --name weaviate -p 8080:8080 \

@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-push hook for comprehensive checks
+echo "🚀 Running pre-push checks..."
+
+# Run type checking
+echo "📝 Type checking..."
+pnpm type-check
+
+# Run all tests
+echo "🧪 Running all tests..."
+pnpm test
+
+# Run build to ensure everything compiles
+echo "🏗️  Building project..."
+pnpm build
+
+# Run security audit
+echo "🔒 Running security audit..."
+pnpm audit:check || true
+
+echo "✅ Pre-push checks passed!"

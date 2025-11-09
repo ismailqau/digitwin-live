@@ -3,6 +3,7 @@
 ## 📋 Current Setup Status
 
 ### ✅ Completed Infrastructure
+
 - **Monorepo**: Turborepo + pnpm workspaces configured
 - **GCP Management**: Complete script-based management system
   - Scripts: `gcp-setup.sh`, `gcp-create-sql.sh`, `gcp-manage.sh`, `gcp-cleanup.sh`
@@ -15,6 +16,7 @@
 - **Documentation**: Comprehensive docs in `/docs` with clean structure
 
 ### 📚 Key Documentation
+
 - **[GCP Management](../docs/GCP-MANAGEMENT.md)** - Complete GCP resource management
 - **[GCP Quick Reference](../docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
 - **[GCP Cleanup Guide](../docs/GCP-CLEANUP-GUIDE.md)** - Resource cleanup and cost optimization
@@ -24,6 +26,7 @@
 - **[Getting Started](../docs/GETTING-STARTED.md)** - Quick setup guide
 
 ### 🎯 Implementation Guidelines
+
 1. **Use PostgreSQL for caching** - NOT Redis or Memcached (see docs/CACHING-SUMMARY.md)
 2. **Use GCP scripts** - All GCP operations via bash scripts (Terraform optional)
 3. **Vector database** - Use `WEAVIATE_ENABLED` env var to switch between PostgreSQL and Weaviate
@@ -193,6 +196,7 @@
 ## Phase 3: Audio Processing and ASR
 
 ### 📝 Implementation Notes
+
 - Use WebSocket for real-time audio streaming (already configured)
 - Cache audio chunks in PostgreSQL cache_audio_chunks table
 - Store processed audio in GCS bucket: digitwin-live-uploads
@@ -201,6 +205,7 @@
 - VAD threshold: Configurable sensitivity for speech detection
 
 ### 🎯 Audio Pipeline Overview
+
 ```
 Mobile App → WebSocket → Backend → ASR Service → Transcript
      ↓                                                ↓
@@ -294,6 +299,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 ## Phase 4: RAG Pipeline and Knowledge Base
 
 ### 📝 Implementation Notes
+
 - Vector database already configured (PostgreSQL + pgvector OR Weaviate)
 - Use `WEAVIATE_ENABLED=true/false` to switch between databases
 - Cache embeddings in PostgreSQL cache_embeddings table
@@ -336,6 +342,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 ## Phase 5: LLM Integration and Response Generation
 
 ### 📝 Implementation Notes
+
 - Cache LLM responses in PostgreSQL cache_llm_responses table
 - Use cache_key = hash(prompt + context) for deduplication
 - Implement TTL-based cache expiration (CACHE_TTL_MEDIUM = 3600s)
@@ -364,6 +371,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 ## Phase 6: Voice Cloning and TTS
 
 ### 📝 Implementation Notes
+
 - Store voice models in GCS bucket: digitwin-live-voice-models
 - Cache active voice models in memory for fast access
 - Use GKE with GPU nodes (T4) - can be stopped with `pnpm gcp:stop-all`
@@ -372,6 +380,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 - Training time: 10-30 minutes depending on sample quality and length
 
 ### 🎯 Voice Cloning Pipeline
+
 ```
 Voice Samples → Preprocessing → Training → Voice Model → TTS
       ↓              ↓             ↓           ↓          ↓
@@ -472,6 +481,7 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
 ## Phase 7: Face Cloning and Model Creation
 
 ### 📝 Implementation Notes
+
 - Store face models in GCS bucket: digitwin-live-face-models
 - Store face model metadata in PostgreSQL face_models table
 - Use GKE with GPU nodes for face processing
@@ -571,6 +581,7 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
 ## Phase 10: Performance Optimization and Caching
 
 ### 📝 Implementation Notes
+
 - **IMPORTANT**: Use PostgreSQL for ALL caching, NOT Redis or Memcached
 - Cache tables already designed (see docs/CACHING-ARCHITECTURE.md)
 - Environment variables: ENABLE_CACHING, CACHE_TTL_SHORT, CACHE_TTL_MEDIUM, CACHE_TTL_LONG
@@ -580,7 +591,7 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
 
 - [ ] 10. Implement caching and performance optimization
   - ✅ PostgreSQL cache tables architecture already designed (see docs/CACHING-ARCHITECTURE.md)
-  - ✅ Cache table pattern: cache_<type> with cache_key, cache_value (JSONB), expires_at
+  - ✅ Cache table pattern: cache\_<type> with cache_key, cache_value (JSONB), expires_at
   - ✅ Environment variables: ENABLE_CACHING, CACHE_TTL_SHORT, CACHE_TTL_MEDIUM, CACHE_TTL_LONG
   - Implement cache tables: cache_vector_searches, cache_llm_responses, cache_audio_chunks, cache_embeddings
   - Create cache service with get/set/delete/cleanup methods
@@ -592,7 +603,7 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
   - Create connection pooling for databases and APIs
   - Implement query result caching with cache-aside pattern using PostgreSQL
   - Create cache warming strategies for frequently accessed data
-  - Implement automatic cache cleanup job (DELETE FROM cache_* WHERE expires_at < NOW())
+  - Implement automatic cache cleanup job (DELETE FROM cache\_\* WHERE expires_at < NOW())
   - _Requirements: 11_
   - _Note: Use PostgreSQL for caching, NOT Redis or Memcached (see docs/CACHING-SUMMARY.md)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information

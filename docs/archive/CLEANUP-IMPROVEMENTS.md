@@ -18,6 +18,7 @@ When you choose to delete Cloud SQL instances, the script now:
 4. **Deletes only selected instances**
 
 **Example**:
+
 ```bash
 pnpm gcp:cleanup-menu
 # Select: 3 (Cloud SQL instances)
@@ -49,6 +50,7 @@ Similarly, when deleting storage buckets:
 4. **Deletes only selected buckets**
 
 **Example**:
+
 ```bash
 Found 4 storage buckets:
 
@@ -77,6 +79,7 @@ pnpm gcp:cleanup-sql
 ```
 
 **Benefits**:
+
 - Focus only on SQL instances
 - Faster than full cleanup menu
 - Perfect for managing multiple database instances
@@ -139,12 +142,14 @@ pnpm gcp:cleanup-menu
 ## 🔄 How It Works
 
 ### Before (Old Behavior)
+
 ```
 Delete Cloud SQL? (y/N) y
 → Deletes ALL instances (no choice)
 ```
 
 ### After (New Behavior)
+
 ```
 Delete Cloud SQL? (y/N) y
 → Shows list of all instances
@@ -157,14 +162,14 @@ Delete Cloud SQL? (y/N) y
 
 ## 📊 Comparison
 
-| Feature | Before | After |
-|---------|--------|-------|
-| SQL instance selection | ❌ All or nothing | ✅ Select specific instances |
-| Bucket selection | ❌ All or nothing | ✅ Select specific buckets |
-| Instance details | ❌ No details shown | ✅ Full details (version, tier, IP) |
-| Bucket sizes | ❌ No sizes shown | ✅ Shows sizes |
-| Flexibility | Low | High |
-| Safety | Medium | High |
+| Feature                | Before              | After                               |
+| ---------------------- | ------------------- | ----------------------------------- |
+| SQL instance selection | ❌ All or nothing   | ✅ Select specific instances        |
+| Bucket selection       | ❌ All or nothing   | ✅ Select specific buckets          |
+| Instance details       | ❌ No details shown | ✅ Full details (version, tier, IP) |
+| Bucket sizes           | ❌ No sizes shown   | ✅ Shows sizes                      |
+| Flexibility            | Low                 | High                                |
+| Safety                 | Medium              | High                                |
 
 ---
 
@@ -173,6 +178,7 @@ Delete Cloud SQL? (y/N) y
 ### Your Current Situation
 
 You have 3 Cloud SQL instances:
+
 - `digitwin-live-db` (POSTGRES_15, $7.67/month) - OLD
 - `digitwinlive-db` (POSTGRES_17, $50/month) - CURRENT
 - `clone-db-prod` (POSTGRES_17, $150/month) - TEST/EXPENSIVE
@@ -206,6 +212,7 @@ pnpm gcp:cleanup-menu
 ## 🚀 Commands
 
 ### New Commands
+
 ```bash
 # Dedicated SQL cleanup
 pnpm gcp:cleanup-sql
@@ -220,6 +227,7 @@ pnpm gcp:cleanup-menu
 ```
 
 ### Existing Commands (Still Work)
+
 ```bash
 pnpm gcp:cleanup              # Interactive menu
 pnpm gcp:cleanup-selective    # Y/N for each resource type
@@ -260,17 +268,20 @@ The improved functions:
 ## 🎉 Benefits
 
 ### For You
+
 - ✅ **Precise control** - Delete exactly what you want
 - ✅ **Cost optimization** - Remove expensive instances easily
 - ✅ **Safety** - See what you're deleting before confirmation
 - ✅ **Flexibility** - Multiple ways to accomplish the same task
 
 ### For Your Wallet
+
 - 💰 **Save $157/month** by removing unnecessary instances
 - 💰 **Avoid mistakes** by seeing details before deletion
 - 💰 **Quick cleanup** of test/development resources
 
 ### For Your Workflow
+
 - ⚡ **Faster** - Dedicated scripts for specific tasks
 - ⚡ **Clearer** - See all options at once
 - ⚡ **Safer** - Multiple confirmation steps
@@ -288,11 +299,13 @@ The improved functions:
 ## ✅ Next Steps
 
 1. **Check your current instances**:
+
 ```bash
 gcloud sql instances list
 ```
 
 2. **Run the cleanup**:
+
 ```bash
 pnpm gcp:cleanup-sql
 ```
@@ -300,11 +313,13 @@ pnpm gcp:cleanup-sql
 3. **Select instances to delete** (e.g., 1,3)
 
 4. **Verify everything works**:
+
 ```bash
 pnpm verify:vector-db
 ```
 
 5. **Check your savings**:
+
 ```bash
 pnpm gcp:cost
 ```

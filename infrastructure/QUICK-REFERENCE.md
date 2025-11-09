@@ -40,9 +40,9 @@
 
 ## Environment Values
 
-| Environment | Project ID Pattern    | Region      |
-| ----------- | --------------------- | ----------- |
-| dev         | digitwinlive     | us-central1 |
+| Environment | Project ID Pattern   | Region      |
+| ----------- | -------------------- | ----------- |
+| dev         | digitwinlive         | us-central1 |
 | staging     | digitwinlive-staging | us-central1 |
 | prod        | digitwinlive-prod    | us-central1 |
 

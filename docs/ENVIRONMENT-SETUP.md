@@ -276,6 +276,7 @@ The application uses PostgreSQL with the pgvector extension for vector storage a
 **Setup:**
 
 1. Install pgvector extension in your PostgreSQL database:
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
@@ -283,6 +284,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 2. The vector tables will be created automatically by the application migrations.
 
 3. Configuration (uses existing DATABASE_URL):
+
 ```bash
 VECTOR_DIMENSIONS=768  # Google text-embedding-004 dimension
 VECTOR_INDEX_LISTS=100  # IVFFlat index parameter

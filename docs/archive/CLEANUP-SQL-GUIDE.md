@@ -4,11 +4,11 @@
 
 You have **3 Cloud SQL instances** running:
 
-| Instance | Version | Tier | IP | Cost/Month |
-|----------|---------|------|----|-----------:|
-| digitwin-live-db | POSTGRES_15 | db-f1-micro | 34.59.156.169 | ~$7.67 |
-| digitwinlive-db | POSTGRES_17 | (standard) | 136.114.179.89 | ~$50 |
-| clone-db-prod | POSTGRES_17 | db-perf-optimized-N-4 | 34.66.124.92 | ~$150 |
+| Instance         | Version     | Tier                  | IP             | Cost/Month |
+| ---------------- | ----------- | --------------------- | -------------- | ---------: |
+| digitwin-live-db | POSTGRES_15 | db-f1-micro           | 34.59.156.169  |     ~$7.67 |
+| digitwinlive-db  | POSTGRES_17 | (standard)            | 136.114.179.89 |       ~$50 |
+| clone-db-prod    | POSTGRES_17 | db-perf-optimized-N-4 | 34.66.124.92   |      ~$150 |
 
 **Total cost: ~$207/month**
 
@@ -17,17 +17,20 @@ You have **3 Cloud SQL instances** running:
 ## 🎯 Quick Cleanup Options
 
 ### Option 1: Use the SQL-Only Cleanup Script (Recommended)
+
 ```bash
 pnpm gcp:cleanup-sql
 ```
 
 This will:
+
 1. Show all your Cloud SQL instances with details
 2. Let you select which ones to delete (e.g., 1,3)
 3. Confirm before deletion
 4. Delete only the selected instances
 
 **Example interaction**:
+
 ```
 === Cloud SQL Instance Cleanup ===
 
@@ -64,6 +67,7 @@ Deleting Cloud SQL instance: digitwin-live-db...
 ```
 
 ### Option 2: Use Main Cleanup Script
+
 ```bash
 pnpm gcp:cleanup-menu
 # Select: 3 (Cloud SQL instances)
@@ -72,6 +76,7 @@ pnpm gcp:cleanup-menu
 This integrates with the full cleanup menu and will also show instance selection.
 
 ### Option 3: Direct gcloud Commands
+
 ```bash
 # Delete specific instances
 gcloud sql instances delete digitwin-live-db --quiet
@@ -88,6 +93,7 @@ gcloud sql instances delete clone-db-prod --quiet
 ### Which Instances to Keep?
 
 1. **Check your .env file**:
+
 ```bash
 grep DATABASE_URL .env
 ```
@@ -123,11 +129,13 @@ pnpm gcp:cleanup-sql
 ### Before Deleting
 
 1. **Check which instance is in use**:
+
 ```bash
 grep DATABASE_URL .env
 ```
 
 2. **Backup important data**:
+
 ```bash
 # Export database
 gcloud sql export sql INSTANCE_NAME gs://bucket/backup.sql \
@@ -135,6 +143,7 @@ gcloud sql export sql INSTANCE_NAME gs://bucket/backup.sql \
 ```
 
 3. **Verify connections**:
+
 ```bash
 # Check if any services are connected
 gcloud sql operations list --instance=INSTANCE_NAME --limit=5
@@ -145,6 +154,7 @@ gcloud sql operations list --instance=INSTANCE_NAME --limit=5
 1. **Update .env file** if you deleted the active instance
 2. **Update connection strings** in your application
 3. **Verify application still works**:
+
 ```bash
 pnpm verify:vector-db
 ```
@@ -154,12 +164,14 @@ pnpm verify:vector-db
 ## 📊 Cost Comparison
 
 ### Current State (3 instances)
+
 - digitwin-live-db (POSTGRES_15): $7.67/month
 - digitwinlive-db (POSTGRES_17): $50/month
 - clone-db-prod (POSTGRES_17): $150/month
 - **Total**: $207.67/month
 
 ### Recommended State (1 instance)
+
 - digitwinlive-db (POSTGRES_17): $50/month
 - **Total**: $50/month
 - **Savings**: $157.67/month ($1,892/year)
@@ -167,6 +179,7 @@ pnpm verify:vector-db
 ### Alternative: Stop Instead of Delete
 
 If you're not sure, you can stop instances instead:
+
 ```bash
 # Stop an instance (keeps data, stops billing)
 gcloud sql instances patch INSTANCE_NAME --activation-policy=NEVER
@@ -180,6 +193,7 @@ gcloud sql instances patch INSTANCE_NAME --activation-policy=ALWAYS
 ## 🔧 Troubleshooting
 
 ### "Cannot delete instance with backups"
+
 ```bash
 # Delete backups first
 gcloud sql backups list --instance=INSTANCE_NAME
@@ -187,6 +201,7 @@ gcloud sql backups delete BACKUP_ID --instance=INSTANCE_NAME
 ```
 
 ### "Instance is in use"
+
 ```bash
 # Check connections
 gcloud sql operations list --instance=INSTANCE_NAME
@@ -196,6 +211,7 @@ gcloud sql instances delete INSTANCE_NAME --quiet --force
 ```
 
 ### "Permission denied"
+
 ```bash
 # Ensure you have the right permissions
 gcloud projects get-iam-policy PROJECT_ID

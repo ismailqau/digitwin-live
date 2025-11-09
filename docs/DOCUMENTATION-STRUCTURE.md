@@ -53,21 +53,25 @@ docs/
 ## 🎯 Documentation Principles
 
 ### 1. No Redundancy
+
 - Each topic has ONE authoritative document
 - Related information is cross-referenced, not duplicated
 - Session notes are archived, not kept in main docs
 
 ### 2. Clear Hierarchy
+
 - README.md is the entry point
 - INDEX.md provides complete navigation
 - Documents are organized by category
 
 ### 3. Practical Focus
+
 - Quick start guides for common tasks
 - Command cheat sheets for daily operations
 - Troubleshooting guides for common issues
 
 ### 4. Easy Navigation
+
 - Clear file names describe content
 - Consistent structure across documents
 - Cross-references between related topics
@@ -77,10 +81,12 @@ docs/
 ## 📖 Document Purposes
 
 ### Core Navigation
+
 - **README.md** - Documentation hub, quick navigation
 - **INDEX.md** - Complete index with all documents
 
 ### Getting Started (5 docs)
+
 - **GETTING-STARTED.md** - 5-step quick setup
 - **TOOL-INSTALLATION.md** - Install Node.js, PostgreSQL, etc.
 - **ENVIRONMENT-SETUP.md** - Complete configuration guide
@@ -88,23 +94,27 @@ docs/
 - **TROUBLESHOOTING.md** - Common issues and solutions
 
 ### GCP & Infrastructure (4 docs)
+
 - **GCP-MANAGEMENT.md** - Complete resource management guide
 - **GCP-QUICK-REFERENCE.md** - Command cheat sheet
 - **GCP-CLEANUP-GUIDE.md** - Delete and manage resources
 - **GCP-INFRASTRUCTURE.md** - Infrastructure architecture
 
 ### Database & Storage (4 docs)
+
 - **VECTOR-DATABASE.md** - Vector database setup and migration
 - **DATABASE-ARCHITECTURE.md** - Schema and repository pattern
 - **CACHING-ARCHITECTURE.md** - PostgreSQL-based caching
 - **CACHING-SUMMARY.md** - Why PostgreSQL instead of Redis
 
 ### Architecture (3 docs)
+
 - **EVENT-DRIVEN-ARCHITECTURE.md** - Event bus and event sourcing
 - **CQRS-ARCHITECTURE.md** - Command Query separation
 - **microservices-communication.md** - gRPC and service discovery
 
 ### Development (1 doc)
+
 - **MONOREPO-DEVELOPMENT.md** - Turborepo & pnpm guide
 
 ---
@@ -129,6 +139,7 @@ docs/
 ### Archiving Documentation
 
 Session notes and temporary documentation go to `docs/archive/`:
+
 - Session summaries
 - Implementation notes
 - Temporary guides
@@ -166,16 +177,19 @@ Before publishing documentation:
 ## 🎯 Quick Access
 
 ### For New Users
+
 1. [docs/README.md](./README.md)
 2. [GETTING-STARTED.md](./GETTING-STARTED.md)
 3. [TOOL-INSTALLATION.md](./TOOL-INSTALLATION.md)
 
 ### For Developers
+
 1. [MONOREPO-DEVELOPMENT.md](./MONOREPO-DEVELOPMENT.md)
 2. [DATABASE-ARCHITECTURE.md](./DATABASE-ARCHITECTURE.md)
 3. [EVENT-DRIVEN-ARCHITECTURE.md](./EVENT-DRIVEN-ARCHITECTURE.md)
 
 ### For DevOps
+
 1. [GCP-MANAGEMENT.md](./GCP-MANAGEMENT.md)
 2. [GCP-QUICK-REFERENCE.md](./GCP-QUICK-REFERENCE.md)
 3. [GCP-CLEANUP-GUIDE.md](./GCP-CLEANUP-GUIDE.md)

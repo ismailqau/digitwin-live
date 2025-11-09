@@ -36,6 +36,7 @@ pnpm gcp:status
 ```
 
 **Shows**:
+
 - ✅ Enabled/disabled APIs
 - ✅ Storage bucket status and sizes
 - ✅ Cloud SQL instance state
@@ -44,6 +45,7 @@ pnpm gcp:status
 - ✅ Secret Manager configuration
 
 **Example output**:
+
 ```
 === GCP Resources Status ===
 
@@ -126,12 +128,14 @@ pnpm gcp:cost
 ```
 
 **Typical costs**:
+
 - Storage (15GB): ~$0.30/month
 - Cloud SQL (db-f1-micro): ~$7.67/month
 - GKE (1 node): ~$24/month
 - **Total**: ~$32/month
 
 **Save money**:
+
 ```bash
 # Stop resources when not in use
 ./scripts/gcp-manage.sh stop sql-instance
@@ -147,6 +151,7 @@ pnpm gcp:list
 ```
 
 **Shows**:
+
 - All storage buckets
 - Cloud SQL instances
 - GKE clusters
@@ -161,6 +166,7 @@ pnpm test:gcp
 ```
 
 **Tests**:
+
 - GCP authentication
 - Project access
 - Cloud SQL connection
@@ -241,6 +247,7 @@ pnpm gcp:cost
 **Issue**: Command takes too long or hangs
 
 **Solution**: Commands now have automatic timeouts (5-10 seconds)
+
 - If a command times out, the resource may not exist
 - Check GCP Console for actual status
 
@@ -249,6 +256,7 @@ pnpm gcp:cost
 **Issue**: `Not authenticated with gcloud`
 
 **Solution**:
+
 ```bash
 gcloud auth login
 gcloud auth application-default login
@@ -259,6 +267,7 @@ gcloud auth application-default login
 **Issue**: `Permission denied` errors
 
 **Solution**:
+
 ```bash
 # Check permissions
 gcloud projects get-iam-policy $GCP_PROJECT_ID
@@ -271,6 +280,7 @@ gcloud projects get-iam-policy $GCP_PROJECT_ID
 **Issue**: `API not enabled` errors
 
 **Solution**:
+
 ```bash
 ./scripts/gcp-manage.sh enable apis
 ```

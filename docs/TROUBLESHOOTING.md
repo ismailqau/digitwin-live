@@ -7,6 +7,7 @@ Common issues and their solutions for the DigitWin Live System.
 ### Issue: pgvector Extension Not Found
 
 **Symptoms:**
+
 ```bash
 ERROR: could not open extension control file "/path/to/vector.control": No such file or directory
 ```
@@ -14,30 +15,33 @@ ERROR: could not open extension control file "/path/to/vector.control": No such 
 **Solutions:**
 
 1. **Install pgvector for your PostgreSQL version:**
+
    ```bash
    # macOS with Homebrew
    brew install pgvector
-   
+
    # Ubuntu/Debian
    sudo apt install postgresql-15-pgvector
-   
+
    # From source
    git clone https://github.com/pgvector/pgvector.git
    cd pgvector && make && sudo make install
    ```
 
 2. **Check PostgreSQL version compatibility:**
+
    ```bash
    psql -c "SELECT version();"
    # Ensure pgvector supports your PostgreSQL version
    ```
 
 3. **Use Weaviate as alternative:**
+
    ```bash
    # Update .env
    WEAVIATE_ENABLED=true
    WEAVIATE_URL=http://localhost:8080
-   
+
    # Start Weaviate
    docker run -d --name weaviate -p 8080:8080 \
      -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
@@ -47,6 +51,7 @@ ERROR: could not open extension control file "/path/to/vector.control": No such 
 ### Issue: Weaviate Connection Failed
 
 **Symptoms:**
+
 ```bash
 Error: connect ECONNREFUSED 127.0.0.1:8080
 ```
@@ -54,12 +59,14 @@ Error: connect ECONNREFUSED 127.0.0.1:8080
 **Solutions:**
 
 1. **Check if Weaviate is running:**
+
    ```bash
    curl http://localhost:8080/v1/meta
    docker ps | grep weaviate
    ```
 
 2. **Start Weaviate:**
+
    ```bash
    docker run -d --name weaviate -p 8080:8080 \
      -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
@@ -75,6 +82,7 @@ Error: connect ECONNREFUSED 127.0.0.1:8080
 ### Issue: Vector Database Migration Failed
 
 **Symptoms:**
+
 ```bash
 Error: P1010: User was denied access on the database
 ```
@@ -82,15 +90,17 @@ Error: P1010: User was denied access on the database
 **Solutions:**
 
 1. **Check database credentials:**
+
    ```bash
    # Test connection
    psql "$DATABASE_URL"
-   
+
    # Update DATABASE_URL with correct credentials
    DATABASE_URL=postgresql://correct_user@localhost:5432/dbname
    ```
 
 2. **Create database if it doesn't exist:**
+
    ```bash
    createdb digitwinline_dev
    ```
