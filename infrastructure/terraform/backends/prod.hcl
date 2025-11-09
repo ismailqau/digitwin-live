@@ -1,3 +1,3 @@
 # Backend configuration for production environment
-bucket = "digitwin-live-prod-tfstate"
+bucket = "digitwinlive-prod-tfstate"
 prefix = "terraform/state"

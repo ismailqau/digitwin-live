@@ -555,7 +555,7 @@ After installing all tools:
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd digitwin-live
+   cd digitwinlive
    ```
 
 2. **Follow the Getting Started guide:**

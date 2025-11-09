@@ -84,7 +84,7 @@ CACHE_TTL_LONG=86400
 
 ```bash
 # CORS
-CORS_ORIGIN=https://app.digitwin-live.com
+CORS_ORIGIN=https://app.digitwinlive.com
 
 # Database with SSL
 DATABASE_SSL=true
@@ -202,7 +202,7 @@ GROUP BY table_name;
 2. Create OAuth 2.0 Client ID
 3. Add authorized redirect URIs:
    - Development: `http://localhost:3000/api/v1/auth/oauth/google/callback`
-   - Production: `https://api.digitwin-live.com/api/v1/auth/oauth/google/callback`
+   - Production: `https://api.digitwinlive.com/api/v1/auth/oauth/google/callback`
 4. Copy Client ID and Client Secret
 
 ```bash
@@ -220,7 +220,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/v1/auth/oauth/google/callback
 5. Download and save the `.p8` file
 
 ```bash
-APPLE_CLIENT_ID=com.yourcompany.digitwin-live
+APPLE_CLIENT_ID=com.yourcompany.digitwinlive
 APPLE_TEAM_ID=YOUR_TEAM_ID
 APPLE_KEY_ID=YOUR_KEY_ID
 APPLE_PRIVATE_KEY_PATH=./secrets/apple-private-key.p8

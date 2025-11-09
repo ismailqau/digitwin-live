@@ -68,7 +68,7 @@ check_prerequisites() {
     # Check if in project directory
     if [ ! -f "package.json" ]; then
         log_error "Not in project root directory"
-        log_info "Run this script from the digitwin-live project root"
+        log_info "Run this script from the digitwinlive project root"
         exit 1
     fi
 }
@@ -211,7 +211,7 @@ test_weaviate_gke() {
     fi
     
     # Get GKE credentials with timeout
-    CLUSTER_NAME="digitwin-live-cluster"
+    CLUSTER_NAME="digitwinlive-cluster"
     log_info "Attempting to connect to GKE cluster: $CLUSTER_NAME"
     
     if timeout 15s gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$GCP_REGION" &> /dev/null; then
@@ -328,12 +328,16 @@ test_gcp_configurations() {
     
     # Test Secret Manager (if used)
     log_info "Checking Secret Manager..."
-    if timeout 10s gcloud services list --enabled --filter="name:secretmanager.googleapis.com" --format="value(name)" 2>/dev/null | grep -q "secretmanager"; then
+    if gcloud services list --enabled --filter="name:secretmanager.googleapis.com" --format="value(name)" 2>/dev/null | grep -q "secretmanager"; then
         log_success "Secret Manager API is enabled"
         
-        # Test accessing secrets with timeout
-        SECRET_COUNT=$(timeout 10s gcloud secrets list --format="value(name)" 2>/dev/null | wc -l | xargs)
-        log_info "Found $SECRET_COUNT secrets in Secret Manager"
+        # Test accessing secrets
+        SECRET_COUNT=$(gcloud secrets list --format="value(name)" 2>/dev/null | wc -l | xargs || echo "0")
+        if [ "$SECRET_COUNT" -gt 0 ]; then
+            log_success "Found $SECRET_COUNT secrets in Secret Manager"
+        else
+            log_info "No secrets configured yet (you can add them later)"
+        fi
     else
         log_info "Secret Manager API not enabled (optional)"
     fi
@@ -344,8 +348,12 @@ test_gcp_configurations() {
     
     for bucket in "${BUCKETS[@]}"; do
         if [ -n "$bucket" ]; then
-            if timeout 10s gsutil ls "gs://$bucket" &> /dev/null; then
-                log_success "Bucket $bucket is accessible"
+            # Check if bucket exists (without timeout for reliability)
+            if gsutil ls "gs://$bucket" &> /dev/null; then
+                # Get bucket size
+                SIZE=$(gsutil du -s "gs://$bucket" 2>/dev/null | awk '{print $1}' || echo "0")
+                SIZE_HUMAN=$(numfmt --to=iec $SIZE 2>/dev/null || echo "${SIZE}B")
+                log_success "Bucket $bucket is accessible ($SIZE_HUMAN)"
             else
                 log_info "Bucket $bucket not accessible (may not be created yet)"
             fi
@@ -357,14 +365,26 @@ test_gcp_configurations() {
     CURRENT_USER=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null)
     
     if [ -n "$CURRENT_USER" ]; then
-        # Check if user has necessary roles with timeout
-        if timeout 15s gcloud projects get-iam-policy "$GCP_PROJECT_ID" --flatten="bindings[].members" --format="table(bindings.role)" --filter="bindings.members:$CURRENT_USER" 2>/dev/null | grep -q "roles/editor\|roles/owner"; then
+        log_info "Authenticated as: $CURRENT_USER"
+        
+        # Check if user has necessary roles
+        USER_ROLES=$(gcloud projects get-iam-policy "$GCP_PROJECT_ID" \
+            --flatten="bindings[].members" \
+            --format="value(bindings.role)" \
+            --filter="bindings.members:$CURRENT_USER" 2>/dev/null | head -5)
+        
+        if echo "$USER_ROLES" | grep -q "roles/editor\|roles/owner"; then
             log_success "User has sufficient permissions (Editor/Owner)"
+        elif [ -n "$USER_ROLES" ]; then
+            log_success "User has project access with custom roles"
+            echo "$USER_ROLES" | while read role; do
+                [ -n "$role" ] && log_info "  - $role"
+            done
         else
-            log_info "User permissions check completed (may need specific roles)"
+            log_warning "Could not verify user permissions"
         fi
     else
-        log_info "Could not determine current user for IAM check"
+        log_warning "Could not determine current user for IAM check"
     fi
 }
 

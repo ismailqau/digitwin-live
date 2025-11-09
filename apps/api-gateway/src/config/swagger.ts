@@ -10,7 +10,7 @@ const options: swaggerJsdoc.Options = {
         'REST API for managing conversational AI clones with voice and face cloning capabilities',
       contact: {
         name: 'API Support',
-        email: 'support@digitwin-live.com',
+        email: 'support@digitwinlive.com',
       },
       license: {
         name: 'MIT',
@@ -23,11 +23,11 @@ const options: swaggerJsdoc.Options = {
         description: 'Development server',
       },
       {
-        url: 'https://api-staging.digitwin-live.com/api/v1',
+        url: 'https://api-staging.digitwinlive.com/api/v1',
         description: 'Staging server',
       },
       {
-        url: 'https://api.digitwin-live.com/api/v1',
+        url: 'https://api.digitwinlive.com/api/v1',
         description: 'Production server',
       },
     ],

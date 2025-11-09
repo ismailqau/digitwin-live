@@ -25,7 +25,7 @@ Visual guide to all documentation in the DigitWin Live platform.
 │   └── docs/ENVIRONMENT-SETUP.md           → OAuth setup section
 │
 ├── 🏗️ ARCHITECTURE
-│   ├── .kiro/specs/real-time-digitwin-live/
+│   ├── .kiro/specs/real-time-digitwinlive/
 │   │   ├── design.md                       → Complete system design
 │   │   ├── requirements.md                 → System requirements
 │   │   └── tasks.md                        → Implementation tasks
@@ -70,9 +70,9 @@ README.md
 
 ```
 README.md
-  → .kiro/specs/real-time-digitwin-live/design.md
+  → .kiro/specs/real-time-digitwinlive/design.md
     → docs/CACHING-ARCHITECTURE.md
-      → .kiro/specs/real-time-digitwin-live/requirements.md
+      → .kiro/specs/real-time-digitwinlive/requirements.md
 ```
 
 ### Path 4: Configuration Reference
@@ -132,7 +132,7 @@ README.md
 | Developer | [Getting Started](./GETTING-STARTED.md)                                |
 | DevOps    | [Environment Setup](./ENVIRONMENT-SETUP.md)                            |
 | Security  | [Authentication Flow](../apps/api-gateway/docs/authentication-flow.md) |
-| Architect | [Design Document](../.kiro/specs/real-time-digitwin-live/design.md)    |
+| Architect | [Design Document](../.kiro/specs/real-time-digitwinlive/design.md)    |
 
 ### By Topic
 

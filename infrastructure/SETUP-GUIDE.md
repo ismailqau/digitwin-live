@@ -67,8 +67,8 @@ export ORG_ID="your-org-id"  # Optional
 
 # Create projects for each environment
 gcloud projects create digitwinlive --name="DigitWin Live Dev"
-gcloud projects create digitwin-live-staging --name="DigitWin Live Staging"
-gcloud projects create digitwin-live-prod --name="DigitWin Live Prod"
+gcloud projects create digitwinlive-staging --name="DigitWin Live Staging"
+gcloud projects create digitwinlive-prod --name="DigitWin Live Prod"
 ```
 
 ### Link Billing Account
@@ -82,8 +82,8 @@ export BILLING_ACCOUNT_ID="your-billing-account-id"
 
 # Link projects to billing
 gcloud billing projects link digitwinlive --billing-account=$BILLING_ACCOUNT_ID
-gcloud billing projects link digitwin-live-staging --billing-account=$BILLING_ACCOUNT_ID
-gcloud billing projects link digitwin-live-prod --billing-account=$BILLING_ACCOUNT_ID
+gcloud billing projects link digitwinlive-staging --billing-account=$BILLING_ACCOUNT_ID
+gcloud billing projects link digitwinlive-prod --billing-account=$BILLING_ACCOUNT_ID
 ```
 
 ## Step 3: Create Service Accounts
@@ -123,28 +123,28 @@ echo "✓ Dev service account created: ~/terraform-key-dev.json"
 
 ```bash
 # Set project
-gcloud config set project digitwin-live-staging
+gcloud config set project digitwinlive-staging
 
 # Create service account
 gcloud iam service-accounts create terraform-sa \
   --display-name="Terraform Service Account"
 
 # Grant roles
-gcloud projects add-iam-policy-binding digitwin-live-staging \
-  --member="serviceAccount:terraform-sa@digitwin-live-staging.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive-staging \
+  --member="serviceAccount:terraform-sa@digitwinlive-staging.iam.gserviceaccount.com" \
   --role="roles/editor"
 
-gcloud projects add-iam-policy-binding digitwin-live-staging \
-  --member="serviceAccount:terraform-sa@digitwin-live-staging.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive-staging \
+  --member="serviceAccount:terraform-sa@digitwinlive-staging.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountAdmin"
 
-gcloud projects add-iam-policy-binding digitwin-live-staging \
-  --member="serviceAccount:terraform-sa@digitwin-live-staging.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive-staging \
+  --member="serviceAccount:terraform-sa@digitwinlive-staging.iam.gserviceaccount.com" \
   --role="roles/resourcemanager.projectIamAdmin"
 
 # Create key
 gcloud iam service-accounts keys create ~/terraform-key-staging.json \
-  --iam-account=terraform-sa@digitwin-live-staging.iam.gserviceaccount.com
+  --iam-account=terraform-sa@digitwinlive-staging.iam.gserviceaccount.com
 
 echo "✓ Staging service account created: ~/terraform-key-staging.json"
 ```
@@ -153,28 +153,28 @@ echo "✓ Staging service account created: ~/terraform-key-staging.json"
 
 ```bash
 # Set project
-gcloud config set project digitwin-live-prod
+gcloud config set project digitwinlive-prod
 
 # Create service account
 gcloud iam service-accounts create terraform-sa \
   --display-name="Terraform Service Account"
 
 # Grant roles
-gcloud projects add-iam-policy-binding digitwin-live-prod \
-  --member="serviceAccount:terraform-sa@digitwin-live-prod.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive-prod \
+  --member="serviceAccount:terraform-sa@digitwinlive-prod.iam.gserviceaccount.com" \
   --role="roles/editor"
 
-gcloud projects add-iam-policy-binding digitwin-live-prod \
-  --member="serviceAccount:terraform-sa@digitwin-live-prod.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive-prod \
+  --member="serviceAccount:terraform-sa@digitwinlive-prod.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountAdmin"
 
-gcloud projects add-iam-policy-binding digitwin-live-prod \
-  --member="serviceAccount:terraform-sa@digitwin-live-prod.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive-prod \
+  --member="serviceAccount:terraform-sa@digitwinlive-prod.iam.gserviceaccount.com" \
   --role="roles/resourcemanager.projectIamAdmin"
 
 # Create key
 gcloud iam service-accounts keys create ~/terraform-key-prod.json \
-  --iam-account=terraform-sa@digitwin-live-prod.iam.gserviceaccount.com
+  --iam-account=terraform-sa@digitwinlive-prod.iam.gserviceaccount.com
 
 echo "✓ Prod service account created: ~/terraform-key-prod.json"
 ```
@@ -189,15 +189,15 @@ gsutil versioning set on gs://digitwinlive-tfstate
 echo "✓ Dev state bucket created"
 
 # Staging
-gcloud config set project digitwin-live-staging
-gsutil mb -p digitwin-live-staging -l US gs://digitwin-live-staging-tfstate
-gsutil versioning set on gs://digitwin-live-staging-tfstate
+gcloud config set project digitwinlive-staging
+gsutil mb -p digitwinlive-staging -l US gs://digitwinlive-staging-tfstate
+gsutil versioning set on gs://digitwinlive-staging-tfstate
 echo "✓ Staging state bucket created"
 
 # Production
-gcloud config set project digitwin-live-prod
-gsutil mb -p digitwin-live-prod -l US gs://digitwin-live-prod-tfstate
-gsutil versioning set on gs://digitwin-live-prod-tfstate
+gcloud config set project digitwinlive-prod
+gsutil mb -p digitwinlive-prod -l US gs://digitwinlive-prod-tfstate
+gsutil versioning set on gs://digitwinlive-prod-tfstate
 echo "✓ Prod state bucket created"
 ```
 
@@ -206,7 +206,7 @@ echo "✓ Prod state bucket created"
 ```bash
 # Clone repository
 git clone <repository-url>
-cd digitwin-live
+cd digitwinlive
 
 # Set up authentication for dev environment
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/terraform-key-dev.json"
@@ -321,8 +321,8 @@ If using CI/CD:
      - `GCP_SA_KEY_STAGING`: Content of `~/terraform-key-staging.json`
      - `GCP_SA_KEY_PROD`: Content of `~/terraform-key-prod.json`
      - `GCP_PROJECT_ID_DEV`: `digitwinlive`
-     - `GCP_PROJECT_ID_STAGING`: `digitwin-live-staging`
-     - `GCP_PROJECT_ID_PROD`: `digitwin-live-prod`
+     - `GCP_PROJECT_ID_STAGING`: `digitwinlive-staging`
+     - `GCP_PROJECT_ID_PROD`: `digitwinlive-prod`
 
 2. **Test Workflow**:
 
@@ -351,7 +351,7 @@ export GOOGLE_APPLICATION_CREDENTIALS="$HOME/terraform-key-staging.json"
 ./scripts/init-terraform.sh staging
 
 # Plan and apply
-./scripts/plan-terraform.sh staging digitwin-live-staging
+./scripts/plan-terraform.sh staging digitwinlive-staging
 ./scripts/apply-terraform.sh staging
 ```
 
@@ -365,7 +365,7 @@ export GOOGLE_APPLICATION_CREDENTIALS="$HOME/terraform-key-prod.json"
 ./scripts/init-terraform.sh prod
 
 # Plan and apply
-./scripts/plan-terraform.sh prod digitwin-live-prod
+./scripts/plan-terraform.sh prod digitwinlive-prod
 
 # IMPORTANT: Review plan very carefully before applying
 ./scripts/apply-terraform.sh prod

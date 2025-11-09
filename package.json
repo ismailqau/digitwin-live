@@ -1,5 +1,5 @@
 {
-  "name": "digitwin-live",
+  "name": "digitwinlive",
   "version": "1.0.0",
   "private": true,
   "description": "DigitWin Live - Real-Time Conversational AI System - Monorepo",
@@ -24,7 +24,20 @@
     "verify:vector-db": "node scripts/verify-vector-db.js",
     "verify:local": "./scripts/verify-local-vector-db.sh",
     "health:vector-db": "node scripts/health-check-vector-db.js",
-    "test:gcp": "./scripts/gcp-vector-db-test.sh"
+    "test:gcp": "./scripts/gcp-vector-db-test.sh",
+    "gcp:setup": "./scripts/gcp-setup.sh",
+    "gcp:create-sql": "./scripts/gcp-create-sql.sh",
+    "gcp:status": "./scripts/gcp-manage.sh status",
+    "gcp:list": "./scripts/gcp-manage.sh list",
+    "gcp:cost": "./scripts/gcp-manage.sh cost",
+    "gcp:stop-all": "./scripts/gcp-manage.sh stop-all",
+    "gcp:start-all": "./scripts/gcp-manage.sh start-all",
+    "gcp:cleanup": "./scripts/gcp-cleanup.sh",
+    "gcp:cleanup-menu": "./scripts/gcp-cleanup.sh --menu",
+    "gcp:cleanup-selective": "./scripts/gcp-cleanup.sh --selective",
+    "gcp:cleanup-all": "./scripts/gcp-cleanup.sh --all",
+    "gcp:cleanup-sql": "./scripts/cleanup-sql-only.sh",
+    "docs:verify": "./scripts/verify-docs.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",

@@ -7,7 +7,7 @@ A real-time conversational AI system that enables natural voice conversations wi
 This project uses a monorepo architecture managed by Turborepo and pnpm workspaces.
 
 ```
-digitwin-live/
+digitwinlive/
 ├── apps/                      # Deployable applications
 │   ├── mobile-app/           # React Native mobile app (iOS/Android)
 │   ├── websocket-server/     # WebSocket server for real-time communication
@@ -50,7 +50,7 @@ digitwin-live/
 ```bash
 # 1. Clone and install
 git clone <repository-url>
-cd digitwin-live
+cd digitwinlive
 
 pnpm install
 
@@ -178,40 +178,39 @@ The system follows a microservices architecture with the following key component
 
 ## 📚 Documentation
 
-### Getting Started
+### 🚀 Getting Started
+- **[Getting Started Guide](./docs/GETTING-STARTED.md)** - 5-step quick setup
+- **[Tool Installation](./docs/TOOL-INSTALLATION.md)** - Install Node.js, PostgreSQL, etc.
+- **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Complete configuration guide
+- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
-- **[Getting Started Guide](./docs/GETTING-STARTED.md)** - Quick setup guide
-- **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive configuration
+### ☁️ GCP & Infrastructure
+- **[GCP Management](./docs/GCP-MANAGEMENT.md)** - Complete GCP resource management
+- **[GCP Quick Reference](./docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
+- **[GCP Cleanup Guide](./docs/GCP-CLEANUP-GUIDE.md)** - Delete and manage resources
+- **[GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)** - Infrastructure architecture
 
-### Configuration
-
-- **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive setup guide
-- **[Quick Reference](./docs/ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
-- **[Vector Database](./docs/VECTOR-DATABASE.md)** - Complete vector database guide
+### 🗄️ Database & Storage
+- **[Vector Database](./docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector / Weaviate setup
+- **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
-- **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
 
-### Security & Authentication
-
-- **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth guide
+### 🔐 Security & Authentication
+- **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth
 - **[RBAC Guide](./apps/api-gateway/docs/RBAC-GUIDE.md)** - Role-based access control
 
-### Development
+### 🏗️ Architecture
+- **[Design Document](./.kiro/specs/real-time-digitwinlive/design.md)** - System design
+- **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus
+- **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query separation
+- **[Microservices Communication](./docs/microservices-communication.md)** - gRPC & service discovery
 
+### 🛠️ Development
+- **[Monorepo Development](./docs/MONOREPO-DEVELOPMENT.md)** - Turborepo & pnpm guide
 - **[Scripts Documentation](./scripts/README.md)** - Utility scripts
 - **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
 
-### Architecture
-
-- **[Design Document](./.kiro/specs/real-time-digitwin-live/design.md)** - Complete system design
-- **[GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)** - Cloud infrastructure setup and deployment
-- **[Microservices Communication](./docs/microservices-communication.md)** - gRPC, service discovery, and distributed transactions
-- **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus and event sourcing
-- **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query Responsibility Segregation
-- **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
-- **[Implementation Summary](./apps/api-gateway/docs/IMPLEMENTATION-SUMMARY.md)** - What's implemented
-
-**📁 All Documentation**: See [docs/](./docs/README.md) | [Documentation Index](./docs/INDEX.md)
+**📖 Complete Index**: [Documentation Index](./docs/INDEX.md)
 
 ## 🧪 Testing
 

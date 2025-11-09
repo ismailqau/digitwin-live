@@ -79,8 +79,8 @@ The infrastructure is managed using Terraform and supports three environments:
    ```bash
    # Create projects for each environment
    gcloud projects create digitwinlive
-   gcloud projects create digitwin-live-staging
-   gcloud projects create digitwin-live-prod
+   gcloud projects create digitwinlive-staging
+   gcloud projects create digitwinlive-prod
    ```
 
 2. **Enable Billing**
@@ -109,13 +109,13 @@ The infrastructure is managed using Terraform and supports three environments:
    ```bash
    # Create buckets for each environment
    gsutil mb -p digitwinlive gs://digitwinlive-tfstate
-   gsutil mb -p digitwin-live-staging gs://digitwin-live-staging-tfstate
-   gsutil mb -p digitwin-live-prod gs://digitwin-live-prod-tfstate
+   gsutil mb -p digitwinlive-staging gs://digitwinlive-staging-tfstate
+   gsutil mb -p digitwinlive-prod gs://digitwinlive-prod-tfstate
 
    # Enable versioning
    gsutil versioning set on gs://digitwinlive-tfstate
-   gsutil versioning set on gs://digitwin-live-staging-tfstate
-   gsutil versioning set on gs://digitwin-live-prod-tfstate
+   gsutil versioning set on gs://digitwinlive-staging-tfstate
+   gsutil versioning set on gs://digitwinlive-prod-tfstate
    ```
 
 ## Deployment
@@ -126,7 +126,7 @@ The infrastructure is managed using Terraform and supports three environments:
 
    ```bash
    git clone <repository-url>
-   cd digitwin-live
+   cd digitwinlive
    ```
 
 2. **Set up authentication**
@@ -161,7 +161,7 @@ The infrastructure is managed using Terraform and supports three environments:
 ./infrastructure/scripts/init-terraform.sh staging
 
 # Plan changes
-./infrastructure/scripts/plan-terraform.sh staging digitwin-live-staging
+./infrastructure/scripts/plan-terraform.sh staging digitwinlive-staging
 
 # Review the plan, then apply
 ./infrastructure/scripts/apply-terraform.sh staging
@@ -174,7 +174,7 @@ The infrastructure is managed using Terraform and supports three environments:
 ./infrastructure/scripts/init-terraform.sh prod
 
 # Plan changes
-./infrastructure/scripts/plan-terraform.sh prod digitwin-live-prod
+./infrastructure/scripts/plan-terraform.sh prod digitwinlive-prod
 
 # Review the plan carefully, then apply
 ./infrastructure/scripts/apply-terraform.sh prod

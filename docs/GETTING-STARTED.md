@@ -19,7 +19,7 @@ Before starting, ensure you have these tools installed:
 
 ```bash
 git clone <repository-url>
-cd digitwin-live
+cd digitwinlive
 pnpm install
 ```
 
@@ -173,7 +173,7 @@ psql $DATABASE_URL                  # Connect to database
 ## Project Structure
 
 ```
-digitwin-live/
+digitwinlive/
 ├── apps/
 │   ├── api-gateway/         # REST API
 │   └── websocket-server/    # WebSocket server

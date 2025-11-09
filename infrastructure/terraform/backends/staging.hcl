@@ -1,3 +1,3 @@
 # Backend configuration for staging environment
-bucket = "digitwin-live-staging-tfstate"
+bucket = "digitwinlive-staging-tfstate"
 prefix = "terraform/state"

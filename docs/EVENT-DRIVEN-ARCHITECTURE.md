@@ -273,7 +273,7 @@ VoiceModelTrainingStarted → [ProcessAudio, TrainModel, ValidateQuality] → Vo
 
 ```bash
 # GCP Configuration
-GCP_PROJECT_ID=digitwin-live-prod
+GCP_PROJECT_ID=digitwinlive-prod
 GCP_REGION=us-central1
 
 # Event Bus Configuration

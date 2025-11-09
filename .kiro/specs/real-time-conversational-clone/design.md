@@ -2158,8 +2158,8 @@ interface ComponentHealth {
 ```hcl
 # GCP Project Setup
 resource "google_project" "clone_system" {
-  name       = "digitwin-live"
-  project_id = "digitwin-live-prod"
+  name       = "digitwinlive"
+  project_id = "digitwinlive-prod"
 }
 
 # Cloud Run - WebSocket Server
@@ -2170,7 +2170,7 @@ resource "google_cloud_run_service" "websocket_server" {
   template {
     spec {
       containers {
-        image = "gcr.io/digitwin-live/websocket-server:latest"
+        image = "gcr.io/digitwinlive/websocket-server:latest"
         resources {
           limits = {
             cpu    = "2000m"
@@ -2262,12 +2262,12 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build Docker images
         run: |
-          docker build -t gcr.io/digitwin-live/websocket-server:${{ github.sha }} .
-          docker build -t gcr.io/digitwin-live/tts-service:${{ github.sha }} ./services/tts
+          docker build -t gcr.io/digitwinlive/websocket-server:${{ github.sha }} .
+          docker build -t gcr.io/digitwinlive/tts-service:${{ github.sha }} ./services/tts
       - name: Push to GCR
         run: |
-          docker push gcr.io/digitwin-live/websocket-server:${{ github.sha }}
-          docker push gcr.io/digitwin-live/tts-service:${{ github.sha }}
+          docker push gcr.io/digitwinlive/websocket-server:${{ github.sha }}
+          docker push gcr.io/digitwinlive/tts-service:${{ github.sha }}
 
   deploy:
     needs: build
@@ -2276,12 +2276,12 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy websocket-server \
-            --image gcr.io/digitwin-live/websocket-server:${{ github.sha }} \
+            --image gcr.io/digitwinlive/websocket-server:${{ github.sha }} \
             --region us-central1
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/tts-service \
-            tts-service=gcr.io/digitwin-live/tts-service:${{ github.sha }}
+            tts-service=gcr.io/digitwinlive/tts-service:${{ github.sha }}
 ```
 
 ### Environment Configuration

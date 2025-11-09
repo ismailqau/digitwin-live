@@ -51,7 +51,10 @@ Root:
 
 ### Infrastructure & Deployment
 
-- [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - Complete GCP setup guide
+- [GCP Management](./GCP-MANAGEMENT.md) - Complete GCP resource management guide
+- [GCP Quick Reference](./GCP-QUICK-REFERENCE.md) - Command cheat sheet for daily operations
+- [GCP Cleanup Guide](./GCP-CLEANUP-GUIDE.md) - Delete and manage GCP resources
+- [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - Infrastructure setup and architecture
 - [Infrastructure Setup](../infrastructure/SETUP-GUIDE.md) - Step-by-step Terraform deployment
 - [Infrastructure Quick Reference](../infrastructure/QUICK-REFERENCE.md) - Common commands
 - [Directory Structure](../infrastructure/DIRECTORY-STRUCTURE.md) - Directory preservation guide
@@ -64,9 +67,9 @@ Root:
 - [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus and event sourcing
 - [CQRS Architecture](./CQRS-ARCHITECTURE.md) - Command Query Responsibility Segregation
 - [Microservices Communication](./microservices-communication.md) - gRPC and service discovery
-- [Design Document](../.kiro/specs/real-time-digitwin-live/design.md) - System design
-- [Requirements](../.kiro/specs/real-time-digitwin-live/requirements.md) - Requirements
-- [Tasks](../.kiro/specs/real-time-digitwin-live/tasks.md) - Implementation tasks
+- [Design Document](../.kiro/specs/real-time-digitwinlive/design.md) - System design
+- [Requirements](../.kiro/specs/real-time-digitwinlive/requirements.md) - Requirements
+- [Tasks](../.kiro/specs/real-time-digitwinlive/tasks.md) - Implementation tasks
 
 ### Development Tools
 
@@ -90,16 +93,22 @@ Root:
 
 ### "I want to understand the architecture"
 
-1. [Design Document](../.kiro/specs/real-time-digitwin-live/design.md)
+1. [Design Document](../.kiro/specs/real-time-digitwinlive/design.md)
 2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)
 3. [Caching Architecture](./CACHING-ARCHITECTURE.md)
-4. [Requirements](../.kiro/specs/real-time-digitwin-live/requirements.md)
+4. [Requirements](../.kiro/specs/real-time-digitwinlive/requirements.md)
 
 ### "I'm having configuration issues"
 
 1. [Quick Reference](./ENV-QUICK-REFERENCE.md)
 2. [Environment Setup - Troubleshooting](./ENVIRONMENT-SETUP.md#troubleshooting)
 3. Run `node scripts/validate-env.js`
+
+### "I need to clean up GCP resources"
+
+1. [GCP Cleanup Guide](./GCP-CLEANUP-GUIDE.md) - Delete specific resources
+2. [GCP Management](./GCP-MANAGEMENT.md) - Full resource management guide
+3. [GCP Quick Reference](./GCP-QUICK-REFERENCE.md) - Quick commands
 
 ## 📊 Documentation Stats
 

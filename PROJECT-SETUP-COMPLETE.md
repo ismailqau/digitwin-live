@@ -143,7 +143,7 @@ The **DigitWin Live** project is now fully configured with complete infrastructu
 
 **Consistent Naming Throughout:**
 - ✅ Project name: "DigitWin Live"
-- ✅ Repository: "digitwin-live"
+- ✅ Repository: "digitwinlive"
 - ✅ Database: "digitwin_live_dev"
 - ✅ All references updated (40+ files)
 - ✅ Zero inconsistencies
@@ -162,7 +162,7 @@ The **DigitWin Live** project is now fully configured with complete infrastructu
 ## 📁 Project Structure
 
 ```
-digitwin-live/
+digitwinlive/
 ├── apps/                          # Applications
 │   ├── api-gateway/              # REST API (port 3000)
 │   ├── websocket-server/         # WebSocket (port 3001)
@@ -217,7 +217,7 @@ Install required tools (see [Tool Installation Guide](./docs/TOOL-INSTALLATION.m
 ```bash
 # 1. Clone repository
 git clone <repository-url>
-cd digitwin-live
+cd digitwinlive
 
 # 2. Install dependencies
 pnpm install
@@ -465,7 +465,7 @@ node scripts/validate-env.js              # Validate environment
 ✅ **Directory structure preserved** - .gitkeep system  
 ✅ **Environment validation** - automated checks  
 ✅ **PostgreSQL caching** - no Redis dependency  
-✅ **Consistent naming** - digitwin-live throughout  
+✅ **Consistent naming** - digitwinlive throughout  
 ✅ **CI/CD pipeline** - GitHub Actions configured  
 ✅ **Monitoring setup** - dashboards and alerts  
 
