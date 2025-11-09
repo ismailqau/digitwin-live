@@ -267,8 +267,7 @@ pnpm test:gcp
 
 ### Complete Documentation
 
-- **[Documentation Index](./INDEX.md)** - All documentation
-- **[Documentation Hub](./README.md)** - Documentation overview
+- **[Documentation Hub](./README.md)** - Complete documentation index and guides
 
 ---
 
@@ -445,7 +444,7 @@ pnpm validate
 
 ### Can't find what you need?
 
-1. Check [Documentation Index](./docs/INDEX.md)
+1. Check [Documentation Hub](./README.md)
 2. Search documentation: `grep -r "search term" docs/`
 3. Review [Troubleshooting](./docs/TROUBLESHOOTING.md)
 4. Ask in team chat

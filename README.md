@@ -230,7 +230,7 @@ The system follows a microservices architecture with the following key component
 - **[Scripts Documentation](./scripts/README.md)** - Utility scripts
 - **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
 
-**📖 Complete Index**: [Documentation Index](./docs/INDEX.md)
+**📖 Complete Documentation**: [docs/README.md](./docs/README.md)
 
 ## 🧪 Testing
 

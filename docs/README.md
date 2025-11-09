@@ -16,7 +16,6 @@ Complete documentation for the DigitWin Live platform.
 
 - **[Troubleshooting](./TROUBLESHOOTING.md)** - Common issues and solutions
 - **[ENV Quick Reference](./ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
-- **[Documentation Index](./INDEX.md)** - Complete documentation map
 
 ---
 
@@ -113,24 +112,49 @@ Complete documentation for the DigitWin Live platform.
 
 ---
 
-## 📊 Documentation Stats
+## 🔍 By Use Case
 
-- **Total Documents**: 20+
-- **Setup Guides**: 3
-- **GCP Guides**: 4
-- **Architecture Docs**: 6
-- **Development & Quality Docs**: 5
+### "I want to set up the project"
+
+1. [Setup Guide](./SETUP.md) - Complete automated setup
+2. [Getting Started](./GETTING-STARTED.md) - Quick 5-step guide
+3. [Tool Installation](./TOOL-INSTALLATION.md) - Install prerequisites
+4. [Environment Setup](./ENVIRONMENT-SETUP.md) - Configuration details
+
+### "I need to configure GCP"
+
+1. [GCP Management](./GCP-MANAGEMENT.md) - Complete resource management
+2. [GCP Quick Reference](./GCP-QUICK-REFERENCE.md) - Command cheat sheet
+3. [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - Architecture details
+
+### "I need to clean up GCP resources"
+
+1. [GCP Cleanup Guide](./GCP-CLEANUP-GUIDE.md) - Delete specific resources
+2. [GCP Management](./GCP-MANAGEMENT.md) - Full management guide
+
+### "I want to understand the architecture"
+
+1. [Design Document](../.kiro/specs/real-time-digitwinlive/design.md) - System design
+2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
+3. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
+4. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
+
+### "I'm having issues"
+
+1. [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
+2. [ENV Quick Reference](./ENV-QUICK-REFERENCE.md) - Environment variables
+3. Run `node scripts/validate-env.js` - Validate configuration
 
 ---
 
-## 🆘 Getting Help
+## 📊 Documentation Stats
 
-Can't find what you need?
-
-1. Check the [Documentation Index](./INDEX.md)
-2. Search documentation: `grep -r "search term" docs/`
-3. Review [Troubleshooting](./TROUBLESHOOTING.md)
-4. Check [Getting Started](./GETTING-STARTED.md)
+- **Total Documents**: 20+
+- **Setup Guides**: 4
+- **GCP Guides**: 4
+- **Architecture Docs**: 6
+- **Development & Quality Docs**: 5
+- **Security Docs**: 3
 
 ---
 
@@ -155,4 +179,11 @@ All documentation follows these principles:
 
 ---
 
-**📖 Complete Index**: [Documentation Index](./INDEX.md)
+## 🆘 Getting Help
+
+Can't find what you need?
+
+1. Search documentation: `grep -r "search term" docs/`
+2. Review [Troubleshooting](./TROUBLESHOOTING.md)
+3. Check [Getting Started](./GETTING-STARTED.md)
+4. Review use cases above
