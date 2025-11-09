@@ -401,7 +401,7 @@ rm -rf infrastructure/terraform/.terraform
 ./infrastructure/scripts/init-terraform.sh dev
 
 # Verify backend bucket exists
-gsutil ls gs://digitwin-live-dev-tfstate
+gsutil ls gs://digitwinlive-tfstate
 ```
 
 ### Issue: GCP Authentication Failed

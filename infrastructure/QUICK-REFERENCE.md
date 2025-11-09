@@ -42,7 +42,7 @@
 
 | Environment | Project ID Pattern    | Region      |
 | ----------- | --------------------- | ----------- |
-| dev         | digitwin-live-dev     | us-central1 |
+| dev         | digitwinlive     | us-central1 |
 | staging     | digitwin-live-staging | us-central1 |
 | prod        | digitwin-live-prod    | us-central1 |
 
@@ -66,7 +66,7 @@ gcloud auth application-default print-access-token
 
 ## Terraform State Buckets
 
-- Dev: `gs://digitwin-live-dev-tfstate`
+- Dev: `gs://digitwinlive-tfstate`
 - Staging: `gs://digitwin-live-staging-tfstate`
 - Prod: `gs://digitwin-live-prod-tfstate`
 

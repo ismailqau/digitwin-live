@@ -1,0 +1,155 @@
+# GitHub Actions workflow for Vector Database verification
+# Place this in .github/workflows/vector-db-check.yml
+
+name: Vector Database Verification
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  POSTGRES_VERSION: '15'
+
+jobs:
+  verify-local:
+    name: Verify Local Setup
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: digitwin_live_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      weaviate:
+        image: semitechnologies/weaviate:latest
+        env:
+          QUERY_DEFAULTS_LIMIT: 25
+          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+          PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+        ports:
+          - 8080:8080
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    
+    - name: Install dependencies
+      run: pnpm install
+    
+    - name: Install pgvector
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client postgresql-15-pgvector
+    
+    - name: Setup test environment
+      run: |
+        cp .env.example .env
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwin_live_test" >> .env
+        echo "WEAVIATE_URL=http://localhost:8080" >> .env
+        echo "WEAVIATE_ENABLED=false" >> .env
+        echo "NODE_ENV=test" >> .env
+    
+    - name: Setup database
+      run: |
+        # Enable pgvector extension
+        PGPASSWORD=postgres psql -h localhost -U postgres -d digitwin_live_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+        
+        # Run migrations
+        pnpm db:migrate
+        pnpm db:generate
+    
+    - name: Test PostgreSQL + pgvector
+      run: |
+        echo "WEAVIATE_ENABLED=false" >> .env
+        node scripts/verify-vector-db.js
+    
+    - name: Test Weaviate
+      run: |
+        echo "WEAVIATE_ENABLED=true" >> .env
+        node scripts/verify-vector-db.js
+    
+    - name: Upload verification results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: vector-db-verification-results
+        path: vector-db-verification-results.json
+
+  verify-gcp:
+    name: Verify GCP Setup
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: verify-local
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    
+    - name: Install dependencies
+      run: pnpm install
+    
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+    
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+    
+    - name: Install Cloud SQL Proxy
+      run: |
+        wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+        chmod +x cloud_sql_proxy
+        sudo mv cloud_sql_proxy /usr/local/bin/
+    
+    - name: Setup GCP environment
+      run: |
+        echo "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" >> .env
+        echo "GCP_REGION=${{ secrets.GCP_REGION }}" >> .env
+        echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        echo "WEAVIATE_URL=${{ secrets.WEAVIATE_URL }}" >> .env
+        echo "WEAVIATE_ENABLED=${{ secrets.WEAVIATE_ENABLED }}" >> .env
+    
+    - name: Run GCP vector database tests
+      run: ./scripts/gcp-vector-db-test.sh
+    
+    - name: Upload GCP test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: gcp-test-results
+        path: gcp-vector-db-test-report-*.json

@@ -78,7 +78,7 @@ The infrastructure is managed using Terraform and supports three environments:
 
    ```bash
    # Create projects for each environment
-   gcloud projects create digitwin-live-dev
+   gcloud projects create digitwinlive
    gcloud projects create digitwin-live-staging
    gcloud projects create digitwin-live-prod
    ```
@@ -91,29 +91,29 @@ The infrastructure is managed using Terraform and supports three environments:
    ```bash
    # For each environment (dev, staging, prod)
    gcloud iam service-accounts create terraform-sa \
-     --project=digitwin-live-dev \
+     --project=digitwinlive \
      --display-name="Terraform Service Account"
 
    # Grant necessary permissions
-   gcloud projects add-iam-policy-binding digitwin-live-dev \
-     --member="serviceAccount:terraform-sa@digitwin-live-dev.iam.gserviceaccount.com" \
+   gcloud projects add-iam-policy-binding digitwinlive \
+     --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
      --role="roles/editor"
 
    # Create and download key
    gcloud iam service-accounts keys create terraform-key-dev.json \
-     --iam-account=terraform-sa@digitwin-live-dev.iam.gserviceaccount.com
+     --iam-account=terraform-sa@digitwinlive.iam.gserviceaccount.com
    ```
 
 4. **Create Terraform State Buckets**
 
    ```bash
    # Create buckets for each environment
-   gsutil mb -p digitwin-live-dev gs://digitwin-live-dev-tfstate
+   gsutil mb -p digitwinlive gs://digitwinlive-tfstate
    gsutil mb -p digitwin-live-staging gs://digitwin-live-staging-tfstate
    gsutil mb -p digitwin-live-prod gs://digitwin-live-prod-tfstate
 
    # Enable versioning
-   gsutil versioning set on gs://digitwin-live-dev-tfstate
+   gsutil versioning set on gs://digitwinlive-tfstate
    gsutil versioning set on gs://digitwin-live-staging-tfstate
    gsutil versioning set on gs://digitwin-live-prod-tfstate
    ```
@@ -148,7 +148,7 @@ The infrastructure is managed using Terraform and supports three environments:
 ./infrastructure/scripts/init-terraform.sh dev
 
 # Plan changes
-./infrastructure/scripts/plan-terraform.sh dev digitwin-live-dev
+./infrastructure/scripts/plan-terraform.sh dev digitwinlive
 
 # Review the plan, then apply
 ./infrastructure/scripts/apply-terraform.sh dev

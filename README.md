@@ -69,7 +69,7 @@ pnpm db:generate
 
 # 5. Set up vector database (choose one)
 # Option A: PostgreSQL with pgvector (recommended)
-# See docs/VECTOR-DATABASE-SETUP.md for pgvector installation
+# See docs/VECTOR-DATABASE.md for pgvector installation
 
 # Option B: Weaviate (free alternative, currently configured)
 docker run -d --name weaviate -p 8080:8080 \
@@ -187,8 +187,7 @@ The system follows a microservices architecture with the following key component
 
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Comprehensive setup guide
 - **[Quick Reference](./docs/ENV-QUICK-REFERENCE.md)** - Environment variables cheat sheet
-- **[Vector Database Setup](./docs/VECTOR-DATABASE-SETUP.md)** - PostgreSQL pgvector or Weaviate setup
-- **[Vector Database Migration](./docs/VECTOR-DATABASE-MIGRATION.md)** - Pinecone to PostgreSQL migration
+- **[Vector Database](./docs/VECTOR-DATABASE.md)** - Complete vector database guide
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Database schema and repository pattern
 

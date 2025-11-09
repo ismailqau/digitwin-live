@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 # Check if environment is provided
 if [ -z "$1" ]; then
   echo "Usage: ./verify-deployment.sh <environment> <project_id>"
-  echo "Example: ./verify-deployment.sh dev digitwin-live-dev"
+  echo "Example: ./verify-deployment.sh dev digitwinlive"
   exit 1
 fi
 

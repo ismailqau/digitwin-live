@@ -78,7 +78,7 @@ WEAVIATE_URL=http://localhost:8080
 WEAVIATE_ENABLED=true
 ```
 
-**📖 Detailed Setup**: See [Vector Database Setup Guide](./VECTOR-DATABASE-SETUP.md)
+**📖 Detailed Setup**: See [Vector Database Guide](./VECTOR-DATABASE.md)
 
 ### 5. Validate Configuration
 
@@ -119,7 +119,7 @@ curl http://localhost:3000/health
 ## Next Steps
 
 - **[Environment Setup](./ENVIRONMENT-SETUP.md)** - Detailed configuration
-- **[Vector Database Setup](./VECTOR-DATABASE-SETUP.md)** - Complete vector database guide
+- **[Vector Database](./VECTOR-DATABASE.md)** - Complete vector database guide
 - **[Authentication Guide](../apps/api-gateway/docs/authentication-flow.md)** - Learn about auth
 - **[API Documentation](http://localhost:3000/api-docs)** - Explore the API
 

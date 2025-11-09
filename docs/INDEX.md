@@ -41,9 +41,7 @@ Root:
 - [Environment Setup](./ENVIRONMENT-SETUP.md) - Detailed setup guide
 - [Quick Reference](./ENV-QUICK-REFERENCE.md) - Variables cheat sheet
 - [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
-- [Vector Database Migration](./VECTOR-DATABASE-MIGRATION.md) - Pinecone to PostgreSQL migration guide
-- [Vector Database Setup](./VECTOR-DATABASE-SETUP.md) - Complete setup guide for vector databases
-- [Migration Checklist](./MIGRATION-CHECKLIST.md) - Verification checklist for the vector database migration
+- [Vector Database](./VECTOR-DATABASE.md) - Complete guide: setup, migration, and verification
 
 ### Authentication & Security
 

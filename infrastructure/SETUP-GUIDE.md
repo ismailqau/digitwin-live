@@ -66,7 +66,7 @@ gcloud version
 export ORG_ID="your-org-id"  # Optional
 
 # Create projects for each environment
-gcloud projects create digitwin-live-dev --name="DigitWin Live Dev"
+gcloud projects create digitwinlive --name="DigitWin Live Dev"
 gcloud projects create digitwin-live-staging --name="DigitWin Live Staging"
 gcloud projects create digitwin-live-prod --name="DigitWin Live Prod"
 ```
@@ -81,7 +81,7 @@ gcloud billing accounts list
 export BILLING_ACCOUNT_ID="your-billing-account-id"
 
 # Link projects to billing
-gcloud billing projects link digitwin-live-dev --billing-account=$BILLING_ACCOUNT_ID
+gcloud billing projects link digitwinlive --billing-account=$BILLING_ACCOUNT_ID
 gcloud billing projects link digitwin-live-staging --billing-account=$BILLING_ACCOUNT_ID
 gcloud billing projects link digitwin-live-prod --billing-account=$BILLING_ACCOUNT_ID
 ```
@@ -92,7 +92,7 @@ gcloud billing projects link digitwin-live-prod --billing-account=$BILLING_ACCOU
 
 ```bash
 # Set project
-gcloud config set project digitwin-live-dev
+gcloud config set project digitwinlive
 
 # Create service account
 gcloud iam service-accounts create terraform-sa \
@@ -100,21 +100,21 @@ gcloud iam service-accounts create terraform-sa \
   --description="Service account for Terraform infrastructure management"
 
 # Grant necessary roles
-gcloud projects add-iam-policy-binding digitwin-live-dev \
-  --member="serviceAccount:terraform-sa@digitwin-live-dev.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive \
+  --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
   --role="roles/editor"
 
-gcloud projects add-iam-policy-binding digitwin-live-dev \
-  --member="serviceAccount:terraform-sa@digitwin-live-dev.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive \
+  --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountAdmin"
 
-gcloud projects add-iam-policy-binding digitwin-live-dev \
-  --member="serviceAccount:terraform-sa@digitwin-live-dev.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding digitwinlive \
+  --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
   --role="roles/resourcemanager.projectIamAdmin"
 
 # Create and download key
 gcloud iam service-accounts keys create ~/terraform-key-dev.json \
-  --iam-account=terraform-sa@digitwin-live-dev.iam.gserviceaccount.com
+  --iam-account=terraform-sa@digitwinlive.iam.gserviceaccount.com
 
 echo "✓ Dev service account created: ~/terraform-key-dev.json"
 ```
@@ -183,9 +183,9 @@ echo "✓ Prod service account created: ~/terraform-key-prod.json"
 
 ```bash
 # Development
-gcloud config set project digitwin-live-dev
-gsutil mb -p digitwin-live-dev -l US gs://digitwin-live-dev-tfstate
-gsutil versioning set on gs://digitwin-live-dev-tfstate
+gcloud config set project digitwinlive
+gsutil mb -p digitwinlive -l US gs://digitwinlive-tfstate
+gsutil versioning set on gs://digitwinlive-tfstate
 echo "✓ Dev state bucket created"
 
 # Staging
@@ -228,7 +228,7 @@ cd infrastructure
 ./scripts/validate-terraform.sh
 
 # Plan infrastructure
-./scripts/plan-terraform.sh dev digitwin-live-dev
+./scripts/plan-terraform.sh dev digitwinlive
 
 # Review the plan output carefully
 # Look for:
@@ -251,7 +251,7 @@ cloud_run_urls = {
   "api_gateway" = "https://dev-api-gateway-xxx.run.app"
   "websocket_server" = "https://dev-websocket-server-xxx.run.app"
 }
-database_connection_name = "digitwin-live-dev:us-central1:dev-clone-db"
+database_connection_name = "digitwinlive:us-central1:dev-clone-db"
 gke_cluster_name = "dev-gpu-cluster"
 ...
 ```
@@ -261,7 +261,7 @@ gke_cluster_name = "dev-gpu-cluster"
 ### Check Cloud Run Services
 
 ```bash
-gcloud config set project digitwin-live-dev
+gcloud config set project digitwinlive
 gcloud run services list --region=us-central1
 ```
 
@@ -298,10 +298,10 @@ gsutil ls
 
 Expected buckets:
 
-- `gs://digitwin-live-dev-voice-models`
-- `gs://digitwin-live-dev-face-models`
-- `gs://digitwin-live-dev-documents`
-- `gs://digitwin-live-dev-conversations`
+- `gs://digitwinlive-voice-models`
+- `gs://digitwinlive-face-models`
+- `gs://digitwinlive-documents`
+- `gs://digitwinlive-conversations`
 
 ### View Terraform Outputs
 
@@ -320,7 +320,7 @@ If using CI/CD:
      - `GCP_SA_KEY_DEV`: Content of `~/terraform-key-dev.json`
      - `GCP_SA_KEY_STAGING`: Content of `~/terraform-key-staging.json`
      - `GCP_SA_KEY_PROD`: Content of `~/terraform-key-prod.json`
-     - `GCP_PROJECT_ID_DEV`: `digitwin-live-dev`
+     - `GCP_PROJECT_ID_DEV`: `digitwinlive`
      - `GCP_PROJECT_ID_STAGING`: `digitwin-live-staging`
      - `GCP_PROJECT_ID_PROD`: `digitwin-live-prod`
 
@@ -413,7 +413,7 @@ curl https://dev-api-gateway-xxx.run.app/health
 
 ```bash
 # Verify service account has correct permissions
-gcloud projects get-iam-policy digitwin-live-dev
+gcloud projects get-iam-policy digitwinlive
 
 # Re-authenticate
 gcloud auth application-default login
@@ -425,11 +425,11 @@ gcloud auth application-default login
 
 ```bash
 # Verify bucket exists
-gsutil ls gs://digitwin-live-dev-tfstate
+gsutil ls gs://digitwinlive-tfstate
 
 # If not, create it
-gsutil mb -p digitwin-live-dev gs://digitwin-live-dev-tfstate
-gsutil versioning set on gs://digitwin-live-dev-tfstate
+gsutil mb -p digitwinlive gs://digitwinlive-tfstate
+gsutil versioning set on gs://digitwinlive-tfstate
 ```
 
 ### Issue: "Resource Already Exists"
@@ -441,7 +441,7 @@ gsutil versioning set on gs://digitwin-live-dev-tfstate
 terraform import <resource_type>.<name> <resource_id>
 
 # Example:
-terraform import google_storage_bucket.voice_models digitwin-live-dev-voice-models
+terraform import google_storage_bucket.voice_models digitwinlive-voice-models
 ```
 
 ### Issue: "Quota Exceeded"
@@ -512,7 +512,7 @@ For issues or questions:
 To destroy development infrastructure:
 
 ```bash
-./scripts/destroy-terraform.sh dev digitwin-live-dev
+./scripts/destroy-terraform.sh dev digitwinlive
 ```
 
 **WARNING**: This will delete all resources. Make sure you have backups!
