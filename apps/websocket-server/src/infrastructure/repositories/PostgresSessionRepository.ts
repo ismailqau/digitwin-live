@@ -151,13 +151,13 @@ export class PostgresSessionRepository implements ISessionRepository {
 
   private mapRowToSession(row: Record<string, unknown>): Session {
     return new SessionEntity(
-      row.id,
-      row.user_id,
-      row.connection_id,
-      row.state,
-      JSON.parse(row.conversation_history || '[]'),
-      new Date(row.created_at),
-      new Date(row.last_activity_at)
+      row.id as string,
+      row.user_id as string,
+      row.connection_id as string,
+      row.state as ConversationState,
+      JSON.parse((row.conversation_history as string) || '[]'),
+      new Date(row.created_at as string | number | Date),
+      new Date(row.last_activity_at as string | number | Date)
     );
   }
 
