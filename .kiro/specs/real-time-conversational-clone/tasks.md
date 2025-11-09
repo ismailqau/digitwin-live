@@ -1,5 +1,37 @@
 # Implementation Plan
 
+## 📋 Current Setup Status
+
+### ✅ Completed Infrastructure
+- **Monorepo**: Turborepo + pnpm workspaces configured
+- **GCP Management**: Complete script-based management system
+  - Scripts: `gcp-setup.sh`, `gcp-create-sql.sh`, `gcp-manage.sh`, `gcp-cleanup.sh`
+  - Commands: `pnpm gcp:setup`, `pnpm gcp:status`, `pnpm gcp:cleanup-sql`, `pnpm gcp:stop-all`
+- **Database**: PostgreSQL 17 with pgvector extension on Cloud SQL
+- **Vector Database**: Dual setup (PostgreSQL + Weaviate), switchable via `WEAVIATE_ENABLED`
+- **Caching**: PostgreSQL-based caching architecture (NOT Redis)
+- **Storage**: 4 GCS buckets configured (voice-models, face-models, documents, uploads)
+- **Authentication**: JWT-based auth with RBAC implemented
+- **Documentation**: Comprehensive docs in `/docs` with clean structure
+
+### 📚 Key Documentation
+- **[GCP Management](../docs/GCP-MANAGEMENT.md)** - Complete GCP resource management
+- **[GCP Quick Reference](../docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
+- **[GCP Cleanup Guide](../docs/GCP-CLEANUP-GUIDE.md)** - Resource cleanup and cost optimization
+- **[Vector Database](../docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector / Weaviate setup
+- **[Caching Architecture](../docs/CACHING-ARCHITECTURE.md)** - PostgreSQL caching (NOT Redis)
+- **[Database Architecture](../docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
+- **[Getting Started](../docs/GETTING-STARTED.md)** - Quick setup guide
+
+### 🎯 Implementation Guidelines
+1. **Use PostgreSQL for caching** - NOT Redis or Memcached (see docs/CACHING-SUMMARY.md)
+2. **Use GCP scripts** - All GCP operations via bash scripts (Terraform optional)
+3. **Vector database** - Use `WEAVIATE_ENABLED` env var to switch between PostgreSQL and Weaviate
+4. **Documentation** - Update docs/ with proper links, avoid redundancy
+5. **Cost optimization** - Use `pnpm gcp:stop-all` to save ~$74/month when not in use
+
+---
+
 ## Phase 1: Monorepo Setup and Infrastructure
 
 - [x] 1. Design and initialize monorepo structure
@@ -150,8 +182,20 @@
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [x] 2.8 Setup guide on GCP to verify the deployment and cloud setup ensuring everything can be run through scripts.
+  - ✅ Complete GCP management system implemented
+  - ✅ Scripts: gcp-setup.sh, gcp-create-sql.sh, gcp-manage.sh, gcp-cleanup.sh
+  - ✅ NPM commands: pnpm gcp:setup, pnpm gcp:status, pnpm gcp:cleanup-sql, pnpm gcp:stop-all
+  - ✅ Documentation: docs/GCP-MANAGEMENT.md, docs/GCP-QUICK-REFERENCE.md, docs/GCP-CLEANUP-GUIDE.md
+  - ✅ Verification: pnpm verify:vector-db, pnpm test:gcp
+  - ✅ Cost optimization: Stop/start all resources, selective cleanup
+  - _Note: All GCP operations can be performed through scripts_
 
 ## Phase 3: Audio Processing and ASR
+
+### 📝 Implementation Notes
+- Use WebSocket for real-time audio streaming (already configured)
+- Cache audio chunks in PostgreSQL cache_audio_chunks table
+- Store processed audio in GCS bucket: digitwin-live-uploads
 
 - [ ] 3. Implement audio capture and streaming in mobile app
   - Implement audio recording in React Native using react-native-audio-recorder-player
@@ -185,14 +229,25 @@
 
 ## Phase 4: RAG Pipeline and Knowledge Base
 
+### 📝 Implementation Notes
+- Vector database already configured (PostgreSQL + pgvector OR Weaviate)
+- Use `WEAVIATE_ENABLED=true/false` to switch between databases
+- Cache embeddings in PostgreSQL cache_embeddings table
+- Cache vector search results in cache_vector_searches table
+- Store documents in GCS bucket: digitwin-live-documents
+- Use DocumentChunk model in Prisma schema (already defined)
+
 - [ ] 4. Implement RAG pipeline foundation
-  - Set up PostgreSQL with pgvector extension in Cloud SQL
+  - ✅ PostgreSQL with pgvector extension already set up in Cloud SQL
+  - ✅ Weaviate as alternative vector database (self-hosted, free)
   - Integrate Google text-embedding-004 for embeddings
   - Create embedding service for query and document embedding
   - Implement vector search with cosine similarity filtering (> 0.7)
   - Create context assembler that combines search results with conversation history
-  - Implement caching for embeddings
+  - Implement PostgreSQL cache tables for embeddings with proper indexing
+  - Use environment variable WEAVIATE_ENABLED to switch between PostgreSQL and Weaviate
   - _Requirements: 3_
+  - _Note: Vector database setup complete, see docs/VECTOR-DATABASE.md_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 4.1 Implement document processing service
@@ -216,6 +271,12 @@
 
 ## Phase 5: LLM Integration and Response Generation
 
+### 📝 Implementation Notes
+- Cache LLM responses in PostgreSQL cache_llm_responses table
+- Use cache_key = hash(prompt + context) for deduplication
+- Implement TTL-based cache expiration (CACHE_TTL_MEDIUM = 3600s)
+- Track costs per provider in database for optimization
+
 - [ ] 5. Implement LLM service with multi-provider support
   - Create LLM service abstraction layer in `services/llm-service`
   - Implement Gemini Flash adapter using Vertex AI
@@ -237,6 +298,12 @@
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 6: Voice Cloning and TTS
+
+### 📝 Implementation Notes
+- Store voice models in GCS bucket: digitwin-live-voice-models
+- Cache active voice models in memory for fast access
+- Use GKE with GPU nodes (T4) - can be stopped with `pnpm gcp:stop-all`
+- Track voice model metadata in PostgreSQL voice_models table
 
 - [ ] 6. Implement voice cloning and TTS service
   - Set up GKE cluster with GPU nodes (T4) for TTS workloads
@@ -267,6 +334,12 @@
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 7: Face Cloning and Model Creation
+
+### 📝 Implementation Notes
+- Store face models in GCS bucket: digitwin-live-face-models
+- Store face model metadata in PostgreSQL face_models table
+- Use GKE with GPU nodes for face processing
+- Cache active face models in GPU workers
 
 - [ ] 7. Implement face model creation pipeline
   - Create photo/video upload UI in mobile app
@@ -361,8 +434,20 @@
 
 ## Phase 10: Performance Optimization and Caching
 
+### 📝 Implementation Notes
+- **IMPORTANT**: Use PostgreSQL for ALL caching, NOT Redis or Memcached
+- Cache tables already designed (see docs/CACHING-ARCHITECTURE.md)
+- Environment variables: ENABLE_CACHING, CACHE_TTL_SHORT, CACHE_TTL_MEDIUM, CACHE_TTL_LONG
+- Implement automatic cleanup: `DELETE FROM cache_* WHERE expires_at < NOW()`
+- Use JSONB for cache_value to store complex objects
+- Create indexes on cache_key and expires_at for performance
+
 - [ ] 10. Implement caching and performance optimization
-  - Set up PostgreSQL cache tables for embeddings and common queries with proper indexing
+  - ✅ PostgreSQL cache tables architecture already designed (see docs/CACHING-ARCHITECTURE.md)
+  - ✅ Cache table pattern: cache_<type> with cache_key, cache_value (JSONB), expires_at
+  - ✅ Environment variables: ENABLE_CACHING, CACHE_TTL_SHORT, CACHE_TTL_MEDIUM, CACHE_TTL_LONG
+  - Implement cache tables: cache_vector_searches, cache_llm_responses, cache_audio_chunks, cache_embeddings
+  - Create cache service with get/set/delete/cleanup methods
   - Implement multi-level caching strategy (L1: memory, L2: PostgreSQL cache tables, L3: storage)
   - Create cache invalidation strategies (TTL with timestamp columns, event-based triggers)
   - Implement LLM response caching for FAQs in PostgreSQL
@@ -371,7 +456,9 @@
   - Create connection pooling for databases and APIs
   - Implement query result caching with cache-aside pattern using PostgreSQL
   - Create cache warming strategies for frequently accessed data
+  - Implement automatic cache cleanup job (DELETE FROM cache_* WHERE expires_at < NOW())
   - _Requirements: 11_
+  - _Note: Use PostgreSQL for caching, NOT Redis or Memcached (see docs/CACHING-SUMMARY.md)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 10.1 Implement API response optimization
@@ -456,10 +543,15 @@
 
 - [ ] 11.5 Implement rate limiting
   - Create rate limiting service with PostgreSQL indexed rate_limits table
+  - Table structure: user_id, endpoint, request_count, window_start, window_end, tier
   - Implement per-user rate limits based on subscription tier
   - Create rate limit enforcement middleware
   - Implement graceful degradation on rate limit exceeded
+  - Use PostgreSQL for rate limiting storage (NOT Redis)
+  - Create indexes on (user_id, endpoint, window_start) for fast lookups
+  - Implement sliding window algorithm using PostgreSQL
   - _Requirements: 12_
+  - _Note: Use PostgreSQL for rate limiting, consistent with caching architecture_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 12: Monitoring and Observability
@@ -714,13 +806,17 @@
 ## Phase 14: Deployment and Infrastructure Automation
 
 - [ ] 14. Implement deployment automation and infrastructure
-  - Create Terraform modules for all GCP resources
+  - ✅ GCP infrastructure scripts already implemented (see Phase 2.8)
+  - ✅ Cloud SQL (PostgreSQL 17), Storage Buckets, Service Accounts configured
+  - ✅ Management scripts: setup, status, cleanup, stop-all, start-all
+  - Create Terraform modules for all GCP resources (migrate from bash scripts)
   - Implement Terraform workspaces for dev/staging/prod
   - Create Terraform state management with remote backend
   - Implement infrastructure validation with terraform validate
   - Create infrastructure testing with Terratest
   - Implement infrastructure documentation generation
   - _Requirements: 11_
+  - _Note: Current bash scripts work well, Terraform migration is optional optimization_
 
 - [ ] 14.1 Set up CI/CD pipeline
   - Create GitHub Actions workflow for backend services
