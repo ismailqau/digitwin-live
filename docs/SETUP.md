@@ -259,16 +259,16 @@ pnpm test:gcp
 
 ### Essential Reading
 
-- **[Getting Started](./docs/GETTING-STARTED.md)** - Quick 5-step setup
-- **[Code Quality Guide](./docs/CODE-QUALITY-GUIDE.md)** - Linting and best practices
-- **[Testing Guide](./docs/TESTING-GUIDE.md)** - Writing and running tests (45 workspaces)
-- **[Quality Gates Setup](./docs/QUALITY-GATES-SETUP.md)** - Pre-commit hooks and CI/CD
-- **[GCP Management](./docs/GCP-MANAGEMENT.md)** - GCP infrastructure
+- **[Getting Started](./GETTING-STARTED.md)** - Quick 5-step setup
+- **[Code Quality Guide](./CODE-QUALITY-GUIDE.md)** - Linting and best practices
+- **[Testing Guide](./TESTING-GUIDE.md)** - Writing and running tests (45 workspaces)
+- **[Quality Gates Setup](./QUALITY-GATES-SETUP.md)** - Pre-commit hooks and CI/CD
+- **[GCP Management](./GCP-MANAGEMENT.md)** - GCP infrastructure
 
 ### Complete Documentation
 
-- **[Documentation Index](./docs/INDEX.md)** - All documentation
-- **[Documentation Hub](./docs/README.md)** - Documentation overview
+- **[Documentation Index](./INDEX.md)** - All documentation
+- **[Documentation Hub](./README.md)** - Documentation overview
 
 ---
 

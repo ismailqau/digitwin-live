@@ -36,8 +36,9 @@ Root:
 
 ### Setup & Configuration
 
-- [Tool Installation](./TOOL-INSTALLATION.md) - Install Node.js, PostgreSQL, Terraform, and more
+- [Setup Guide](./SETUP.md) - Complete automated setup guide
 - [Getting Started](./GETTING-STARTED.md) - 5-step quick setup
+- [Tool Installation](./TOOL-INSTALLATION.md) - Install Node.js, PostgreSQL, Terraform, and more
 - [Environment Setup](./ENVIRONMENT-SETUP.md) - Detailed setup guide
 - [Quick Reference](./ENV-QUICK-REFERENCE.md) - Variables cheat sheet
 - [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
@@ -84,9 +85,10 @@ Root:
 
 ### "I want to set up the project"
 
-1. [Getting Started](./GETTING-STARTED.md)
-2. [Environment Setup](./ENVIRONMENT-SETUP.md)
-3. [Scripts Documentation](../scripts/README.md)
+1. [Setup Guide](./SETUP.md) - Complete automated setup
+2. [Getting Started](./GETTING-STARTED.md) - Quick 5-step guide
+3. [Environment Setup](./ENVIRONMENT-SETUP.md) - Configuration details
+4. [Scripts Documentation](../scripts/README.md) - Automation scripts
 
 ### "I need to configure authentication"
 

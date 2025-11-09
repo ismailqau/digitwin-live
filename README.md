@@ -47,7 +47,7 @@ cd digitwinlive
 ./scripts/setup-all.sh
 ```
 
-**📖 Complete Guide**: See [SETUP.md](./SETUP.md) for detailed instructions.
+**📖 Complete Guide**: See [docs/SETUP.md](./docs/SETUP.md) for detailed instructions.
 
 ### Manual Setup
 
@@ -317,7 +317,7 @@ WEBSOCKET_PORT=3001
 ENABLE_CACHING=true
 ```
 
-**📖 Complete Reference**: See [Environment Variables Guide](./ENVIRONMENT-VARIABLES.md)
+**📖 Complete Reference**: See [docs/ENVIRONMENT-SETUP.md](./docs/ENVIRONMENT-SETUP.md)
 
 ### Utility Scripts
 
@@ -330,10 +330,37 @@ node scripts/validate-env.js        # Validate configuration
 
 ## 🤝 Contributing
 
-1. Create a feature branch
-2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details on:
+
+- Setting up your development environment
+- Code standards and style guidelines
+- Testing requirements
+- Pull request process
+- Commit message conventions
+
+**Quick Start for Contributors:**
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/your-username/digitwinlive.git
+cd digitwinlive
+
+# Install dependencies and setup
+pnpm install
+./scripts/setup-all.sh
+
+# Create a feature branch
+git checkout -b feature/your-feature
+
+# Make changes, test, and commit
+pnpm validate
+git commit -m "feat(scope): your changes"
+
+# Push and create PR
+git push origin feature/your-feature
+```
+
+**📖 Full Guide**: See [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## 📄 License
 
@@ -343,6 +370,7 @@ node scripts/validate-env.js        # Validate configuration
 
 For issues and questions:
 
-- GitHub Issues: [repository-url]/issues
-- Documentation: [docs-url]
-- Email: support@example.com
+- **Documentation**: [docs/](./docs/) - Complete documentation
+- **GitHub Issues**: [repository-url]/issues - Bug reports and feature requests
+- **Contributing**: [CONTRIBUTING.md](./CONTRIBUTING.md) - How to contribute
+- **Email**: support@example.com

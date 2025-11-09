@@ -26,6 +26,7 @@ Complete documentation for the DigitWin Live platform.
 
 | Document                                        | Description                               |
 | ----------------------------------------------- | ----------------------------------------- |
+| [Setup Guide](./SETUP.md)                       | Complete setup guide                      |
 | [Getting Started](./GETTING-STARTED.md)         | Quick 5-step setup guide                  |
 | [Tool Installation](./TOOL-INSTALLATION.md)     | Install Node.js, PostgreSQL, Docker, etc. |
 | [Environment Setup](./ENVIRONMENT-SETUP.md)     | Complete configuration guide              |
@@ -82,9 +83,10 @@ Complete documentation for the DigitWin Live platform.
 
 ### "I want to set up the project"
 
-1. [Tool Installation](./TOOL-INSTALLATION.md)
-2. [Getting Started](./GETTING-STARTED.md)
-3. [Environment Setup](./ENVIRONMENT-SETUP.md)
+1. [Setup Guide](./SETUP.md) - Complete automated setup
+2. [Getting Started](./GETTING-STARTED.md) - Quick 5-step guide
+3. [Tool Installation](./TOOL-INSTALLATION.md) - Install prerequisites
+4. [Environment Setup](./ENVIRONMENT-SETUP.md) - Configuration details
 
 ### "I need to configure GCP"
 
