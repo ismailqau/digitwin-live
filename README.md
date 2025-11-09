@@ -230,6 +230,10 @@ The system follows a microservices architecture with the following key component
 - **[Scripts Documentation](./scripts/README.md)** - Utility scripts
 - **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
 
+### 🎤 Audio & Speech Processing
+
+- **[Audio Processing](./docs/AUDIO-PROCESSING.md)** - Audio capture, streaming, and ASR integration
+
 **📖 Complete Documentation**: [docs/README.md](./docs/README.md)
 
 ## 🧪 Testing

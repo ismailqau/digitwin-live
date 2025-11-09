@@ -218,7 +218,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
   Cache ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← Playback
 ```
 
-- [ ] 3. Implement audio capture and streaming in mobile app
+- [x] 3. Implement audio capture and streaming in mobile app
   - Implement audio recording in React Native using react-native-audio-recorder-player
   - Configure audio capture at 16 kHz, mono, 16-bit PCM format
   - Implement Voice Activity Detection (VAD) for speech detection

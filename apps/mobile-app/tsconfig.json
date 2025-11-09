@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": ".",
+    "jsx": "react-native",
     "types": ["node", "react-native"]
   },
   "include": ["**/*.ts", "**/*.tsx"],

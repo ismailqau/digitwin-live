@@ -20,8 +20,11 @@
     "@clone/shared-types": "workspace:*",
     "@clone/validation": "workspace:*",
     "expo": "~54.0.20",
+    "expo-av": "~15.0.1",
     "react": "^19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "react-native-audio-recorder-player": "^3.6.12",
+    "react-native-permissions": "^5.1.0"
   },
   "devDependencies": {
     "@clone/test-utils": "workspace:*",
