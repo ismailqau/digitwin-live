@@ -20,11 +20,19 @@ export {
 export { ContextAssembler } from './services/ContextAssembler';
 export { CacheService } from './services/CacheService';
 export { RAGOrchestrator } from './services/RAGOrchestrator';
+export { TextExtractor } from './services/TextExtractor';
+export { TextChunker } from './services/TextChunker';
+export { DocumentProcessor } from './services/DocumentProcessor';
+export { DocumentProcessingQueue } from './services/DocumentProcessingQueue';
 
 // Export types
 export type { SearchResult, SearchFilter } from './services/VectorSearchService';
 export type { ConversationTurn, UserProfile, LLMContext } from './services/ContextAssembler';
 export type { RAGQueryRequest, RAGQueryResponse } from './services/RAGOrchestrator';
+export type { TextChunk, ChunkerConfig } from './services/TextChunker';
+export type { ExtractionResult } from './services/TextExtractor';
+export type { ProcessingResult, DocumentProcessorConfig } from './services/DocumentProcessor';
+export type { DocumentProcessingJob, QueueConfig } from './services/DocumentProcessingQueue';
 
 /**
  * Initialize RAG service with configuration

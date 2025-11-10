@@ -1,7 +1,12 @@
+import { PrismaClient } from '@clone/database';
+import { logger } from '@clone/logger';
 import { Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 
 import { AuthRequest } from '../middleware/auth.middleware';
+import { DocumentService } from '../services/document.service';
+
+const prisma = new PrismaClient();
+const documentService = new DocumentService(prisma);
 
 /**
  * @swagger
@@ -22,13 +27,23 @@ import { AuthRequest } from '../middleware/auth.middleware';
  *                   items:
  *                     $ref: '#/components/schemas/Document'
  */
-export const getDocuments = async (_req: AuthRequest, res: Response): Promise<void> => {
+export const getDocuments = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // TODO: Fetch documents from database
-    res.json({
-      documents: [],
-    });
-  } catch {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated',
+        },
+      });
+      return;
+    }
+
+    const documents = await documentService.getUserDocuments(userId);
+    res.json({ documents });
+  } catch (error) {
+    logger.error('Failed to fetch documents', { error });
     res.status(500).json({
       error: {
         code: 'FETCH_DOCUMENTS_FAILED',
@@ -66,18 +81,31 @@ export const getDocumentById = async (req: AuthRequest, res: Response): Promise<
     const { id } = req.params;
     const userId = req.user?.userId;
 
-    // TODO: Fetch document from database
-    res.json({
-      id,
-      userId,
-      filename: 'example.pdf',
-      contentType: 'application/pdf',
-      sizeBytes: 1024000,
-      uploadedAt: new Date().toISOString(),
-      status: 'completed',
-      chunkCount: 10,
-    });
-  } catch {
+    if (!userId) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated',
+        },
+      });
+      return;
+    }
+
+    const document = await documentService.getDocument(id, userId);
+
+    if (!document) {
+      res.status(404).json({
+        error: {
+          code: 'DOCUMENT_NOT_FOUND',
+          message: 'Document not found',
+        },
+      });
+      return;
+    }
+
+    res.json(document);
+  } catch (error) {
+    logger.error('Failed to fetch document', { error, documentId: req.params.id });
     res.status(500).json({
       error: {
         code: 'FETCH_DOCUMENT_FAILED',
@@ -115,24 +143,36 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
   try {
     const userId = req.user?.userId;
 
-    // TODO: Implement file upload and processing
-    const documentId = uuidv4();
+    if (!userId) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated',
+        },
+      });
+      return;
+    }
 
-    res.status(201).json({
-      id: documentId,
-      userId,
-      filename: 'uploaded-file.pdf',
-      contentType: 'application/pdf',
-      sizeBytes: 1024000,
-      uploadedAt: new Date().toISOString(),
-      status: 'pending',
-      chunkCount: 0,
-    });
-  } catch {
+    if (!req.file) {
+      res.status(400).json({
+        error: {
+          code: 'NO_FILE_PROVIDED',
+          message: 'No file provided',
+        },
+      });
+      return;
+    }
+
+    // Upload document and queue for processing
+    const document = await documentService.uploadDocument(userId, req.file);
+
+    res.status(201).json(document);
+  } catch (error) {
+    logger.error('Failed to upload document', { error });
     res.status(500).json({
       error: {
         code: 'UPLOAD_FAILED',
-        message: 'Failed to upload document',
+        message: error instanceof Error ? error.message : 'Failed to upload document',
       },
     });
   }
@@ -157,15 +197,85 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
  *       404:
  *         description: Document not found
  */
-export const deleteDocument = async (_req: AuthRequest, res: Response): Promise<void> => {
+export const deleteDocument = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // TODO: Delete document from database and storage
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated',
+        },
+      });
+      return;
+    }
+
+    await documentService.deleteDocument(id, userId);
     res.status(204).send();
-  } catch {
+  } catch (error) {
+    logger.error('Failed to delete document', { error, documentId: req.params.id });
     res.status(500).json({
       error: {
         code: 'DELETE_FAILED',
         message: 'Failed to delete document',
+      },
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /documents/{id}/status:
+ *   get:
+ *     summary: Get document processing status
+ *     tags: [Documents]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Document processing status
+ */
+export const getDocumentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated',
+        },
+      });
+      return;
+    }
+
+    const status = await documentService.getProcessingStatus(id, userId);
+
+    if (!status) {
+      res.status(404).json({
+        error: {
+          code: 'DOCUMENT_NOT_FOUND',
+          message: 'Document not found',
+        },
+      });
+      return;
+    }
+
+    res.json(status);
+  } catch (error) {
+    logger.error('Failed to get document status', { error, documentId: req.params.id });
+    res.status(500).json({
+      error: {
+        code: 'STATUS_FETCH_FAILED',
+        message: 'Failed to get document status',
       },
     });
   }

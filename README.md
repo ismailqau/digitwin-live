@@ -217,6 +217,7 @@ The system follows a microservices architecture with the following key component
 - **[Vector Database](./docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector / Weaviate setup
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
+- **[Document Processing](./docs/DOCUMENT-PROCESSING.md)** - Document upload, extraction, and embedding
 
 ### 🔐 Security & Authentication
 

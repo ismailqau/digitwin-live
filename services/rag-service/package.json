@@ -19,12 +19,19 @@
     "@clone/errors": "workspace:*",
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
+    "@google-cloud/storage": "^7.0.0",
     "@google-cloud/vertexai": "^1.0.0",
     "@types/pg": "^8.10.0",
+    "bullmq": "^5.0.0",
+    "cheerio": "^1.0.0",
+    "mammoth": "^1.6.0",
+    "marked": "^11.0.0",
+    "pdf-parse": "^1.1.1",
     "pg": "^8.11.0"
   },
   "devDependencies": {
     "@types/node": "^24.9.2",
+    "@types/pdf-parse": "^1.1.5",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }

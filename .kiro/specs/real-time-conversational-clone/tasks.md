@@ -341,7 +341,7 @@ User Query → Embedding → Vector Search → Context Assembly → LLM
   - _Note: Vector database setup complete, see docs/VECTOR-DATABASE.md_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 4.1 Implement document processing service in `services/rag-service`
+- [x] 4.1 Implement document processing service in `services/rag-service`
   - Create document upload endpoint in API Gateway (POST /api/v1/documents)
   - Implement multipart file upload with progress tracking
   - Integrate text extraction libraries:
