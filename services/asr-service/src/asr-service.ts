@@ -23,6 +23,8 @@ export class ASRService {
   private cache: ASRCacheService;
   private metrics: ASRMetricsService;
   private quota: ASRQuotaService;
+  private cleanupInterval?: NodeJS.Timeout;
+  private metricsInterval?: NodeJS.Timeout;
 
   constructor() {
     this.client = new SpeechClient({
@@ -332,7 +334,7 @@ export class ASRService {
    */
   private startCleanupInterval(): void {
     // Clean up expired streams every minute
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       const now = Date.now();
       const maxAge = asrConfig.maxStreamDuration;
 
@@ -355,11 +357,17 @@ export class ASRService {
       this.quota.cleanup();
     }, 60000);
 
+    // Unref the interval so it doesn't keep the process alive
+    this.cleanupInterval.unref();
+
     // Log metrics periodically
     if (asrConfig.monitoring.enableMetrics) {
-      setInterval(() => {
+      this.metricsInterval = setInterval(() => {
         this.metrics.logMetrics();
       }, asrConfig.monitoring.metricsInterval);
+
+      // Unref the interval so it doesn't keep the process alive
+      this.metricsInterval.unref();
     }
   }
 
@@ -370,6 +378,16 @@ export class ASRService {
     logger.info('Shutting down ASR service', {
       activeStreams: this.streams.size,
     });
+
+    // Clear intervals
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+    if (this.metricsInterval) {
+      clearInterval(this.metricsInterval);
+      this.metricsInterval = undefined;
+    }
 
     // End all active streams
     const promises = Array.from(this.streams.keys()).map((handleId) => this.endStream(handleId));

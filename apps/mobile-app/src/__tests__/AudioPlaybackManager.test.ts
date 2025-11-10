@@ -63,7 +63,8 @@ describe('AudioPlaybackManager', () => {
       onInterruption: jest.fn(),
     };
 
-    playbackManager = new AudioPlaybackManager({}, mockCallbacks);
+    // Use a large buffer size to prevent auto-playback during tests
+    playbackManager = new AudioPlaybackManager({ bufferSize: 10000 }, mockCallbacks);
   });
 
   afterEach(async () => {

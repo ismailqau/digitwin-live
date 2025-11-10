@@ -5,7 +5,7 @@ import { Pool } from 'pg';
 export interface SearchResult {
   id: string;
   score: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   content: string;
 }
 
@@ -18,6 +18,16 @@ export interface SearchFilter {
 export interface VectorSearchConfig {
   connectionString: string;
   similarityThreshold: number;
+}
+
+export interface VectorDocument {
+  id: string;
+  documentId: string;
+  userId: string;
+  chunkIndex: number;
+  content: string;
+  embedding: number[];
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -56,7 +66,7 @@ export class PostgreSQLVectorSearch {
         WHERE dc.user_id = $2
       `;
 
-      const params: any[] = [embeddingStr, filter.userId];
+      const params: unknown[] = [embeddingStr, filter.userId];
       let paramIndex = 3;
 
       if (filter.sourceType) {
@@ -99,17 +109,7 @@ export class PostgreSQLVectorSearch {
     }
   }
 
-  async upsert(
-    vectors: Array<{
-      id: string;
-      documentId: string;
-      userId: string;
-      chunkIndex: number;
-      content: string;
-      embedding: number[];
-      metadata: Record<string, any>;
-    }>
-  ): Promise<void> {
+  async upsert(vectors: VectorDocument[]): Promise<void> {
     try {
       logger.info('Upserting vectors', { count: vectors.length });
 
@@ -195,7 +195,7 @@ export class WeaviateVectorSearch {
     throw new RAGError('Weaviate search not yet implemented');
   }
 
-  async upsert(_vectors: any[]): Promise<void> {
+  async upsert(_vectors: VectorDocument[]): Promise<void> {
     // TODO: Implement Weaviate upsert
     throw new RAGError('Weaviate upsert not yet implemented');
   }
@@ -232,7 +232,7 @@ export class VectorSearchService {
     return this.adapter.search(embedding, topK, filter);
   }
 
-  async upsert(vectors: unknown[]): Promise<void> {
+  async upsert(vectors: VectorDocument[]): Promise<void> {
     return this.adapter.upsert(vectors);
   }
 

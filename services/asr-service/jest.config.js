@@ -12,4 +12,8 @@ module.exports = {
     '/dist/',
     '/coverage/',
   ],
+  // Ensure tests exit cleanly
+  testTimeout: 10000,
+  forceExit: false,
+  detectOpenHandles: false,
 };

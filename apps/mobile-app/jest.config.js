@@ -3,14 +3,26 @@ const base = require('../../jest.config.base');
 module.exports = {
   ...base,
   displayName: 'mobile-app',
-  preset: 'react-native',
-  setupFilesAfterEnv: ['<rootDir>/../../jest.setup.base.ts'],
+  // Don't use preset - configure manually to avoid ESM issues
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  testEnvironment: 'node',
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
+  },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo|@expo|@unimodules|unimodules|react-native-audio-recorder-player|react-native-permissions|expo-av)/)',
+    'node_modules/(?!(react-native|@react-native|@react-native/.*|expo|@expo|@unimodules|unimodules|react-native-audio-recorder-player|react-native-permissions|expo-av)/)',
   ],
   moduleNameMapper: {
-    '^react-native$': '<rootDir>/../../node_modules/react-native',
-    '^expo-av$': '<rootDir>/../../node_modules/expo-av',
+    '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
-  testEnvironment: 'node',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx|js)'],
+  haste: {
+    defaultPlatform: 'ios',
+    platforms: ['android', 'ios', 'native'],
+  },
+  // Ensure tests exit cleanly
+  testTimeout: 10000,
+  forceExit: false,
+  detectOpenHandles: false,
 };

@@ -3,33 +3,53 @@
  * Tests for Google Chirp ASR streaming service
  */
 
-// Mock Google Cloud Speech Client BEFORE importing ASRService
-const mockStreamingRecognize = jest.fn().mockReturnValue({
+// Mock MUST be before imports
+interface MockStream {
+  write: jest.Mock;
+  end: jest.Mock;
+  on: jest.Mock;
+  pipe: jest.Mock;
+  removeListener: jest.Mock;
+  removeAllListeners: jest.Mock;
+}
+
+const mockStream: MockStream = {
   write: jest.fn(),
   end: jest.fn(),
-  on: jest.fn(),
+  on: jest.fn().mockReturnThis(),
   pipe: jest.fn(),
   removeListener: jest.fn(),
-});
+  removeAllListeners: jest.fn(),
+};
 
-const mockSpeechClient = jest.fn().mockImplementation(() => ({
-  streamingRecognize: mockStreamingRecognize,
-}));
+const mockStreamingRecognize = jest.fn(() => mockStream);
+const mockClose = jest.fn(() => Promise.resolve());
 
-jest.mock('@google-cloud/speech', () => ({
-  SpeechClient: mockSpeechClient,
-  protos: {
-    google: {
-      cloud: {
-        speech: {
-          v1: {},
+jest.mock('@google-cloud/speech', () => {
+  class MockSpeechClient {
+    constructor(public config?: unknown) {}
+    streamingRecognize = mockStreamingRecognize;
+    close = mockClose;
+  }
+
+  return {
+    SpeechClient: MockSpeechClient,
+    protos: {
+      google: {
+        cloud: {
+          speech: {
+            v1: {
+              StreamingRecognizeRequest: {},
+              StreamingRecognitionConfig: {},
+              RecognitionConfig: {},
+            },
+          },
         },
       },
     },
-  },
-}));
+  };
+});
 
-// NOW import ASRService after mocks are set up
 import { ASRService } from '../asr-service';
 import { AudioEncoding } from '../types';
 
@@ -37,17 +57,22 @@ describe('ASRService', () => {
   let asrService: ASRService;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    // Reset mock implementations
+    mockStream.write.mockClear();
+    mockStream.end.mockClear();
+    mockStream.on.mockClear().mockReturnThis();
+    mockStreamingRecognize.mockClear().mockReturnValue(mockStream);
     asrService = new ASRService();
   });
 
   afterEach(async () => {
     await asrService.shutdown();
+    jest.clearAllTimers();
   });
 
   describe('Stream Management', () => {
-    // Skip these tests as they require complex Google Cloud Speech API mocking
-    // These are integration tests that should be run with actual GCP credentials
-    it.skip('should start a new ASR stream', async () => {
+    it('should start a new ASR stream', async () => {
       const handle = await asrService.startStream('session-1', 'user-1');
 
       expect(handle).toBeDefined();
@@ -56,9 +81,10 @@ describe('ASRService', () => {
       expect(handle.config).toBeDefined();
       expect(handle.config.sampleRate).toBe(16000);
       expect(handle.config.encoding).toBe(AudioEncoding.LINEAR16);
+      expect(mockStreamingRecognize).toHaveBeenCalled();
     });
 
-    it.skip('should start stream with custom configuration', async () => {
+    it('should start stream with custom configuration', async () => {
       const handle = await asrService.startStream('session-2', 'user-1', {
         sampleRate: 48000,
         languageCode: 'es-US',
@@ -70,7 +96,7 @@ describe('ASRService', () => {
       expect(handle.config.enableAutomaticPunctuation).toBe(false);
     });
 
-    it.skip('should track active streams', async () => {
+    it('should track active streams', async () => {
       const handle1 = await asrService.startStream('session-1', 'user-1');
       const handle2 = await asrService.startStream('session-2', 'user-1');
 
@@ -83,7 +109,7 @@ describe('ASRService', () => {
       expect(asrService.getActiveStreamCount()).toBe(0);
     });
 
-    it.skip('should retrieve stream handle by ID', async () => {
+    it('should retrieve stream handle by ID', async () => {
       const handle = await asrService.startStream('session-1', 'user-1');
       const retrieved = asrService.getStreamHandle(handle.id);
 
@@ -92,12 +118,13 @@ describe('ASRService', () => {
       expect(retrieved?.sessionId).toBe('session-1');
     });
 
-    it.skip('should end stream successfully', async () => {
+    it('should end stream successfully', async () => {
       const handle = await asrService.startStream('session-1', 'user-1');
       await asrService.endStream(handle.id);
 
       const retrieved = asrService.getStreamHandle(handle.id);
       expect(retrieved).toBeUndefined();
+      expect(mockStream.end).toHaveBeenCalled();
     });
 
     it('should handle ending non-existent stream gracefully', async () => {
@@ -106,11 +133,12 @@ describe('ASRService', () => {
   });
 
   describe('Audio Processing', () => {
-    it.skip('should send audio chunks to stream', async () => {
+    it('should send audio chunks to stream', async () => {
       const handle = await asrService.startStream('session-1', 'user-1');
       const audioData = Buffer.alloc(3200); // 100ms of 16kHz mono 16-bit audio
 
       await expect(asrService.sendAudioChunk(handle.id, audioData)).resolves.not.toThrow();
+      expect(mockStream.write).toHaveBeenCalled();
     });
 
     it('should throw error when sending to non-existent stream', async () => {
@@ -123,7 +151,7 @@ describe('ASRService', () => {
   });
 
   describe('Event Handling', () => {
-    it.skip('should set up stream event handlers', async () => {
+    it('should set up stream event handlers', async () => {
       const handle = await asrService.startStream('session-1', 'user-1');
 
       const onInterimResult = jest.fn();
@@ -139,6 +167,7 @@ describe('ASRService', () => {
           onEnd,
         });
       }).not.toThrow();
+      expect(mockStream.on).toHaveBeenCalled();
     });
 
     it('should throw error when setting up events for non-existent stream', () => {
@@ -164,7 +193,7 @@ describe('ASRService', () => {
       expect(cache).toBeDefined();
     });
 
-    it.skip('should shutdown gracefully', async () => {
+    it('should shutdown gracefully', async () => {
       const handle1 = await asrService.startStream('session-1', 'user-1');
       const handle2 = await asrService.startStream('session-2', 'user-1');
 

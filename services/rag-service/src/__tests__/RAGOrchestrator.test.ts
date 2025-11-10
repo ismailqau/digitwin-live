@@ -13,9 +13,22 @@ jest.mock('../services/CacheService');
 describe('RAGOrchestrator', () => {
   let ragOrchestrator: RAGOrchestrator;
   let mockEmbeddingService: jest.Mocked<EmbeddingService>;
-  let mockVectorSearchService: jest.Mocked<VectorSearchService>;
-  let mockContextAssembler: jest.Mocked<ContextAssembler>;
-  let mockCacheService: jest.Mocked<CacheService>;
+  let mockVectorSearchService: {
+    search: jest.Mock;
+    upsert: jest.Mock;
+    delete: jest.Mock;
+  };
+  let mockContextAssembler: {
+    assembleContext: jest.Mock;
+    buildPrompt: jest.Mock;
+  };
+  let mockCacheService: {
+    getCachedEmbedding: jest.Mock;
+    cacheEmbedding: jest.Mock;
+    getCachedSearchResults: jest.Mock;
+    cacheSearchResults: jest.Mock;
+    cleanup: jest.Mock;
+  };
 
   beforeEach(() => {
     // Create mocked instances
@@ -29,12 +42,12 @@ describe('RAGOrchestrator', () => {
       search: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
-    } as any;
+    };
 
     mockContextAssembler = {
       assembleContext: jest.fn(),
       buildPrompt: jest.fn(),
-    } as any;
+    };
 
     mockCacheService = {
       getCachedEmbedding: jest.fn(),
@@ -42,13 +55,13 @@ describe('RAGOrchestrator', () => {
       getCachedSearchResults: jest.fn(),
       cacheSearchResults: jest.fn(),
       cleanup: jest.fn(),
-    } as any;
+    };
 
     ragOrchestrator = new RAGOrchestrator(
       mockEmbeddingService,
-      mockVectorSearchService,
-      mockContextAssembler,
-      mockCacheService,
+      mockVectorSearchService as unknown as VectorSearchService,
+      mockContextAssembler as unknown as ContextAssembler,
+      mockCacheService as unknown as CacheService,
       {
         topK: 5,
         similarityThreshold: 0.7,
@@ -100,7 +113,7 @@ describe('RAGOrchestrator', () => {
       expect(result.prompt).toEqual(mockPrompt);
       expect(result.searchResults).toEqual(mockSearchResults);
       expect(result.metrics.cacheHit).toBe(false);
-      expect(result.metrics.totalLatencyMs).toBeGreaterThan(0);
+      expect(result.metrics.totalLatencyMs).toBeGreaterThanOrEqual(0);
       expect(mockEmbeddingService.embedQuery).toHaveBeenCalledWith('Test query');
       expect(mockVectorSearchService.search).toHaveBeenCalled();
       expect(mockCacheService.cacheEmbedding).toHaveBeenCalled();

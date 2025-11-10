@@ -549,7 +549,7 @@ export class AudioPlaybackManager {
     this.setState(AudioPlaybackState.ERROR);
     this.callbacks.onError?.(error);
 
-    // Attempt recovery
+    // Attempt recovery (but don't trigger another error cycle)
     this.recoverFromError().catch((err) => {
       console.error('Recovery failed:', err);
     });
@@ -560,8 +560,21 @@ export class AudioPlaybackManager {
    */
   private async recoverFromError(): Promise<void> {
     try {
-      // Stop current playback
-      await this.stop();
+      // Safely stop current playback without triggering error handlers
+      try {
+        await this.audioRecorderPlayer.stopPlayer();
+        this.audioRecorderPlayer.removePlayBackListener();
+      } catch (stopError) {
+        // Ignore stop errors during recovery to prevent infinite recursion
+        console.warn('Stop failed during recovery:', stopError);
+      }
+
+      // Reset state
+      this.playbackQueue = [];
+      this.bufferedDuration = 0;
+      this.currentChunk = null;
+      this.isProcessingQueue = false;
+      this.setState(AudioPlaybackState.STOPPED);
 
       // Wait a bit before retrying
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -572,6 +585,7 @@ export class AudioPlaybackManager {
       }
     } catch (error) {
       console.error('Error recovery failed:', error);
+      // Don't call handleError here to prevent infinite recursion
     }
   }
 

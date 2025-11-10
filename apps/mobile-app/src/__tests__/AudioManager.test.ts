@@ -3,45 +3,32 @@
  * Tests for audio recording and streaming functionality
  */
 
-import { AudioManager, AudioRecordingState } from '../services/AudioManager';
-
-// Mock react-native modules
-jest.mock('react-native', () => ({
-  Platform: { OS: 'ios' },
-  PermissionsAndroid: {
-    PERMISSIONS: { RECORD_AUDIO: 'android.permission.RECORD_AUDIO' },
-    RESULTS: { GRANTED: 'granted' },
-    request: jest.fn(),
-    check: jest.fn(),
-  },
-}));
-
-// Mock react-native-audio-recorder-player
-jest.mock('react-native-audio-recorder-player', () => {
-  return jest.fn().mockImplementation(() => ({
-    startRecorder: jest.fn().mockResolvedValue('file://test-recording.m4a'),
-    stopRecorder: jest.fn().mockResolvedValue('file://test-recording.m4a'),
-    pauseRecorder: jest.fn().mockResolvedValue(undefined),
-    resumeRecorder: jest.fn().mockResolvedValue(undefined),
-    addRecordBackListener: jest.fn(),
-    removeRecordBackListener: jest.fn(),
-  }));
-});
-
-// Mock react-native-permissions
+// Mock react-native-permissions BEFORE imports
 jest.mock('react-native-permissions', () => ({
-  check: jest.fn().mockResolvedValue('granted'),
-  request: jest.fn().mockResolvedValue('granted'),
+  check: jest.fn(),
+  request: jest.fn(),
   PERMISSIONS: {
-    IOS: { MICROPHONE: 'ios.permission.MICROPHONE' },
-    ANDROID: { RECORD_AUDIO: 'android.permission.RECORD_AUDIO' },
+    IOS: {
+      MICROPHONE: 'ios.permission.MICROPHONE',
+    },
+    ANDROID: {
+      RECORD_AUDIO: 'android.permission.RECORD_AUDIO',
+    },
   },
   RESULTS: {
     GRANTED: 'granted',
     DENIED: 'denied',
     BLOCKED: 'blocked',
+    UNAVAILABLE: 'unavailable',
   },
 }));
+
+import { check, request } from 'react-native-permissions';
+
+import { AudioManager, AudioRecordingState } from '../services/AudioManager';
+
+const mockCheck = check as jest.MockedFunction<typeof check>;
+const mockRequest = request as jest.MockedFunction<typeof request>;
 
 describe('AudioManager', () => {
   let audioManager: AudioManager;
@@ -54,6 +41,12 @@ describe('AudioManager', () => {
   };
 
   beforeEach(() => {
+    // Clear and set up permission mocks
+    mockCheck.mockClear();
+    mockRequest.mockClear();
+    mockCheck.mockResolvedValue('granted');
+    mockRequest.mockResolvedValue('granted');
+
     mockCallbacks = {
       onChunk: jest.fn(),
       onQualityUpdate: jest.fn(),
@@ -94,6 +87,7 @@ describe('AudioManager', () => {
   describe('Permissions', () => {
     it('should check microphone permissions', async () => {
       const hasPermission = await audioManager.checkPermissions();
+      expect(mockCheck).toHaveBeenCalled();
       expect(hasPermission).toBe(true);
     });
 
