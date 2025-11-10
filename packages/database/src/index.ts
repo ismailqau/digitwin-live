@@ -20,6 +20,18 @@ export { CacheRepository } from './repositories/CacheRepository';
 export { RateLimitRepository } from './repositories/RateLimitRepository';
 export { AuditLogRepository } from './repositories/AuditLogRepository';
 
+// Export services
+export { AudioStorageService } from './services/audio-storage.service';
+export type {
+  AudioChunkData,
+  AudioCacheKey,
+  AudioRetrievalOptions,
+} from './services/audio-storage.service';
+
+// Export jobs
+export { AudioCacheCleanupJob, createAudioCacheCleanupJob } from './jobs/audio-cache-cleanup.job';
+export type { CleanupJobConfig } from './jobs/audio-cache-cleanup.job';
+
 // Export repository factory
 import { PrismaClient } from '@prisma/client';
 

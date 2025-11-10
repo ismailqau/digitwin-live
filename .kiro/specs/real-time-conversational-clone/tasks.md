@@ -283,7 +283,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
   - _Requirements: 1, 2_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 3.4 Implement audio caching and storage strategy
+- [x] 3.4 Implement audio caching and storage strategy
   - Create cache_audio_chunks table in PostgreSQL
   - Implement audio chunk caching with TTL (CACHE_TTL_SHORT = 300s)
   - Create audio storage service for GCS bucket (digitwin-live-uploads)
@@ -295,6 +295,8 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
   - _Requirements: 1, 7_
   - _Note: Follow PostgreSQL caching architecture (see docs/CACHING-ARCHITECTURE.md)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [x] 3.5 Write test for each major functionality in phase 3 and ensure that it runs on emulator. Fix anything that is not working or problematic.
 
 ## Phase 4: RAG Pipeline and Knowledge Base
 

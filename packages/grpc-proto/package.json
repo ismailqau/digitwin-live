@@ -9,12 +9,12 @@
     "proto:generate": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./src/generated --grpc_out=grpc_js:./src/generated --ts_out=grpc_js:./src/generated --proto_path=./proto ./proto/*.proto"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.9.0",
-    "@grpc/proto-loader": "^0.7.10",
-    "google-protobuf": "^3.21.2",
     "@clone/service-auth": "workspace:*",
     "@clone/service-discovery": "workspace:*",
-    "@clone/service-errors": "workspace:*"
+    "@clone/service-errors": "workspace:*",
+    "@grpc/grpc-js": "^1.9.0",
+    "@grpc/proto-loader": "^0.7.10",
+    "google-protobuf": "^3.21.2"
   },
   "devDependencies": {
     "@types/google-protobuf": "^3.15.12",

@@ -1,5 +1,5 @@
-import { Query, QueryHandler, QueryResult } from '../types';
 import { AllQueries, QueryType } from '../queries';
+import { Query, QueryHandler, QueryResult } from '../types';
 
 export interface QueryBusConfig {
   enableCaching?: boolean;

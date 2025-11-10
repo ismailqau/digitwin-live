@@ -1,4 +1,5 @@
 import { PubSub, Subscription, Message, Topic } from '@google-cloud/pubsub';
+
 import { DomainEvent } from '../types/events';
 
 export interface DeadLetterQueueConfig {

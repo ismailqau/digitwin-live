@@ -4,13 +4,15 @@
  * Creates gRPC clients with authentication, retry, and circuit breaker support
  */
 
+import path from 'path';
+
+import { ServiceAuthManager } from '@clone/service-auth';
+import { ServiceRegistry } from '@clone/service-discovery';
+import { CircuitBreaker, RetryPolicy } from '@clone/service-errors';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
-import { ServiceAuthManager } from '@clone/service-auth';
-import { CircuitBreaker, RetryPolicy } from '@clone/service-errors';
-import { ServiceRegistry } from '@clone/service-discovery';
+
 import { GrpcClientOptions, ServiceConfig } from './types';
-import path from 'path';
 
 export interface GrpcClientFactoryConfig {
   authManager?: ServiceAuthManager;
@@ -172,7 +174,7 @@ export class GrpcClientFactory {
   /**
    * Wrap method call with retry logic
    */
-  private wrapWithRetry(method: Function, args: any[], config: ServiceConfig): any {
+  private wrapWithRetry(method: (...args: any[]) => void, args: any[], config: ServiceConfig): any {
     const retryPolicy = new RetryPolicy({
       maxAttempts: config.maxRetries || 3,
       initialDelayMs: 100,
@@ -197,7 +199,11 @@ export class GrpcClientFactory {
   /**
    * Wrap method call with circuit breaker
    */
-  private wrapWithCircuitBreaker(method: Function, args: any[], _serviceName: string): any {
+  private wrapWithCircuitBreaker(
+    method: (...args: any[]) => void,
+    args: any[],
+    _serviceName: string
+  ): any {
     const circuitBreaker = new CircuitBreaker({
       failureThreshold: 5,
       successThreshold: 2,

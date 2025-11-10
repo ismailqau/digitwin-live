@@ -1,4 +1,5 @@
 import { DomainEvent } from '@clone/event-bus';
+
 import { QueryBus } from '../bus/QueryBus';
 
 export interface ConsistencyRule {

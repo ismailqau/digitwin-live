@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
 import { Metadata } from '@grpc/grpc-js';
+import jwt from 'jsonwebtoken';
 
 export interface ServiceTokenPayload {
   serviceId: string;

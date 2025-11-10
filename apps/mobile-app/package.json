@@ -5,27 +5,27 @@
   "description": "React Native mobile application for DigitWin Live",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
     "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
     "build": "tsc --noEmit",
-    "test": "jest",
+    "ios": "expo start --ios",
     "lint": "eslint . --ext .ts,.tsx",
-    "type-check": "tsc --noEmit"
+    "start": "expo start",
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@clone/api-client": "workspace:*",
     "@clone/constants": "workspace:*",
     "@clone/shared-types": "workspace:*",
     "@clone/validation": "workspace:*",
+    "buffer": "^6.0.3",
     "expo": "~54.0.20",
     "expo-av": "~15.0.1",
     "react": "^19.1.0",
     "react-native": "0.81.5",
     "react-native-audio-recorder-player": "^3.6.12",
-    "react-native-permissions": "^5.1.0",
-    "buffer": "^6.0.3"
+    "react-native-permissions": "^5.1.0"
   },
   "devDependencies": {
     "@clone/test-utils": "workspace:*",

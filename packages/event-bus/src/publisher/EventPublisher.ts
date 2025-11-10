@@ -1,4 +1,5 @@
 import { PubSub, Topic } from '@google-cloud/pubsub';
+
 import { DomainEvent, EventType } from '../types/events';
 
 export interface EventPublisherConfig {

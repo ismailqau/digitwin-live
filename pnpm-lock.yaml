@@ -371,6 +371,9 @@ importers:
       '@clone/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      '@google-cloud/storage':
+        specifier: ^7.0.0
+        version: 7.17.2
       '@prisma/client':
         specifier: ^6.2.0
         version: 6.18.0(prisma@6.18.0)(typescript@5.9.3)

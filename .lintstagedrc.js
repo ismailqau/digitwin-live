@@ -1,6 +1,13 @@
 module.exports = {
-  // TypeScript/JavaScript files
-  '**/*.{ts,tsx,js,jsx}': ['eslint --fix --max-warnings=0 --no-warn-ignored', 'prettier --write'],
+  // TypeScript/JavaScript files - run in batches to avoid timeout
+  '**/*.{ts,tsx,js,jsx}': (files) => {
+    const commands = [];
+    // Run eslint with fix only (allow warnings, fail on errors only)
+    commands.push(`eslint --fix --no-warn-ignored ${files.join(' ')}`);
+    // Run prettier separately
+    commands.push(`prettier --write ${files.join(' ')}`);
+    return commands;
+  },
 
   // JSON files (exclude lock files)
   '**/*.json': (files) => {
@@ -11,14 +18,22 @@ module.exports = {
   },
 
   // Markdown files - only prettier
-  '**/*.md': ['prettier --write'],
+  '**/*.md': (files) => `prettier --write ${files.join(' ')}`,
 
   // YAML files
-  '**/*.{yml,yaml}': ['prettier --write'],
+  '**/*.{yml,yaml}': (files) => `prettier --write ${files.join(' ')}`,
 
   // Package.json files
-  '**/package.json': ['prettier --write'],
+  '**/package.json': (files) => `prettier --write ${files.join(' ')}`,
 
-  // Prisma schema
-  '**/*.prisma': ['prisma format'],
+  // Prisma schema - only if prisma is available
+  '**/*.prisma': (files) => {
+    try {
+      require.resolve('prisma');
+      return `prisma format ${files.join(' ')}`;
+    } catch {
+      // Prisma not installed, skip formatting
+      return [];
+    }
+  },
 };

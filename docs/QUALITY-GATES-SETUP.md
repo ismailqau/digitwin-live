@@ -294,17 +294,14 @@ docs/
 ### Pre-commit hook fails
 
 ```bash
-# Fix linting
-pnpm lint:fix
+# Fix all auto-fixable issues at once
+pnpm fix
 
-# Fix formatting
-pnpm format
-
-# Fix type errors
-pnpm type-check
-
-# Run tests
-pnpm test
+# Or fix individually
+pnpm lint:fix      # Fix linting
+pnpm format        # Fix formatting
+pnpm type-check    # Check types
+pnpm test          # Run tests
 
 # Skip hooks (emergency only)
 git commit --no-verify

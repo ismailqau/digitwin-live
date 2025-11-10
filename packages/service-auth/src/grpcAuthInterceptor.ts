@@ -6,6 +6,7 @@ import {
   ServerDuplexStream,
   status,
 } from '@grpc/grpc-js';
+
 import { ServiceAuthManager } from './ServiceAuthManager';
 
 export type GrpcCall =

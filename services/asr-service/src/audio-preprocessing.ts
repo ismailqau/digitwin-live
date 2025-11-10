@@ -706,22 +706,32 @@ export class AudioPreprocessingService {
    */
   private samplesToBuffer(samples: Float32Array | number[], bitDepth: number): Buffer {
     const buffer = Buffer.alloc(samples.length * (bitDepth / 8));
-    const maxValue = Math.pow(2, bitDepth - 1);
+    const maxValue = Math.pow(2, bitDepth - 1) - 1; // Subtract 1 to avoid overflow
 
     for (let i = 0; i < samples.length; i++) {
       const sample = Math.max(-1, Math.min(1, samples[i]));
       const intSample = Math.round(sample * maxValue);
 
       if (bitDepth === 8) {
-        buffer.writeUInt8(intSample + 128, i);
+        // For 8-bit, clamp to valid unsigned range (0-255)
+        const unsignedSample = Math.max(0, Math.min(255, intSample + 128));
+        buffer.writeUInt8(unsignedSample, i);
       } else if (bitDepth === 16) {
-        buffer.writeInt16LE(intSample, i * 2);
+        // For 16-bit, clamp to valid signed range (-32768 to 32767)
+        const clampedSample = Math.max(-32768, Math.min(32767, intSample));
+        buffer.writeInt16LE(clampedSample, i * 2);
       } else if (bitDepth === 24) {
-        buffer.writeUInt8(intSample & 0xff, i * 3);
-        buffer.writeUInt8((intSample >> 8) & 0xff, i * 3 + 1);
-        buffer.writeInt8((intSample >> 16) & 0xff, i * 3 + 2);
+        // For 24-bit, clamp to valid signed range (-8388608 to 8388607)
+        const clampedSample = Math.max(-8388608, Math.min(8388607, intSample));
+        buffer.writeUInt8(clampedSample & 0xff, i * 3);
+        buffer.writeUInt8((clampedSample >> 8) & 0xff, i * 3 + 1);
+        // For the third byte, we need to handle the sign properly
+        const thirdByte = (clampedSample >> 16) & 0xff;
+        buffer.writeUInt8(thirdByte, i * 3 + 2);
       } else if (bitDepth === 32) {
-        buffer.writeInt32LE(intSample, i * 4);
+        // For 32-bit, clamp to valid signed range
+        const clampedSample = Math.max(-2147483648, Math.min(2147483647, intSample));
+        buffer.writeInt32LE(clampedSample, i * 4);
       }
     }
 

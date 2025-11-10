@@ -1,8 +1,9 @@
-import { BaseCommandHandler } from '../handlers/BaseCommandHandler';
-import { CreateUserCommand } from '../commands';
-import { CommandResult } from '../types';
 import { UserCreatedEvent } from '@clone/event-bus';
 import { v4 as uuidv4 } from 'uuid';
+
+import { CreateUserCommand } from '../commands';
+import { BaseCommandHandler } from '../handlers/BaseCommandHandler';
+import { CommandResult } from '../types';
 
 /**
  * Example: Create User Command Handler

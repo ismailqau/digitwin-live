@@ -6,10 +6,10 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
+    "clean": "rm -rf dist",
     "lint": "eslint . --ext .ts",
-    "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "test": "jest",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "dotenv": "^17.2.3"

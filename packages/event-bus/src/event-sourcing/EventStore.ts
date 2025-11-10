@@ -1,4 +1,5 @@
 import { PubSub, Topic } from '@google-cloud/pubsub';
+
 import { DomainEvent } from '../types/events';
 
 export interface EventStoreConfig {
@@ -164,7 +165,7 @@ export class EventStore {
     // Try to get snapshot first
     const snapshot = await this.getSnapshot(aggregateId, aggregateType);
     let state = snapshot ? (snapshot.state as T) : initialState;
-    let fromVersion = snapshot ? snapshot.version + 1 : 0;
+    const fromVersion = snapshot ? snapshot.version + 1 : 0;
 
     // Get events after snapshot
     const events = await this.getEventsFromVersion(aggregateId, aggregateType, fromVersion);

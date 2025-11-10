@@ -159,9 +159,14 @@ cat .env.example
 
 ```bash
 # Development
-npm run dev              # Start all services
-npm run build            # Build for production
-npm test                 # Run tests
+pnpm dev                 # Start all services
+pnpm build               # Build for production
+pnpm test                # Run tests
+
+# Code Quality
+pnpm fix                 # Auto-fix ESLint, Prettier, and package.json sorting
+pnpm lint                # Check linting
+pnpm format              # Format code
 
 # Utilities
 node scripts/generate-secrets.js    # Generate secrets

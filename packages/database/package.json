@@ -6,19 +6,20 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
-    "lint": "eslint . --ext .ts",
-    "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
+    "lint": "eslint . --ext .ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "test": "jest",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
+    "@google-cloud/storage": "^7.0.0",
     "@prisma/client": "^6.2.0"
   },
   "devDependencies": {

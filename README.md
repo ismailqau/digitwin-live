@@ -145,6 +145,13 @@ pnpm test
 pnpm lint
 ```
 
+### Fix all issues (recommended)
+
+```bash
+# Auto-fix ESLint, Prettier, and package.json sorting
+pnpm fix
+```
+
 ### Format code
 
 ```bash
@@ -234,6 +241,7 @@ The system follows a microservices architecture with the following key component
 
 - **[Audio Processing](./docs/AUDIO-PROCESSING.md)** - Audio capture, streaming, and ASR integration
 - **[Audio Preprocessing](./docs/AUDIO-PREPROCESSING.md)** - Audio enhancement and quality optimization
+- **[Audio Caching & Storage](./docs/AUDIO-CACHING-STORAGE.md)** - Audio chunk caching and GCS archival
 - **[ASR Service](./docs/ASR-SERVICE.md)** - Google Chirp speech-to-text integration
 
 **📖 Complete Documentation**: [docs/README.md](./docs/README.md)

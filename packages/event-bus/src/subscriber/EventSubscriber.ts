@@ -1,4 +1,5 @@
 import { PubSub, Subscription, Message } from '@google-cloud/pubsub';
+
 import { DomainEvent, EventType } from '../types/events';
 
 export interface EventSubscriberConfig {

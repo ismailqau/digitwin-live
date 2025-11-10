@@ -1,6 +1,7 @@
-import { Command, CommandHandler, CommandResult, CommandValidationError } from '../types';
-import { AllCommands, CommandType } from '../commands';
 import { EventPublisher } from '@clone/event-bus';
+
+import { AllCommands, CommandType } from '../commands';
+import { Command, CommandHandler, CommandResult, CommandValidationError } from '../types';
 
 export interface CommandBusConfig {
   eventPublisher?: EventPublisher;

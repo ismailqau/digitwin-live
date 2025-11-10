@@ -8,6 +8,7 @@
 import { ServiceAuthManager } from '@clone/service-auth';
 import { ServiceRegistry, ServiceEndpoint } from '@clone/service-discovery';
 import { CircuitBreaker, RetryPolicy, ServiceError, ServiceErrorCode } from '@clone/service-errors';
+
 import { GrpcClientFactory } from './client-factory';
 import { ServiceConfig } from './types';
 
@@ -208,7 +209,7 @@ export class ServiceCommunicationManager {
         // Implement health check logic based on service type
         // For now, return true (would need actual health check implementation)
         return true;
-      } catch (error) {
+      } catch {
         return false;
       }
     });

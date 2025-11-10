@@ -6,18 +6,18 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
     "clean": "rm -rf dist",
+    "dev": "tsc --watch",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^4.10.0",
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
+    "@google-cloud/pubsub": "^4.10.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "@types/uuid": "^9.0.0"
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.9.3"
   }
 }

@@ -164,8 +164,12 @@ pnpm test:coverage
 # Check code quality
 pnpm lint
 
-# Fix issues automatically
-pnpm lint:fix
+# Fix all auto-fixable issues (ESLint + Prettier + package.json sorting)
+pnpm fix
+
+# Or fix individually
+pnpm lint:fix    # Fix ESLint issues only
+pnpm format      # Format with Prettier only
 ```
 
 ### Build Project
