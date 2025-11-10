@@ -304,41 +304,219 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 
 - Vector database already configured (PostgreSQL + pgvector OR Weaviate)
 - Use `WEAVIATE_ENABLED=true/false` to switch between databases
-- Cache embeddings in PostgreSQL cache_embeddings table
-- Cache vector search results in cache_vector_searches table
+- Cache embeddings in PostgreSQL `EmbeddingCache` table (already in schema)
+- Cache vector search results in `VectorSearchCache` table (already in schema)
 - Store documents in GCS bucket: digitwin-live-documents
-- Use DocumentChunk model in Prisma schema (already defined)
+- Use `KnowledgeDocument` and `DocumentChunk` models in Prisma schema (already defined)
+- Embedding dimensions: 768 (Google text-embedding-004)
+- Chunk size: 500-1000 tokens with 100 token overlap
+- Similarity threshold: > 0.7 (cosine similarity)
 
-- [ ] 4. Implement RAG pipeline foundation
+### 🎯 RAG Pipeline Overview
+
+```
+Document Upload → Text Extraction → Chunking → Embedding → Vector DB
+                                                    ↓
+User Query → Embedding → Vector Search → Context Assembly → LLM
+                              ↓
+                         Cache Results
+```
+
+- [ ] 4. Implement RAG pipeline foundation in `services/rag-service`
   - ✅ PostgreSQL with pgvector extension already set up in Cloud SQL
   - ✅ Weaviate as alternative vector database (self-hosted, free)
-  - Integrate Google text-embedding-004 for embeddings
-  - Create embedding service for query and document embedding
-  - Implement vector search with cosine similarity filtering (> 0.7)
-  - Create context assembler that combines search results with conversation history
-  - Implement PostgreSQL cache tables for embeddings with proper indexing
-  - Use environment variable WEAVIATE_ENABLED to switch between PostgreSQL and Weaviate
+  - ✅ Prisma models: `KnowledgeDocument`, `DocumentChunk`, `EmbeddingCache`, `VectorSearchCache`
+  - Integrate Google Vertex AI text-embedding-004 API for embeddings
+  - Create `EmbeddingService` class for query and document embedding
+  - Implement `VectorSearchService` with PostgreSQL pgvector and Weaviate adapters
+  - Create vector search with cosine similarity filtering (threshold > 0.7)
+  - Implement `ContextAssembler` that combines search results with conversation history
+  - Create cache service using existing `EmbeddingCache` and `VectorSearchCache` models
+  - Implement cache TTL: CACHE_TTL_MEDIUM (3600s) for embeddings, CACHE_TTL_SHORT (300s) for searches
+  - Use environment variable `WEAVIATE_ENABLED` to switch between PostgreSQL and Weaviate
+  - Create `RAGOrchestrator` to coordinate embedding, search, and context assembly
+  - Implement user data isolation (filter by userId in all queries)
+  - Create health check endpoint for RAG service
   - _Requirements: 3_
   - _Note: Vector database setup complete, see docs/VECTOR-DATABASE.md_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 4.1 Implement document processing service
-  - Create document upload endpoint in API Gateway
-  - Implement text extraction for PDF, DOCX, TXT, HTML, Markdown formats
-  - Create text chunking logic (500-1000 tokens with 100 token overlap)
-  - Implement batch embedding generation for document chunks
-  - Create vector upsert logic to store embeddings in vector database
-  - Set up background job processing with Bull/BullMQ
+- [ ] 4.1 Implement document processing service in `services/rag-service`
+  - Create document upload endpoint in API Gateway (POST /api/v1/documents)
+  - Implement multipart file upload with progress tracking
+  - Integrate text extraction libraries:
+    - PDF: pdf-parse or pdfjs-dist
+    - DOCX: mammoth
+    - TXT: native fs
+    - HTML: cheerio or jsdom
+    - Markdown: marked or remark
+  - Create `TextChunker` class with configurable chunk size (500-1000 tokens) and overlap (100 tokens)
+  - Implement batch embedding generation (batch size: 10-20 chunks)
+  - Create vector upsert logic using `DocumentChunk` model
+  - Update `KnowledgeDocument` status: pending → processing → completed/failed
+  - Set up background job processing with Bull/BullMQ for async document processing
+  - Create job queue: `document-processing-queue`
+  - Implement job retry logic (3 retries with exponential backoff)
+  - Store original documents in GCS bucket: digitwin-live-documents/{userId}/{documentId}
+  - Create document processing status webhook/notification
+  - Implement error handling and logging for each processing stage
   - _Requirements: 9_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 4.2 Implement knowledge base management
-  - Create API endpoints for document CRUD operations
-  - Implement user-specific data isolation in vector database
-  - Create document status tracking (pending, processing, completed, failed)
-  - Implement document re-indexing on updates
-  - Create knowledge source priority configuration
+- [ ] 4.2 Implement knowledge base management API
+  - Create REST API endpoints in API Gateway:
+    - **Document Management:**
+      - POST /api/v1/documents - Upload document (multipart/form-data)
+      - POST /api/v1/documents/batch - Batch upload multiple documents
+      - GET /api/v1/documents - List user's documents (paginated, filterable, sortable)
+      - GET /api/v1/documents/:id - Get document details with metadata
+      - GET /api/v1/documents/:id/content - Get full document content
+      - GET /api/v1/documents/:id/chunks - Get document chunks (for debugging)
+      - PUT /api/v1/documents/:id - Update document metadata (title, tags, sourceUrl)
+      - PATCH /api/v1/documents/:id/status - Update document status
+      - DELETE /api/v1/documents/:id - Delete document (soft delete)
+      - POST /api/v1/documents/:id/reindex - Trigger re-indexing
+      - POST /api/v1/documents/bulk-delete - Bulk delete documents
+      - POST /api/v1/documents/bulk-reindex - Bulk reindex documents
+    - **Document Search & Filtering:**
+      - GET /api/v1/documents/search - Search documents by content, title, tags
+      - Query params: q (query), status, fileType, dateFrom, dateTo, sortBy, order, page, limit
+    - **Document Statistics:**
+      - GET /api/v1/documents/stats - Get document statistics (count, storage, by type, by status)
+      - GET /api/v1/documents/stats/usage - Get storage usage breakdown
+    - **FAQ Management:**
+      - POST /api/v1/faqs - Create FAQ
+      - GET /api/v1/faqs - List FAQs (paginated)
+      - GET /api/v1/faqs/:id - Get FAQ details
+      - PUT /api/v1/faqs/:id - Update FAQ
+      - DELETE /api/v1/faqs/:id - Delete FAQ
+      - PUT /api/v1/faqs/reorder - Reorder FAQs (update priority)
+    - **Knowledge Source Priority:**
+      - GET /api/v1/knowledge/sources - Get knowledge sources with priorities
+      - PUT /api/v1/knowledge/sources/priority - Update source priorities
+      - GET /api/v1/knowledge/sources/preview - Preview search results with current priorities
+    - **Document Processing Status:**
+      - GET /api/v1/documents/:id/processing-status - Get real-time processing status
+      - WebSocket event: document:processing:update - Real-time status updates
+      - WebSocket event: document:processing:complete - Processing completion notification
+      - WebSocket event: document:processing:failed - Processing failure notification
+  - Implement user-specific data isolation (filter by userId in all queries)
+  - Create document status tracking using existing status field (pending, processing, completed, failed)
+  - Implement document re-indexing on updates:
+    - Delete old chunks from vector database
+    - Re-process document through chunking and embedding pipeline
+    - Update vectorIds in KnowledgeDocument
+    - Emit WebSocket events for status updates
+  - Create knowledge source priority configuration:
+    - Store in User.settings JSON: { knowledgeSources: { documents: 1, faqs: 2, conversations: 3 } }
+    - Apply priority weighting in vector search results
+  - Implement document search and filtering:
+    - Full-text search in title and content
+    - Filter by: status, fileType, tags, dateRange
+    - Sort by: uploadedAt, processedAt, filename, sizeBytes, relevance
+    - Pagination: page, limit (default: 20 per page)
+  - Create document statistics endpoint:
+    - Total documents count (by status)
+    - Total storage used (bytes, MB, GB)
+    - Documents by type (PDF, DOCX, TXT, etc.)
+    - Processing success rate
+    - Most referenced documents (from conversation turns)
+    - Average processing time
+  - Implement bulk document operations:
+    - Bulk delete with transaction support
+    - Bulk reindex with job queue
+    - Return job IDs for tracking
+  - Create document content preview:
+    - Return first 500-1000 characters
+    - Highlight search matches
+    - Include chunk boundaries
+  - Implement document validation:
+    - File size limits (max 50MB per file)
+    - File type validation (whitelist: PDF, DOCX, TXT, HTML, MD)
+    - Content validation (not empty, readable)
+    - Duplicate detection (by content hash)
+  - Add OpenAPI documentation for all endpoints:
+    - Request/response schemas
+    - Example requests and responses
+    - Error codes and messages
+    - Authentication requirements
+  - Create request validation using Zod schemas:
+    - DocumentUploadSchema
+    - DocumentUpdateSchema
+    - DocumentSearchSchema
+    - FAQCreateSchema
+    - FAQUpdateSchema
+  - Implement rate limiting for upload endpoints:
+    - Upload: 10 requests per minute per user
+    - Batch upload: 2 requests per minute per user
+    - Search: 30 requests per minute per user
+  - Create response caching for statistics:
+    - Cache stats for 5 minutes (CACHE_TTL_SHORT)
+    - Invalidate on document changes
+  - Implement error handling:
+    - 400: Invalid request (validation errors)
+    - 404: Document not found
+    - 409: Duplicate document
+    - 413: File too large
+    - 415: Unsupported file type
+    - 429: Rate limit exceeded
+    - 500: Processing error
   - _Requirements: 9_
+  - _Note: These endpoints support the UI from Phase 13.5_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 4.3 Implement RAG query optimization
+  - Create query preprocessing (normalize, remove stop words, expand acronyms)
+  - Implement hybrid search (vector + keyword) for better recall
+  - Create result re-ranking based on recency, source priority, and relevance
+  - Implement query expansion using synonyms and related terms
+  - Create conversation context integration (use last 3-5 turns for context)
+  - Implement result deduplication (remove similar chunks)
+  - Create relevance scoring with configurable threshold
+  - Implement fallback to general knowledge when no relevant docs found
+  - Create query analytics (track popular queries, low-confidence results)
+  - _Requirements: 3_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 4.4 Implement RAG response metadata and tracking
+  - Enhance RAG response to include source metadata:
+    - Document IDs and titles of retrieved chunks
+    - Relevance scores for each source
+    - Source types (document, FAQ, conversation history)
+    - Chunk indices and content snippets
+  - Store retrieved sources in ConversationTurn.retrievedChunks (already in schema)
+  - Create API endpoint: GET /api/v1/conversations/:sessionId/turns/:turnId/sources
+  - Return structured source information:
+    - documentId, documentTitle, chunkIndex, relevanceScore, contentSnippet
+  - Implement source tracking in WebSocket messages:
+    - Add sources field to response_start message
+    - Include source metadata in response_end message
+  - Create analytics for knowledge base usage:
+    - Track most referenced documents
+    - Track FAQ hit rate
+    - Track queries with no relevant sources
+    - Store in document metadata for statistics
+  - Implement source highlighting in conversation history:
+    - Mark turns that used knowledge base
+    - Show source count badge
+    - Link to source documents
+  - _Requirements: 3, 9, 14_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 4.5 Write tests for RAG pipeline
+  - Create unit tests for EmbeddingService (mock Vertex AI API)
+  - Write unit tests for VectorSearchService (both PostgreSQL and Weaviate)
+  - Create unit tests for TextChunker (various chunk sizes and overlaps)
+  - Write unit tests for ContextAssembler
+  - Create integration tests for document processing pipeline
+  - Write integration tests for RAG query flow
+  - Create tests for cache hit/miss scenarios
+  - Write tests for user data isolation
+  - Create performance tests for vector search (1K, 10K, 100K vectors)
+  - Write tests for error handling and retry logic
+  - Write tests for source metadata tracking
+  - Create tests for FAQ priority handling
+  - _Requirements: 3, 9_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 5: LLM Integration and Response Generation
@@ -790,15 +968,68 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.5 Implement knowledge base management UI
-  - Create knowledge base home screen with document list
-  - Implement document upload screen (file picker integration)
-  - Create document processing status indicators
-  - Implement document detail view with metadata
-  - Create document search and filter functionality
-  - Implement document delete with confirmation
-  - Create FAQ management screen for quick answers
-  - Implement knowledge source priority configuration
+  - Create knowledge base home screen with document list (card/list view toggle)
+  - Display document cards with: title, type icon, upload date, processing status, chunk count
+  - Implement document upload screen with file picker integration (react-native-document-picker)
+  - Support file types: PDF, DOCX, TXT, HTML, Markdown
+  - Create drag-and-drop upload area (if supported by platform)
+  - Implement multi-file upload with queue management
+  - Create upload progress indicators with cancel functionality
+  - Display document processing status with real-time updates:
+    - Pending (queued icon)
+    - Processing (spinner with progress %)
+    - Completed (checkmark with chunk count)
+    - Failed (error icon with retry button)
+  - Implement document detail view with metadata:
+    - Title, filename, file size, upload date, processed date
+    - Content preview (first 500 characters)
+    - Chunk count and embedding status
+    - Tags (editable)
+    - Source URL (if applicable)
+    - Processing logs (if failed)
+  - Create document search functionality:
+    - Search by title, content, tags
+    - Filter by status (all, pending, completed, failed)
+    - Filter by file type (PDF, DOCX, TXT, etc.)
+    - Filter by date range (last 7 days, 30 days, custom)
+    - Sort by: upload date, name, size, relevance
+  - Implement document actions:
+    - Edit metadata (title, tags, source URL)
+    - View full content (document viewer)
+    - Reindex document (if processing failed or content updated)
+    - Delete with confirmation dialog
+    - Share document (if multi-user feature enabled)
+  - Create FAQ management screen for quick answers:
+    - List of FAQ items with question/answer pairs
+    - Add new FAQ with question and answer fields
+    - Edit existing FAQ
+    - Delete FAQ with confirmation
+    - Reorder FAQs (drag-and-drop)
+    - Mark FAQs as high priority
+  - Implement knowledge source priority configuration:
+    - Drag-and-drop list to reorder sources
+    - Toggle sources on/off
+    - Set priority levels (high, medium, low)
+    - Preview how priority affects search results
+  - Create document statistics dashboard:
+    - Total documents count
+    - Total storage used (MB/GB)
+    - Documents by type (pie chart)
+    - Processing status breakdown
+    - Most referenced documents
+  - Implement empty states with helpful CTAs:
+    - "No documents yet" with upload button
+    - "No results found" with clear filters button
+  - Create document viewer for in-app preview:
+    - PDF viewer (react-native-pdf)
+    - Text viewer with syntax highlighting for code
+    - Markdown renderer
+  - Implement pull-to-refresh for document list
+  - Add loading skeletons for better UX
+  - Create error handling with retry mechanisms
+  - Implement offline mode indicators
   - _Requirements: 9_
+  - _Note: This UI connects to API endpoints from Phase 4.2_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.6 Implement main conversation screen
@@ -811,18 +1042,59 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
   - Create conversation controls (mute, end, settings)
   - Implement connection status indicator
   - Add haptic feedback for state transitions
-  - _Requirements: 1, 6, 7, 8_
+  - Create knowledge source indicator:
+    - Show badge when response uses knowledge base
+    - Display "Using 2 documents" or "Using FAQ" indicator
+    - Tap to see which documents/FAQs were referenced
+  - Implement knowledge source drawer:
+    - Slide-up drawer showing referenced documents
+    - Document titles with relevance scores
+    - Tap document to view full content
+    - Quick link to knowledge base management
+  - _Requirements: 1, 6, 7, 8, 9_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.7 Implement conversation history UI
   - Create conversation history list screen
-  - Implement conversation card with date, duration, summary
-  - Create conversation detail view with full transcript
-  - Implement search functionality in conversation history
-  - Create conversation export functionality (PDF, text)
+  - Implement conversation card with:
+    - Date and time
+    - Duration
+    - Auto-generated summary (first user query or AI-generated)
+    - Turn count
+    - Knowledge sources used badge (if any)
+    - Cost indicator (optional)
+  - Create conversation detail view with full transcript:
+    - User messages (left-aligned)
+    - AI responses (right-aligned)
+    - Timestamps for each turn
+    - Knowledge source indicators on AI responses
+    - Tap to expand and see source documents
+  - Implement knowledge source expansion:
+    - Show list of documents/FAQs used in that turn
+    - Display relevance scores
+    - Link to document detail view
+    - Highlight relevant text snippets
+  - Implement search functionality in conversation history:
+    - Search by content (user queries or AI responses)
+    - Filter by date range
+    - Filter by conversations that used knowledge base
+    - Filter by specific documents referenced
+  - Create conversation export functionality:
+    - Export as PDF with formatting
+    - Export as plain text
+    - Include source citations in export
+    - Option to include/exclude source metadata
   - Implement conversation delete with confirmation
   - Add pull-to-refresh for history updates
-  - _Requirements: 14_
+  - Create conversation statistics:
+    - Total conversations count
+    - Total duration
+    - Average conversation length
+    - Knowledge base usage rate
+  - Implement empty state with helpful CTA
+  - Add loading skeletons for better UX
+  - _Requirements: 9, 14_
+  - _Note: Integrates with RAG source tracking from Phase 4.4_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.8 Implement settings and profile screens
