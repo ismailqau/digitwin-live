@@ -13,6 +13,7 @@ import type { ResponseEndMessage } from '@clone/shared-types';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import type { AudioQualityMetrics } from '../services/AudioManager';
+import { AudioPlaybackState } from '../services/AudioPlaybackManager';
 import ConversationManager, {
   ConversationState,
   type ConversationManagerConfig,
@@ -35,6 +36,10 @@ export interface ConversationData {
   metrics: ResponseEndMessage['metrics'] | null;
   audioQuality: AudioQualityMetrics | null;
   isVoiceActive: boolean;
+  playbackState: AudioPlaybackState;
+  playbackPosition: number;
+  playbackDuration: number;
+  bufferedDuration: number;
 }
 
 export interface UseConversationReturn {
@@ -43,6 +48,7 @@ export interface UseConversationReturn {
   isConnected: boolean;
   isListening: boolean;
   isSpeaking: boolean;
+  isPlaying: boolean;
   error: string | null;
   data: ConversationData;
 
@@ -52,6 +58,11 @@ export interface UseConversationReturn {
   startListening: () => Promise<void>;
   stopListening: () => Promise<void>;
   interrupt: () => Promise<void>;
+
+  // Playback controls
+  setVolume: (volume: number) => Promise<void>;
+  setMuted: (muted: boolean) => Promise<void>;
+  setPlaybackSpeed: (speed: number) => Promise<void>;
 
   // Utilities
   sessionId: string;
@@ -72,6 +83,10 @@ export function useConversation(options: UseConversationOptions): UseConversatio
     metrics: null,
     audioQuality: null,
     isVoiceActive: false,
+    playbackState: AudioPlaybackState.IDLE,
+    playbackPosition: 0,
+    playbackDuration: 0,
+    bufferedDuration: 0,
   });
 
   const managerRef = useRef<ConversationManager | null>(null);
@@ -147,6 +162,28 @@ export function useConversation(options: UseConversationOptions): UseConversatio
           isVoiceActive: isActive,
         }));
       },
+
+      onPlaybackStateChange: (playbackState) => {
+        setData((prev) => ({
+          ...prev,
+          playbackState,
+        }));
+      },
+
+      onPlaybackProgress: (position, duration) => {
+        setData((prev) => ({
+          ...prev,
+          playbackPosition: position,
+          playbackDuration: duration,
+        }));
+      },
+
+      onPlaybackBufferUpdate: (bufferedDuration) => {
+        setData((prev) => ({
+          ...prev,
+          bufferedDuration,
+        }));
+      },
     };
 
     const config: ConversationManagerConfig = {
@@ -218,6 +255,28 @@ export function useConversation(options: UseConversationOptions): UseConversatio
     await managerRef.current.interrupt();
   }, []);
 
+  // Playback controls
+  const setVolume = useCallback(async (volume: number) => {
+    if (!managerRef.current) {
+      throw new Error('ConversationManager not initialized');
+    }
+    await managerRef.current.setVolume(volume);
+  }, []);
+
+  const setMuted = useCallback(async (muted: boolean) => {
+    if (!managerRef.current) {
+      throw new Error('ConversationManager not initialized');
+    }
+    await managerRef.current.setMuted(muted);
+  }, []);
+
+  const setPlaybackSpeed = useCallback(async (speed: number) => {
+    if (!managerRef.current) {
+      throw new Error('ConversationManager not initialized');
+    }
+    await managerRef.current.setPlaybackSpeed(speed);
+  }, []);
+
   // Computed state
   const isConnected =
     state === ConversationState.CONNECTED ||
@@ -227,12 +286,14 @@ export function useConversation(options: UseConversationOptions): UseConversatio
 
   const isListening = state === ConversationState.LISTENING;
   const isSpeaking = state === ConversationState.SPEAKING;
+  const isPlaying = managerRef.current?.isPlaying() ?? false;
 
   return {
     state,
     isConnected,
     isListening,
     isSpeaking,
+    isPlaying,
     error,
     data,
     connect,
@@ -240,6 +301,9 @@ export function useConversation(options: UseConversationOptions): UseConversatio
     startListening,
     stopListening,
     interrupt,
+    setVolume,
+    setMuted,
+    setPlaybackSpeed,
     sessionId,
   };
 }

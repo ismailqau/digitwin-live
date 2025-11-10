@@ -74,7 +74,6 @@ export class AudioManager {
   private callbacks: AudioManagerCallbacks;
   private state: AudioRecordingState = AudioRecordingState.IDLE;
   private sequenceNumber: number = 0;
-  private recordingStartTime: number = 0;
   private audioBuffer: number[] = [];
   private lastVoiceActivityTime: number = 0;
   private isVoiceActive: boolean = false;
@@ -167,7 +166,6 @@ export class AudioManager {
         true // Enable metering for volume monitoring
       );
 
-      this.recordingStartTime = Date.now();
       this.sequenceNumber = 0;
       this.audioBuffer = [];
       this.setState(AudioRecordingState.RECORDING);

@@ -235,7 +235,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
   - _Note: This is for user speech input, NOT voice cloning (see Phase 6.2)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 3.1 Implement audio playback in mobile app
+- [x] 3.1 Implement audio playback in mobile app
   - Integrate audio player in React Native using react-native-audio-recorder-player
   - Implement audio chunk buffering for smooth playback (200-500ms buffer)
   - Create audio-video synchronization logic (< 50ms offset)
