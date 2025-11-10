@@ -218,6 +218,7 @@ The system follows a microservices architecture with the following key component
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 - **[Document Processing](./docs/DOCUMENT-PROCESSING.md)** - Document upload, extraction, and embedding
+- **[Knowledge Base API](./docs/KNOWLEDGE-BASE-API.md)** - REST API for documents, FAQs, and knowledge sources
 
 ### 🔐 Security & Authentication
 

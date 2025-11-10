@@ -34,6 +34,38 @@ export const documentUploadSchema = z.object({
     .max(50 * 1024 * 1024), // 50MB
 });
 
+export const documentUpdateSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  tags: z.array(z.string()).optional(),
+  sourceUrl: z.string().url().optional().or(z.literal('')),
+});
+
+export const documentSearchSchema = z.object({
+  q: z.string().optional(),
+  status: z.enum(['pending', 'processing', 'completed', 'failed']).optional(),
+  fileType: z.string().optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  sortBy: z.enum(['uploadedAt', 'processedAt', 'filename', 'sizeBytes', 'relevance']).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export const faqCreateSchema = z.object({
+  question: z.string().min(1).max(500),
+  answer: z.string().min(1).max(2000),
+  priority: z.number().int().min(0).max(100).default(50),
+  tags: z.array(z.string()).optional(),
+});
+
+export const faqUpdateSchema = z.object({
+  question: z.string().min(1).max(500).optional(),
+  answer: z.string().min(1).max(2000).optional(),
+  priority: z.number().int().min(0).max(100).optional(),
+  tags: z.array(z.string()).optional(),
+});
+
 // Voice model schemas
 export const voiceConfigSchema = z.object({
   provider: z.enum(['xtts-v2', 'google-cloud-tts', 'openai-tts']),
@@ -62,6 +94,10 @@ export const userSettingsSchema = z.object({
 export type UserProfileInput = z.infer<typeof userProfileSchema>;
 export type AudioChunkInput = z.infer<typeof audioChunkSchema>;
 export type DocumentUploadInput = z.infer<typeof documentUploadSchema>;
+export type DocumentUpdateInput = z.infer<typeof documentUpdateSchema>;
+export type DocumentSearchInput = z.infer<typeof documentSearchSchema>;
+export type FAQCreateInput = z.infer<typeof faqCreateSchema>;
+export type FAQUpdateInput = z.infer<typeof faqUpdateSchema>;
 export type VoiceConfigInput = z.infer<typeof voiceConfigSchema>;
 export type FaceModelUploadInput = z.infer<typeof faceModelUploadSchema>;
 export type UserSettingsInput = z.infer<typeof userSettingsSchema>;

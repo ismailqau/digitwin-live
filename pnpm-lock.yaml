@@ -134,6 +134,9 @@ importers:
       '@google-cloud/storage':
         specifier: ^7.0.0
         version: 7.17.2
+      '@prisma/client':
+        specifier: ^6.19.0
+        version: 6.19.0(typescript@5.9.3)
       bullmq:
         specifier: ^5.0.0
         version: 5.63.0
@@ -3425,6 +3428,22 @@ packages:
         optional: true
     dependencies:
       prisma: 6.18.0(typescript@5.9.3)
+      typescript: 5.9.3
+    dev: false
+
+  /@prisma/client@6.19.0(typescript@5.9.3):
+    resolution: {integrity: sha512-QXFT+N/bva/QI2qoXmjBzL7D6aliPffIwP+81AdTGq0FXDoLxLkWivGMawG8iM5B9BKfxLIXxfWWAF6wbuJU6g==}
+    engines: {node: '>=18.18'}
+    requiresBuild: true
+    peerDependencies:
+      prisma: '*'
+      typescript: '>=5.1.0'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
       typescript: 5.9.3
     dev: false
 

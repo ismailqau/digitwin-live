@@ -30,12 +30,40 @@ export const authLimiter = rateLimit({
 
 // Upload rate limiter
 export const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 uploads per hour
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Limit each IP to 10 uploads per minute
   message: {
     error: {
       code: 'UPLOAD_RATE_LIMIT_EXCEEDED',
       message: 'Too many uploads, please try again later',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Batch upload rate limiter
+export const batchUploadLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 2, // Limit each IP to 2 batch uploads per minute
+  message: {
+    error: {
+      code: 'BATCH_UPLOAD_RATE_LIMIT_EXCEEDED',
+      message: 'Too many batch uploads, please try again later',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Search rate limiter
+export const searchLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // Limit each IP to 30 searches per minute
+  message: {
+    error: {
+      code: 'SEARCH_RATE_LIMIT_EXCEEDED',
+      message: 'Too many search requests, please try again later',
     },
   },
   standardHeaders: true,
