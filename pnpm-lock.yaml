@@ -720,6 +720,9 @@ importers:
       '@clone/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@clone/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@clone/errors':
         specifier: workspace:*
         version: link:../../packages/errors
@@ -729,9 +732,9 @@ importers:
       '@clone/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@google-cloud/aiplatform':
-        specifier: ^3.0.0
-        version: 3.35.0
+      '@google-cloud/vertexai':
+        specifier: ^1.0.0
+        version: 1.10.0
       '@types/pg':
         specifier: ^8.10.0
         version: 8.15.6
@@ -2758,6 +2761,16 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       google-gax: 4.6.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+    dev: false
+
+  /@google-cloud/vertexai@1.10.0:
+    resolution: {integrity: sha512-HqYqoivNtkq59po8m7KI0n+lWKdz4kabENncYQXZCX/hBWJfXtKAfR/2nUQsP+TwSfHKoA7zDL2RrJYIv/j3VQ==}
+    engines: {node: '>=18.0.0'}
+    dependencies:
+      google-auth-library: 9.15.1
     transitivePeerDependencies:
       - encoding
       - supports-color

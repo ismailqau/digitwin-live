@@ -15,10 +15,11 @@
   },
   "dependencies": {
     "@clone/config": "workspace:*",
+    "@clone/database": "workspace:*",
     "@clone/errors": "workspace:*",
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
-    "@google-cloud/aiplatform": "^3.0.0",
+    "@google-cloud/vertexai": "^1.0.0",
     "@types/pg": "^8.10.0",
     "pg": "^8.11.0"
   },

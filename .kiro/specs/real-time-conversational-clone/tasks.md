@@ -322,7 +322,7 @@ User Query → Embedding → Vector Search → Context Assembly → LLM
                          Cache Results
 ```
 
-- [ ] 4. Implement RAG pipeline foundation in `services/rag-service`
+- [x] 4. Implement RAG pipeline foundation in `services/rag-service`
   - ✅ PostgreSQL with pgvector extension already set up in Cloud SQL
   - ✅ Weaviate as alternative vector database (self-hosted, free)
   - ✅ Prisma models: `KnowledgeDocument`, `DocumentChunk`, `EmbeddingCache`, `VectorSearchCache`

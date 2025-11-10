@@ -414,7 +414,8 @@ export class AudioStorageService {
       return result.count;
     } catch (error: unknown) {
       console.error('Error invalidating cache by pattern:', error);
-      throw new Error(`Failed to invalidate cache: ${error?.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to invalidate cache: ${errorMessage}`);
     }
   }
 }
