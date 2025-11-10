@@ -17,6 +17,7 @@ export enum ServiceErrorCode {
 
   // Service-specific errors
   ASR_FAILED = 'ASR_FAILED',
+  AUDIO_PROCESSING_FAILED = 'AUDIO_PROCESSING_FAILED',
   RAG_FAILED = 'RAG_FAILED',
   LLM_FAILED = 'LLM_FAILED',
   TTS_FAILED = 'TTS_FAILED',
@@ -33,7 +34,7 @@ export class ServiceError extends Error {
   public readonly grpcStatus: GrpcStatus;
   public readonly serviceName: string;
   public readonly retryable: boolean;
-  public readonly metadata?: Record<string, any>;
+  public readonly metadata?: Record<string, unknown>;
 
   constructor(
     code: ServiceErrorCode,
@@ -41,7 +42,7 @@ export class ServiceError extends Error {
     serviceName: string,
     options?: {
       retryable?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
       cause?: Error;
     }
   ) {
@@ -84,6 +85,7 @@ export class ServiceError extends Error {
       [ServiceErrorCode.TIMEOUT]: GrpcStatus.DEADLINE_EXCEEDED,
       [ServiceErrorCode.CIRCUIT_OPEN]: GrpcStatus.UNAVAILABLE,
       [ServiceErrorCode.ASR_FAILED]: GrpcStatus.INTERNAL,
+      [ServiceErrorCode.AUDIO_PROCESSING_FAILED]: GrpcStatus.INTERNAL,
       [ServiceErrorCode.RAG_FAILED]: GrpcStatus.INTERNAL,
       [ServiceErrorCode.LLM_FAILED]: GrpcStatus.INTERNAL,
       [ServiceErrorCode.TTS_FAILED]: GrpcStatus.INTERNAL,
@@ -106,5 +108,23 @@ export class ServiceError extends Error {
       grpcStatus: this.grpcStatus,
       metadata: this.metadata,
     };
+  }
+}
+
+/**
+ * Audio Processing Error
+ * Specialized error for audio preprocessing and enhancement operations
+ */
+export class AudioProcessingError extends ServiceError {
+  constructor(
+    message: string,
+    options?: {
+      retryable?: boolean;
+      metadata?: Record<string, unknown>;
+      cause?: Error;
+    }
+  ) {
+    super(ServiceErrorCode.AUDIO_PROCESSING_FAILED, message, 'audio-preprocessing', options);
+    this.name = 'AudioProcessingError';
   }
 }

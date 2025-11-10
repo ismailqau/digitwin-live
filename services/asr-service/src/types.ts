@@ -82,3 +82,12 @@ export interface ASRCacheEntry {
   createdAt: Date;
   expiresAt: Date;
 }
+
+// Re-export audio preprocessing types
+export type {
+  AudioBuffer,
+  AudioQualityMetrics,
+  AudioMetadata,
+  SilenceSegment,
+  PreprocessingConfig,
+} from './audio-preprocessing';

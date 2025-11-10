@@ -6,5 +6,6 @@ export { ASRCacheService } from './cache';
 export { ASRMetricsService } from './metrics';
 export { ASRQuotaService } from './quota';
 export { ASRErrorHandler, ASRError, ASRErrorCode } from './error-handler';
+export { AudioPreprocessingService, audioPreprocessing } from './audio-preprocessing';
 export * from './types';
 export * from './config';

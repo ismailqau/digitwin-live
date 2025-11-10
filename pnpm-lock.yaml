@@ -587,6 +587,9 @@ importers:
       '@clone/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@clone/service-errors':
+        specifier: workspace:*
+        version: link:../../packages/service-errors
       '@clone/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types

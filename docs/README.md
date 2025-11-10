@@ -76,6 +76,14 @@ Complete documentation for the DigitWin Live platform.
 | [Monorepo Development](./MONOREPO-DEVELOPMENT.md) | Turborepo & pnpm guide             |
 | [Scripts Documentation](../scripts/README.md)     | Utility scripts reference          |
 
+### 🎤 Audio & Speech Processing
+
+| Document                                        | Description                                   |
+| ----------------------------------------------- | --------------------------------------------- |
+| [Audio Processing](./AUDIO-PROCESSING.md)       | Audio capture, streaming, and ASR integration |
+| [Audio Preprocessing](./AUDIO-PREPROCESSING.md) | Audio enhancement and quality optimization    |
+| [ASR Service](./ASR-SERVICE.md)                 | Google Chirp speech-to-text integration       |
+
 ---
 
 ## 🔍 Find What You Need

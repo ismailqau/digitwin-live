@@ -17,6 +17,7 @@
     "@clone/config": "workspace:*",
     "@clone/errors": "workspace:*",
     "@clone/logger": "workspace:*",
+    "@clone/service-errors": "workspace:*",
     "@clone/shared-types": "workspace:*",
     "@google-cloud/speech": "^6.0.0",
     "uuid": "^9.0.0"

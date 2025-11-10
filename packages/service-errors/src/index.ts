@@ -1,4 +1,4 @@
-export { ServiceError, ServiceErrorCode } from './ServiceError';
+export { ServiceError, ServiceErrorCode, AudioProcessingError } from './ServiceError';
 export {
   CircuitBreaker,
   CircuitState,
