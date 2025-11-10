@@ -254,7 +254,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
   - _Note: This plays TTS-generated audio from Phase 6, NOT user recordings_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 3.2 Integrate Google Chirp ASR service
+- [x] 3.2 Integrate Google Chirp ASR service
   - Set up Google Cloud Speech-to-Text API with Chirp model in `services/asr-service`
   - Implement streaming ASR service in backend
   - Configure automatic punctuation and interim results

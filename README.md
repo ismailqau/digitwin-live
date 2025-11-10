@@ -233,6 +233,7 @@ The system follows a microservices architecture with the following key component
 ### 🎤 Audio & Speech Processing
 
 - **[Audio Processing](./docs/AUDIO-PROCESSING.md)** - Audio capture, streaming, and ASR integration
+- **[ASR Service](./docs/ASR-SERVICE.md)** - Google Chirp speech-to-text integration
 
 **📖 Complete Documentation**: [docs/README.md](./docs/README.md)
 

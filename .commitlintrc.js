@@ -26,6 +26,7 @@ module.exports = {
     'subject-full-stop': [2, 'never', '.'],
     'header-max-length': [2, 'always', 100],
     'body-leading-blank': [2, 'always'],
+    'body-max-line-length': [0], // Disabled - allow long lines in commit body
     'footer-leading-blank': [2, 'always'],
   },
 };

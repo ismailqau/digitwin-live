@@ -18,10 +18,12 @@
     "@clone/errors": "workspace:*",
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
-    "@google-cloud/speech": "^6.0.0"
+    "@google-cloud/speech": "^6.0.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.9.2",
+    "@types/uuid": "^9.0.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
