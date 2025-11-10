@@ -56,6 +56,7 @@ cd digitwinlive
 - **Node.js** 20+ ([Download](https://nodejs.org/))
 - **pnpm** 8+ ([Install](https://pnpm.io/installation))
 - **PostgreSQL** 15+ OR **Docker** (for Weaviate)
+- **Windows users**: WSL or Git Bash recommended for shell scripts ([Setup Guide](./docs/CROSS-PLATFORM.md))
 
 **Installation:**
 
