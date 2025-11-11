@@ -503,7 +503,7 @@ User Query → Embedding → Vector Search → Context Assembly → LLM
   - _Requirements: 3, 9, 14_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 4.5 Write tests for RAG pipeline
+- [x] 4.5 Write tests for RAG pipeline
   - Create unit tests for EmbeddingService (mock Vertex AI API)
   - Write unit tests for VectorSearchService (both PostgreSQL and Weaviate)
   - Create unit tests for TextChunker (various chunk sizes and overlaps)

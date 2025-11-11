@@ -12,4 +12,6 @@ module.exports = {
     '/dist/',
     '/coverage/',
   ],
+  forceExit: true,
+  detectOpenHandles: true,
 };
