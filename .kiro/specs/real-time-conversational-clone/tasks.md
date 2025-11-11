@@ -569,7 +569,7 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
    GCS Bucket    Quality       GPU Node    Cache      Audio Chunks
 ```
 
-- [ ] 6. Implement voice cloning and TTS service
+- [x] 6. Implement voice cloning and TTS service
   - Set up GKE cluster with GPU nodes (T4) for TTS workloads
   - Integrate XTTS-v2 model for voice cloning in `services/tts-service`
   - Implement voice model training pipeline from audio samples
