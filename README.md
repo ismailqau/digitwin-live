@@ -249,6 +249,10 @@ The system follows a microservices architecture with the following key component
 - **[Audio Caching & Storage](./docs/AUDIO-CACHING-STORAGE.md)** - Audio chunk caching and GCS archival
 - **[ASR Service](./docs/ASR-SERVICE.md)** - Google Chirp speech-to-text integration
 
+### 🤖 AI & Language Models
+
+- **[LLM Service Guide](./docs/LLM-SERVICE-GUIDE.md)** - Multi-provider LLM integration (Gemini, OpenAI, Groq)
+
 **📖 Complete Documentation**: [docs/README.md](./docs/README.md)
 
 ## 🧪 Testing
