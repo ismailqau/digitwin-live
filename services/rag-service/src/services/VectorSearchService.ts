@@ -13,6 +13,8 @@ export interface SearchFilter {
   userId: string;
   sourceType?: string;
   dateRange?: { start: Date; end: Date };
+  keywords?: string[];
+  hybridSearch?: boolean;
 }
 
 export interface VectorSearchConfig {
@@ -50,8 +52,27 @@ export class PostgreSQLVectorSearch {
         topK,
         userId: filter.userId,
         embeddingDimensions: embedding.length,
+        hybridSearch: filter.hybridSearch,
+        keywords: filter.keywords?.length || 0,
       });
 
+      if (filter.hybridSearch && filter.keywords && filter.keywords.length > 0) {
+        return this.performHybridSearch(embedding, topK, filter);
+      } else {
+        return this.performVectorSearch(embedding, topK, filter);
+      }
+    } catch (error) {
+      logger.error('Vector search failed', { error });
+      throw new RAGError('Vector search failed');
+    }
+  }
+
+  private async performVectorSearch(
+    embedding: number[],
+    topK: number,
+    filter: SearchFilter
+  ): Promise<SearchResult[]> {
+    try {
       // Convert embedding array to pgvector format
       const embeddingStr = `[${embedding.join(',')}]`;
 
@@ -100,6 +121,91 @@ export class PostgreSQLVectorSearch {
       logger.info('Vector search completed', {
         resultsFound: searchResults.length,
         topScore: searchResults[0]?.score,
+      });
+
+      return searchResults;
+    } catch (error) {
+      logger.error('Vector search failed', { error });
+      throw new RAGError('Vector search failed');
+    }
+  }
+
+  private async performHybridSearch(
+    embedding: number[],
+    topK: number,
+    filter: SearchFilter
+  ): Promise<SearchResult[]> {
+    try {
+      // Convert embedding array to pgvector format
+      const embeddingStr = `[${embedding.join(',')}]`;
+
+      // Create keyword search terms for full-text search
+      const keywordQuery = filter.keywords!.join(' & ');
+
+      // Hybrid search: combine vector similarity with keyword matching
+      let query = `
+        SELECT 
+          dc.id,
+          dc.content,
+          dc.metadata,
+          (1 - (dc.embedding <=> $1::vector)) as vector_similarity,
+          ts_rank(to_tsvector('english', dc.content), plainto_tsquery('english', $3)) as keyword_score,
+          (
+            (1 - (dc.embedding <=> $1::vector)) * 0.7 + 
+            ts_rank(to_tsvector('english', dc.content), plainto_tsquery('english', $3)) * 0.3
+          ) as hybrid_score
+        FROM document_chunks dc
+        WHERE dc.user_id = $2
+          AND (
+            1 - (dc.embedding <=> $1::vector) > $4
+            OR to_tsvector('english', dc.content) @@ plainto_tsquery('english', $3)
+          )
+      `;
+
+      const params: unknown[] = [
+        embeddingStr,
+        filter.userId,
+        keywordQuery,
+        this.similarityThreshold,
+      ];
+      let paramIndex = 5;
+
+      if (filter.sourceType) {
+        query += ` AND dc.metadata->>'sourceType' = $${paramIndex}`;
+        params.push(filter.sourceType);
+        paramIndex++;
+      }
+
+      if (filter.dateRange) {
+        query += ` AND dc.created_at BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+        params.push(filter.dateRange.start, filter.dateRange.end);
+        paramIndex += 2;
+      }
+
+      query += `
+        ORDER BY hybrid_score DESC
+        LIMIT $${paramIndex}
+      `;
+      params.push(topK);
+
+      const result = await this.pool.query(query, params);
+
+      const searchResults: SearchResult[] = result.rows.map((row) => ({
+        id: row.id,
+        score: row.hybrid_score || row.vector_similarity,
+        metadata: {
+          ...row.metadata,
+          vectorSimilarity: row.vector_similarity,
+          keywordScore: row.keyword_score,
+          hybridScore: row.hybrid_score,
+        },
+        content: row.content,
+      }));
+
+      logger.info('Hybrid search completed', {
+        resultsFound: searchResults.length,
+        topScore: searchResults[0]?.score,
+        keywords: filter.keywords,
       });
 
       return searchResults;

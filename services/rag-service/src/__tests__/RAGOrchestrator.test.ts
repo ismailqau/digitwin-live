@@ -66,6 +66,9 @@ describe('RAGOrchestrator', () => {
         topK: 5,
         similarityThreshold: 0.7,
         maxConversationTurns: 5,
+        enableQueryOptimization: false,
+        enableHybridSearch: false,
+        sourcePriority: { faq: 1.5, document: 1.0, conversation: 0.8 },
       }
     );
   });

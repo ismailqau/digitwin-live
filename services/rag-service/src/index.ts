@@ -51,6 +51,9 @@ export function initializeRAGService(config: {
   similarityThreshold?: number;
   topK?: number;
   maxConversationTurns?: number;
+  enableQueryOptimization?: boolean;
+  enableHybridSearch?: boolean;
+  sourcePriority?: Record<string, number>;
 }): RAGOrchestrator {
   logger.info('Initializing RAG service', {
     projectId: config.projectId,
@@ -114,6 +117,9 @@ export function initializeRAGService(config: {
       topK: config.topK || 5,
       similarityThreshold: config.similarityThreshold || 0.7,
       maxConversationTurns: config.maxConversationTurns || 5,
+      enableQueryOptimization: config.enableQueryOptimization || false,
+      enableHybridSearch: config.enableHybridSearch || false,
+      sourcePriority: config.sourcePriority || { faq: 1.5, document: 1.0, conversation: 0.8 },
     }
   );
 

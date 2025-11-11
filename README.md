@@ -219,6 +219,7 @@ The system follows a microservices architecture with the following key component
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 - **[Document Processing](./docs/DOCUMENT-PROCESSING.md)** - Document upload, extraction, and embedding
 - **[Knowledge Base API](./docs/KNOWLEDGE-BASE-API.md)** - REST API for documents, FAQs, and knowledge sources
+- **[RAG Query Optimization](./docs/RAG-QUERY-OPTIMIZATION.md)** - Query preprocessing, hybrid search, and analytics
 
 ### 🔐 Security & Authentication
 

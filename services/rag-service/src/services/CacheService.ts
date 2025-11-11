@@ -4,6 +4,8 @@ import { PrismaClient } from '@clone/database';
 import { RAGError } from '@clone/errors';
 import { logger } from '@clone/logger';
 
+import { SearchResult } from './VectorSearchService';
+
 export interface CacheConfig {
   enabled: boolean;
   ttlShort: number; // seconds
@@ -92,8 +94,8 @@ export class CacheService {
   async cacheSearchResults(
     query: string,
     userId: string,
-    filters: Record<string, any>,
-    results: any[]
+    filters: Record<string, unknown>,
+    results: SearchResult[]
   ): Promise<void> {
     if (!this.config.enabled) return;
 
@@ -114,7 +116,7 @@ export class CacheService {
         await this.prisma.vectorSearchCache.update({
           where: { id: existing.id },
           data: {
-            results,
+            results: JSON.parse(JSON.stringify(results)),
             expiresAt,
           },
         });
@@ -124,7 +126,7 @@ export class CacheService {
           data: {
             queryHash,
             userId,
-            results,
+            results: JSON.parse(JSON.stringify(results)),
             expiresAt,
           },
         });
@@ -142,8 +144,8 @@ export class CacheService {
   async getCachedSearchResults(
     query: string,
     userId: string,
-    filters: Record<string, any>
-  ): Promise<any[] | null> {
+    filters: Record<string, unknown>
+  ): Promise<SearchResult[] | null> {
     if (!this.config.enabled) return null;
 
     try {
@@ -159,7 +161,7 @@ export class CacheService {
 
       if (cached) {
         logger.debug('Search results cache hit', { queryHash, userId });
-        return cached.results as unknown[];
+        return cached.results as unknown as SearchResult[];
       }
 
       logger.debug('Search results cache miss', { queryHash, userId });

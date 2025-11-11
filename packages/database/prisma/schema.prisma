@@ -350,6 +350,26 @@ model RateLimit {
 }
 
 // ============================================================================
+// Query Analytics
+// ============================================================================
+
+model QueryAnalytics {
+  id                 String   @id @default(uuid())
+  query              String
+  userId             String   @map("user_id")
+  timestamp          DateTime @default(now())
+  resultsCount       Int      @map("results_count")
+  avgRelevanceScore  Float    @map("avg_relevance_score")
+  hasLowConfidence   Boolean  @map("has_low_confidence")
+
+  @@index([userId, timestamp])
+  @@index([query])
+  @@index([hasLowConfidence])
+  @@index([timestamp])
+  @@map("query_analytics")
+}
+
+// ============================================================================
 // Audit Logging
 // ============================================================================
 
