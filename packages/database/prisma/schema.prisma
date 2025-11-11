@@ -15,11 +15,11 @@ datasource db {
 // ============================================================================
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at") // Soft delete
 
   // Personality configuration
@@ -55,16 +55,16 @@ model User {
 // ============================================================================
 
 model VoiceModel {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  provider  String   // 'xtts-v2', 'google-cloud-tts', 'openai-tts'
-  modelPath String   @map("model_path")
-  sampleRate Int     @default(22050) @map("sample_rate")
-  qualityScore Float @map("quality_score")
-  isActive  Boolean  @default(false) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at") // Soft delete
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  provider     String // 'xtts-v2', 'google-cloud-tts', 'openai-tts'
+  modelPath    String    @map("model_path")
+  sampleRate   Int       @default(22050) @map("sample_rate")
+  qualityScore Float     @map("quality_score")
+  isActive     Boolean   @default(false) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at") // Soft delete
 
   // Metadata (stored as JSON)
   metadata Json @default("{}")
@@ -82,15 +82,15 @@ model VoiceModel {
 // ============================================================================
 
 model FaceModel {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  modelPath String   @map("model_path")
-  resolution Json    // { width: number, height: number }
-  qualityScore Float @map("quality_score")
-  isActive  Boolean  @default(false) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at") // Soft delete
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  modelPath    String    @map("model_path")
+  resolution   Json // { width: number, height: number }
+  qualityScore Float     @map("quality_score")
+  isActive     Boolean   @default(false) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at") // Soft delete
 
   // Metadata (stored as JSON)
   metadata Json @default("{}")
@@ -117,10 +117,10 @@ model ConversationSession {
   currentTurnId   String?   @map("current_turn_id")
 
   // Configuration
-  llmProvider   String  @map("llm_provider")
-  ttsProvider   String  @map("tts_provider")
-  voiceModelId  String? @map("voice_model_id")
-  faceModelId   String? @map("face_model_id")
+  llmProvider  String  @map("llm_provider")
+  ttsProvider  String  @map("tts_provider")
+  voiceModelId String? @map("voice_model_id")
+  faceModelId  String? @map("face_model_id")
 
   // Metrics
   totalTurns       Int   @default(0) @map("total_turns")
@@ -128,7 +128,7 @@ model ConversationSession {
   totalCost        Float @default(0) @map("total_cost")
 
   // Relations
-  user  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   turns ConversationTurn[]
 
   @@index([userId, startedAt])
@@ -146,14 +146,14 @@ model ConversationTurn {
   timestamp DateTime @default(now())
 
   // User input
-  userAudioDurationMs Int     @map("user_audio_duration_ms")
-  userTranscript      String  @map("user_transcript")
+  userAudioDurationMs  Int    @map("user_audio_duration_ms")
+  userTranscript       String @map("user_transcript")
   transcriptConfidence Float  @map("transcript_confidence")
 
   // System response
-  retrievedChunks      String[] @map("retrieved_chunks")
-  llmResponse          String   @map("llm_response")
-  responseAudioDurationMs Int   @map("response_audio_duration_ms")
+  retrievedChunks         String[] @map("retrieved_chunks")
+  llmResponse             String   @map("llm_response")
+  responseAudioDurationMs Int      @map("response_audio_duration_ms")
 
   // Performance metrics
   asrLatencyMs   Int @map("asr_latency_ms")
@@ -209,7 +209,7 @@ model KnowledgeDocument {
   deletedAt DateTime? @map("deleted_at") // Soft delete
 
   // Relations
-  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   chunks DocumentChunk[]
 
   @@index([userId, uploadedAt])
@@ -223,14 +223,14 @@ model KnowledgeDocument {
 // ============================================================================
 
 model FAQ {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
   question  String
-  answer    String   @db.Text
-  priority  Int      @default(50) // 0-100, higher = more important
+  answer    String    @db.Text
+  priority  Int       @default(50) // 0-100, higher = more important
   tags      String[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at") // Soft delete
 
   // Relations
@@ -271,7 +271,7 @@ model DocumentChunk {
 model EmbeddingCache {
   id        String   @id @default(uuid())
   queryHash String   @unique @map("query_hash") // Hash of the query text
-  embedding Float[]  // Vector embedding
+  embedding Float[] // Vector embedding
   createdAt DateTime @default(now()) @map("created_at")
   expiresAt DateTime @map("expires_at")
 
@@ -281,12 +281,12 @@ model EmbeddingCache {
 }
 
 model VectorSearchCache {
-  id         String   @id @default(uuid())
-  queryHash  String   @map("query_hash") // Hash of query + filters
-  userId     String   @map("user_id")
-  results    Json     // Cached search results
-  createdAt  DateTime @default(now()) @map("created_at")
-  expiresAt  DateTime @map("expires_at")
+  id        String   @id @default(uuid())
+  queryHash String   @map("query_hash") // Hash of query + filters
+  userId    String   @map("user_id")
+  results   Json // Cached search results
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
 
   @@index([queryHash, userId])
   @@index([expiresAt])
@@ -308,19 +308,19 @@ model LLMResponseCache {
 }
 
 model AudioChunkCache {
-  id          String   @id @default(uuid())
-  cacheKey    String   @unique @map("cache_key") // Hash of text + voice settings + session
-  audioData   Bytes    @map("audio_data") // Compressed audio data (Opus codec)
-  format      String   @default("opus") // 'opus', 'mp3', 'pcm'
-  durationMs  Int      @map("duration_ms")
-  sampleRate  Int      @default(16000) @map("sample_rate")
-  channels    Int      @default(1) // Mono
-  compression String   @default("opus") // Compression codec used
-  storagePath String?  @map("storage_path") // GCS path for archived audio
-  metadata    Json     @default("{}") // Additional metadata (voice model, session info)
-  createdAt   DateTime @default(now()) @map("created_at")
-  expiresAt   DateTime @map("expires_at")
-  hitCount    Int      @default(0) @map("hit_count")
+  id             String   @id @default(uuid())
+  cacheKey       String   @unique @map("cache_key") // Hash of text + voice settings + session
+  audioData      Bytes    @map("audio_data") // Compressed audio data (Opus codec)
+  format         String   @default("opus") // 'opus', 'mp3', 'pcm'
+  durationMs     Int      @map("duration_ms")
+  sampleRate     Int      @default(16000) @map("sample_rate")
+  channels       Int      @default(1) // Mono
+  compression    String   @default("opus") // Compression codec used
+  storagePath    String?  @map("storage_path") // GCS path for archived audio
+  metadata       Json     @default("{}") // Additional metadata (voice model, session info)
+  createdAt      DateTime @default(now()) @map("created_at")
+  expiresAt      DateTime @map("expires_at")
+  hitCount       Int      @default(0) @map("hit_count")
   lastAccessedAt DateTime @default(now()) @map("last_accessed_at")
 
   @@index([cacheKey])
@@ -335,13 +335,13 @@ model AudioChunkCache {
 // ============================================================================
 
 model RateLimit {
-  id         String   @id @default(uuid())
-  userId     String   @map("user_id")
-  endpoint   String
-  windowStart DateTime @map("window_start")
-  requestCount Int     @default(0) @map("request_count")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  endpoint     String
+  windowStart  DateTime @map("window_start")
+  requestCount Int      @default(0) @map("request_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@unique([userId, endpoint, windowStart])
   @@index([userId, endpoint, windowStart])
@@ -359,7 +359,7 @@ model AuditLog {
   userId    String   @map("user_id")
   action    String
   resource  String
-  result    String   // 'success', 'failure'
+  result    String // 'success', 'failure'
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
   metadata  Json     @default("{}")

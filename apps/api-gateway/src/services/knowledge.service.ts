@@ -2,7 +2,7 @@
  * KnowledgeService - Handles knowledge source priority and configuration
  */
 
-import { PrismaClient } from '@clone/database';
+import { Prisma, PrismaClient } from '@clone/database';
 import { logger } from '@clone/logger';
 
 export interface KnowledgeSourcePriority {
@@ -39,8 +39,8 @@ export class KnowledgeService {
       throw new Error('User not found');
     }
 
-    const settings = user.settings as any;
-    const knowledgeSources = settings.knowledgeSources || {
+    const settings = user.settings as Record<string, unknown>;
+    const knowledgeSources = (settings.knowledgeSources as KnowledgeSourcePriority) || {
       documents: 1,
       faqs: 2,
       conversations: 3,
@@ -83,15 +83,19 @@ export class KnowledgeService {
       throw new Error('User not found');
     }
 
-    const settings = user.settings as any;
+    const settings = user.settings as Record<string, unknown>;
     const updatedSettings = {
       ...settings,
-      knowledgeSources: priorities,
+      knowledgeSources: {
+        documents: priorities.documents,
+        faqs: priorities.faqs,
+        conversations: priorities.conversations,
+      },
     };
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { settings: updatedSettings },
+      data: { settings: updatedSettings as Prisma.InputJsonValue },
     });
 
     logger.info('Knowledge source priorities updated', { userId, priorities });
