@@ -3,6 +3,7 @@ import { TTSProvider } from '@clone/shared-types';
 import winston from 'winston';
 
 import { ITTSProvider } from '../interfaces/ITTSProvider';
+import { ElevenLabsProvider } from '../providers/ElevenLabsProvider';
 import { GoogleCloudTTSProvider } from '../providers/GoogleCloudTTSProvider';
 import { OpenAITTSProvider } from '../providers/OpenAITTSProvider';
 import { XTTSProvider } from '../providers/XTTSProvider';
@@ -12,20 +13,26 @@ import {
   TTSStreamChunk,
   VoiceModelMetadata,
   TTSProviderConfig,
+  ProviderSelectionCriteria,
 } from '../types';
+
+import { ProviderSelectionService } from './ProviderSelectionService';
 
 export class TTSService {
   private providers: Map<TTSProvider, ITTSProvider> = new Map();
   private logger: winston.Logger;
+  private providerSelection: ProviderSelectionService;
   private fallbackOrder: TTSProvider[] = [
     TTSProvider.XTTS_V2,
     TTSProvider.OPENAI_TTS,
     TTSProvider.GOOGLE_CLOUD_TTS,
+    TTSProvider.ELEVENLABS,
   ];
 
   constructor(logger?: winston.Logger) {
     this.logger = logger || createLogger('tts-service');
     this.initializeProviders();
+    this.providerSelection = new ProviderSelectionService(this.providers, this.logger);
   }
 
   private initializeProviders(): void {
@@ -33,6 +40,7 @@ export class TTSService {
     this.providers.set(TTSProvider.GOOGLE_CLOUD_TTS, new GoogleCloudTTSProvider(this.logger));
     this.providers.set(TTSProvider.OPENAI_TTS, new OpenAITTSProvider(this.logger));
     this.providers.set(TTSProvider.XTTS_V2, new XTTSProvider(this.logger));
+    this.providers.set(TTSProvider.ELEVENLABS, new ElevenLabsProvider(this.logger));
   }
 
   async initializeProvider(config: TTSProviderConfig): Promise<void> {
@@ -45,16 +53,46 @@ export class TTSService {
     this.logger.info(`Provider ${config.provider} initialized successfully`);
   }
 
-  async synthesize(request: TTSRequest): Promise<TTSResponse> {
-    const provider = await this.selectProvider(request.provider);
+  async synthesize(
+    request: TTSRequest,
+    criteria?: ProviderSelectionCriteria
+  ): Promise<TTSResponse> {
+    const startTime = Date.now();
+    let selectedProvider: ITTSProvider;
 
     try {
-      return await provider.synthesize(request);
+      selectedProvider = await this.providerSelection.selectProvider(request, criteria);
     } catch (error) {
-      this.logger.error(`Synthesis failed with provider ${provider.provider}`, { error });
+      this.logger.error('Failed to select provider', { error });
+      selectedProvider = await this.selectProvider(request.provider);
+    }
+
+    try {
+      const response = await selectedProvider.synthesize(request);
+
+      // Update provider metrics
+      const latency = Date.now() - startTime;
+      await this.providerSelection.updateProviderMetrics(
+        selectedProvider.provider,
+        latency,
+        true,
+        response.metadata.cost
+      );
+
+      return response;
+    } catch (error) {
+      const latency = Date.now() - startTime;
+      await this.providerSelection.updateProviderMetrics(
+        selectedProvider.provider,
+        latency,
+        false,
+        0
+      );
+
+      this.logger.error(`Synthesis failed with provider ${selectedProvider.provider}`, { error });
 
       // Try fallback providers
-      return await this.synthesizeWithFallback(request, provider.provider);
+      return await this.synthesizeWithFallback(request, selectedProvider.provider, criteria);
     }
   }
 
@@ -67,7 +105,7 @@ export class TTSService {
       this.logger.error(`Stream synthesis failed with provider ${provider.provider}`, { error });
 
       // For streaming, we'll fall back to regular synthesis and chunk it
-      const response = await this.synthesizeWithFallback(request, provider.provider);
+      const response = await this.synthesizeWithFallback(request, provider.provider, undefined);
       yield* this.chunkAudioData(response.audioData);
     }
   }
@@ -140,6 +178,51 @@ export class TTSService {
     return metrics;
   }
 
+  /**
+   * Get provider performance metrics from selection service
+   */
+  getProviderPerformanceMetrics(): Map<TTSProvider, any> {
+    return this.providerSelection.getProviderMetrics();
+  }
+
+  /**
+   * Compare costs across all providers
+   */
+  async compareCosts(text: string): Promise<Map<TTSProvider, number>> {
+    return await this.providerSelection.compareCosts(text);
+  }
+
+  /**
+   * Validate voice model compatibility across providers
+   */
+  async validateVoiceModelCompatibility(
+    voiceModel: VoiceModelMetadata
+  ): Promise<Map<TTSProvider, boolean>> {
+    return await this.providerSelection.validateVoiceModelCompatibility(voiceModel);
+  }
+
+  /**
+   * Get quota usage for all providers
+   */
+  async getQuotaUsage(): Promise<Record<TTSProvider, any>> {
+    const quotas: Record<TTSProvider, any> = {} as any;
+
+    for (const [providerType, provider] of this.providers) {
+      try {
+        if (provider.getQuotaUsage) {
+          quotas[providerType] = await provider.getQuotaUsage();
+        } else {
+          quotas[providerType] = { error: 'Quota tracking not supported' };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to get quota usage for ${providerType}`, { error });
+        quotas[providerType] = { error: (error as Error).message };
+      }
+    }
+
+    return quotas;
+  }
+
   async healthCheck(): Promise<Record<TTSProvider, boolean>> {
     const health: Record<TTSProvider, boolean> = {} as Record<TTSProvider, boolean>;
 
@@ -177,8 +260,51 @@ export class TTSService {
 
   private async synthesizeWithFallback(
     request: TTSRequest,
-    failedProvider: TTSProvider
+    failedProvider: TTSProvider,
+    criteria?: ProviderSelectionCriteria
   ): Promise<TTSResponse> {
+    try {
+      // Use provider selection service for intelligent fallback
+      const fallbackProviders = await this.providerSelection.getFallbackProviders(
+        failedProvider,
+        request,
+        criteria
+      );
+
+      for (const provider of fallbackProviders) {
+        try {
+          this.logger.info(`Falling back to provider ${provider.provider}`);
+          const response = await provider.synthesize(request);
+
+          // Update metrics for successful fallback
+          await this.providerSelection.updateProviderMetrics(
+            provider.provider,
+            response.metadata.latency,
+            true,
+            response.metadata.cost
+          );
+
+          return response;
+        } catch (error) {
+          this.logger.error(`Fallback provider ${provider.provider} also failed`, { error });
+
+          // Update metrics for failed fallback
+          await this.providerSelection.updateProviderMetrics(
+            provider.provider,
+            1000, // Default latency for failed requests
+            false,
+            0
+          );
+          continue;
+        }
+      }
+    } catch (error) {
+      this.logger.error('Provider selection service fallback failed, using default fallback', {
+        error,
+      });
+    }
+
+    // Fallback to original logic if provider selection fails
     const remainingProviders = this.fallbackOrder.filter((p) => p !== failedProvider);
 
     for (const providerType of remainingProviders) {

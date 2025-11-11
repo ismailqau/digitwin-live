@@ -65,6 +65,7 @@ export class OpenAITTSProvider extends BaseProvider {
       const cost = this.calculateCost(text.length, model);
 
       this.updateMetrics(latency, cost);
+      this.updateQuotaUsage(text.length);
 
       return {
         audioData,
@@ -117,7 +118,7 @@ export class OpenAITTSProvider extends BaseProvider {
     return this.calculateCost(text.length, model);
   }
 
-  private mapVoiceModel(voiceModelId?: string, voiceName?: string): string {
+  mapVoiceModel(voiceModelId?: string, voiceName?: string): string {
     // Map voice model ID or voice name to OpenAI voice
     const voiceMap: Record<string, string> = {
       alloy: 'alloy',

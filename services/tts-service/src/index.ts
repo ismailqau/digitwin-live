@@ -14,9 +14,11 @@ export * from './types';
 export * from './interfaces/ITTSProvider';
 export * from './services/TTSService';
 export * from './services/TTSCacheService';
+export * from './services/ProviderSelectionService';
 export * from './providers/GoogleCloudTTSProvider';
 export * from './providers/OpenAITTSProvider';
 export * from './providers/XTTSProvider';
+export * from './providers/ElevenLabsProvider';
 
 // Main service initialization
 export async function createTTSService(): Promise<{
@@ -50,6 +52,12 @@ export async function createTTSService(): Promise<{
       options: {
         modelPath: process.env.XTTS_MODEL_PATH,
         gpuEnabled: process.env.GPU_ENABLED === 'true',
+      },
+    },
+    {
+      provider: TTSProvider.ELEVENLABS,
+      options: {
+        apiKey: process.env.ELEVENLABS_API_KEY,
       },
     },
   ];

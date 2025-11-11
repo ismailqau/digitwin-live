@@ -1,6 +1,14 @@
 import { TTSProvider } from '@clone/shared-types';
 
-import { TTSRequest, TTSResponse, TTSStreamChunk, TTSOptions, VoiceModelMetadata } from '../types';
+import {
+  TTSRequest,
+  TTSResponse,
+  TTSStreamChunk,
+  TTSOptions,
+  VoiceModelMetadata,
+  VoiceQualityMetrics,
+  ProviderQuota,
+} from '../types';
 
 export interface ITTSProvider {
   readonly provider: TTSProvider;
@@ -45,4 +53,27 @@ export interface ITTSProvider {
    * Get provider metrics
    */
   getMetrics(): Promise<Record<string, any>>;
+
+  /**
+   * Validate voice quality against reference audio
+   */
+  validateVoiceQuality?(
+    referenceAudio: Buffer,
+    generatedAudio: Buffer
+  ): Promise<VoiceQualityMetrics>;
+
+  /**
+   * Get current quota usage for this provider
+   */
+  getQuotaUsage?(): Promise<ProviderQuota>;
+
+  /**
+   * Check if provider can handle the request within quota limits
+   */
+  canHandleRequest?(text: string): Promise<boolean>;
+
+  /**
+   * Get provider-specific voice model mapping
+   */
+  mapVoiceModel?(voiceModelId: string): string;
 }

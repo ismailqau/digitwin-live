@@ -18,6 +18,11 @@ export interface TTSOptions {
   voiceName?: string;
   ssmlGender?: string;
   model?: string;
+  // ElevenLabs specific options
+  stability?: number;
+  similarity_boost?: number;
+  style?: number;
+  use_speaker_boost?: boolean;
 }
 
 export interface TTSResponse {
@@ -48,7 +53,7 @@ export interface VoiceModelMetadata {
   sampleRate: number;
   qualityScore: number;
   isActive: boolean;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface TTSProviderConfig {
@@ -66,6 +71,10 @@ export interface TTSMetrics {
   errorCount: number;
   totalCost: number;
   lastUsed: Date;
+  successRate: number;
+  averageQualityScore: number;
+  quotaUsed: number;
+  quotaLimit: number;
 }
 
 export interface CachedTTSResult {
@@ -77,4 +86,45 @@ export interface CachedTTSResult {
   createdAt: Date;
   expiresAt: Date;
   hitCount: number;
+}
+
+export interface ProviderSelectionCriteria {
+  preferredProvider?: TTSProvider;
+  maxCost?: number;
+  maxLatency?: number;
+  minQualityScore?: number;
+  requireStreaming?: boolean;
+  voiceModelCompatibility?: string[];
+}
+
+export interface ProviderPerformanceMetrics {
+  provider: TTSProvider;
+  isAvailable: boolean;
+  averageLatency: number;
+  successRate: number;
+  averageCost: number;
+  qualityScore: number;
+  quotaUsage: {
+    used: number;
+    limit: number;
+    resetDate?: Date;
+  };
+  lastHealthCheck: Date;
+}
+
+export interface VoiceQualityMetrics {
+  similarity: number; // 0-1 score
+  naturalness: number; // 0-1 score
+  clarity: number; // 0-1 score
+  overall: number; // 0-1 score
+}
+
+export interface ProviderQuota {
+  provider: TTSProvider;
+  charactersUsed: number;
+  charactersLimit: number;
+  requestsUsed: number;
+  requestsLimit: number;
+  resetDate: Date;
+  isExceeded: boolean;
 }

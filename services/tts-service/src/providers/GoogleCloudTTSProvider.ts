@@ -77,6 +77,7 @@ export class GoogleCloudTTSProvider extends BaseProvider {
       const cost = this.calculateCost(text.length);
 
       this.updateMetrics(latency, cost);
+      this.updateQuotaUsage(text.length);
 
       return {
         audioData,

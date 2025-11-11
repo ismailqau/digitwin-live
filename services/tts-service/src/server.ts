@@ -172,14 +172,73 @@ app.get('/metrics', async (_req, res) => {
     }
 
     const metrics = await ttsService.getProviderMetrics();
+    const performanceMetrics = ttsService.getProviderPerformanceMetrics();
     const cacheStats = await cacheService.getStats();
 
     return res.json({
       providers: metrics,
+      performance: Object.fromEntries(performanceMetrics),
       cache: cacheStats,
     });
   } catch (error) {
     logger.error('Failed to get metrics', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Compare costs across providers
+app.post('/compare-costs', async (req, res) => {
+  try {
+    if (!ttsService) {
+      return res.status(503).json({ error: 'TTS service not initialized' });
+    }
+
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const costs = await ttsService.compareCosts(text);
+    return res.json(Object.fromEntries(costs));
+  } catch (error) {
+    logger.error('Failed to compare costs', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get quota usage
+app.get('/quota', async (_req, res) => {
+  try {
+    if (!ttsService) {
+      return res.status(503).json({ error: 'TTS service not initialized' });
+    }
+
+    const quotas = await ttsService.getQuotaUsage();
+    return res.json(quotas);
+  } catch (error) {
+    logger.error('Failed to get quota usage', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Validate voice model compatibility
+app.post('/validate-voice-model', async (req, res) => {
+  try {
+    if (!ttsService) {
+      return res.status(503).json({ error: 'TTS service not initialized' });
+    }
+
+    const voiceModel = req.body;
+
+    if (!voiceModel || !voiceModel.id) {
+      return res.status(400).json({ error: 'Voice model data is required' });
+    }
+
+    const compatibility = await ttsService.validateVoiceModelCompatibility(voiceModel);
+    return res.json(Object.fromEntries(compatibility));
+  } catch (error) {
+    logger.error('Failed to validate voice model compatibility', { error });
     return res.status(500).json({ error: (error as Error).message });
   }
 });
