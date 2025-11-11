@@ -1,172 +1,204 @@
 /**
- * Storage Service - Handle file uploads to Google Cloud Storage
+ * Storage Service
+ *
+ * Handles file uploads to Google Cloud Storage.
+ * Implements:
+ * - Chunked file uploads
+ * - Signed URL generation
+ * - File metadata management
+ * - Storage bucket operations
  */
 
-import { config } from '@clone/config';
-import { logger } from '@clone/logger';
 import { Storage } from '@google-cloud/storage';
-import { v4 as uuidv4 } from 'uuid';
 
-export interface UploadResult {
-  storagePath: string;
-  publicUrl?: string;
-  sizeBytes: number;
+const storage = new Storage({
+  projectId: process.env.GCP_PROJECT_ID,
+  keyFilename: process.env.GCP_SERVICE_ACCOUNT_KEY_PATH,
+});
+
+interface UploadOptions {
+  contentType?: string;
+  metadata?: Record<string, any>;
+  resumable?: boolean;
+  chunkSize?: number;
 }
 
-export class StorageService {
-  private storage: Storage;
-  private bucketName: string;
+interface UploadResult {
+  path: string;
+  url: string;
+  size: number;
+  contentType: string;
+  metadata?: Record<string, any>;
+}
 
-  constructor(projectId?: string, bucketName?: string) {
-    this.storage = new Storage({
-      projectId: projectId || config.gcp.projectId,
-    });
-    this.bucketName = bucketName || config.storage.bucket || 'digitwin-live-documents';
-  }
+/**
+ * Upload file to Google Cloud Storage
+ */
+export async function uploadToGCS(
+  bucketName: string,
+  fileName: string,
+  buffer: Buffer,
+  options: UploadOptions = {}
+): Promise<UploadResult> {
+  try {
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(fileName);
 
-  /**
-   * Upload file to GCS from local path
-   */
-  async uploadFile(
-    localFilePath: string,
-    userId: string,
-    filename: string,
-    contentType: string
-  ): Promise<UploadResult> {
-    try {
-      const documentId = uuidv4();
-      const storagePath = `${userId}/${documentId}/${filename}`;
+    const uploadOptions: any = {
+      metadata: {
+        contentType: options.contentType || 'application/octet-stream',
+        metadata: options.metadata || {},
+      },
+      resumable: options.resumable || false,
+    };
 
-      const bucket = this.storage.bucket(this.bucketName);
-      const file = bucket.file(storagePath);
-
-      await bucket.upload(localFilePath, {
-        destination: storagePath,
-        metadata: {
-          contentType,
-          metadata: {
-            userId,
-            documentId,
-            uploadedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      const [metadata] = await file.getMetadata();
-
-      logger.info('File uploaded to GCS', {
-        storagePath,
-        sizeBytes: metadata.size,
-        contentType,
-      });
-
-      return {
-        storagePath,
-        sizeBytes: typeof metadata.size === 'string' ? parseInt(metadata.size) : metadata.size || 0,
-      };
-    } catch (error) {
-      logger.error('File upload to GCS failed', { error });
-      throw error;
+    if (options.chunkSize) {
+      uploadOptions.chunkSize = options.chunkSize;
     }
-  }
 
-  /**
-   * Upload document from buffer
-   */
-  async uploadDocument(
-    userId: string,
-    filename: string,
-    buffer: Buffer,
-    contentType: string
-  ): Promise<string> {
-    try {
-      const documentId = uuidv4();
-      const storagePath = `${userId}/${documentId}/${filename}`;
+    // Upload the file
+    await file.save(buffer, uploadOptions);
 
-      const bucket = this.storage.bucket(this.bucketName);
-      const file = bucket.file(storagePath);
+    // Get file metadata
+    await file.getMetadata();
 
-      await file.save(buffer, {
-        metadata: {
-          contentType,
-          metadata: {
-            userId,
-            documentId,
-            uploadedAt: new Date().toISOString(),
-          },
-        },
-      });
-
-      logger.info('Document uploaded to GCS', {
-        storagePath,
-        sizeBytes: buffer.length,
-        contentType,
-      });
-
-      return storagePath;
-    } catch (error) {
-      logger.error('Document upload to GCS failed', { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Delete document from GCS
-   */
-  async deleteDocument(storagePath: string): Promise<void> {
-    return this.deleteFile(storagePath);
-  }
-
-  /**
-   * Delete file from GCS
-   */
-  async deleteFile(storagePath: string): Promise<void> {
-    try {
-      const bucket = this.storage.bucket(this.bucketName);
-      const file = bucket.file(storagePath);
-
-      await file.delete();
-
-      logger.info('File deleted from GCS', { storagePath });
-    } catch (error) {
-      logger.error('File deletion from GCS failed', { storagePath, error });
-      throw error;
-    }
-  }
-
-  /**
-   * Get signed URL for file download
-   */
-  async getSignedUrl(storagePath: string, expiresInMinutes: number = 60): Promise<string> {
-    try {
-      const bucket = this.storage.bucket(this.bucketName);
-      const file = bucket.file(storagePath);
-
-      const [url] = await file.getSignedUrl({
-        action: 'read',
-        expires: Date.now() + expiresInMinutes * 60 * 1000,
-      });
-
-      return url;
-    } catch (error) {
-      logger.error('Failed to generate signed URL', { storagePath, error });
-      throw error;
-    }
-  }
-
-  /**
-   * Check if file exists
-   */
-  async fileExists(storagePath: string): Promise<boolean> {
-    try {
-      const bucket = this.storage.bucket(this.bucketName);
-      const file = bucket.file(storagePath);
-
-      const [exists] = await file.exists();
-      return exists;
-    } catch (error) {
-      logger.error('Failed to check file existence', { storagePath, error });
-      return false;
-    }
+    return {
+      path: fileName,
+      url: `gs://${bucketName}/${fileName}`,
+      size: buffer.length,
+      contentType: options.contentType || 'application/octet-stream',
+      metadata: options.metadata,
+    };
+  } catch (error) {
+    console.error('GCS upload error:', error);
+    throw new Error(`Failed to upload file to GCS: ${error}`);
   }
 }
+
+/**
+ * Generate signed URL for file access
+ */
+export async function generateSignedUrl(
+  bucketName: string,
+  fileName: string,
+  options: {
+    action: 'read' | 'write' | 'delete';
+    expires: Date;
+    contentType?: string;
+  }
+): Promise<string> {
+  try {
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(fileName);
+
+    const signedUrlOptions: any = {
+      version: 'v4',
+      action: options.action,
+      expires: options.expires,
+    };
+
+    if (options.contentType) {
+      signedUrlOptions.contentType = options.contentType;
+    }
+
+    const [url] = await file.getSignedUrl(signedUrlOptions);
+    return url;
+  } catch (error) {
+    console.error('Signed URL generation error:', error);
+    throw new Error(`Failed to generate signed URL: ${error}`);
+  }
+}
+
+/**
+ * Delete file from Google Cloud Storage
+ */
+export async function deleteFromGCS(bucketName: string, fileName: string): Promise<void> {
+  try {
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(fileName);
+
+    await file.delete();
+  } catch (error) {
+    console.error('GCS delete error:', error);
+    throw new Error(`Failed to delete file from GCS: ${error}`);
+  }
+}
+
+/**
+ * Check if file exists in GCS
+ */
+export async function fileExists(bucketName: string, fileName: string): Promise<boolean> {
+  try {
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(fileName);
+
+    const [exists] = await file.exists();
+    return exists;
+  } catch (error) {
+    console.error('GCS file exists check error:', error);
+    return false;
+  }
+}
+
+/**
+ * Get file metadata from GCS
+ */
+export async function getFileMetadata(bucketName: string, fileName: string): Promise<any> {
+  try {
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(fileName);
+
+    const [metadata] = await file.getMetadata();
+    return metadata;
+  } catch (error) {
+    console.error('GCS metadata retrieval error:', error);
+    throw new Error(`Failed to get file metadata: ${error}`);
+  }
+}
+
+/**
+ * List files in bucket with prefix
+ */
+export async function listFiles(
+  bucketName: string,
+  prefix?: string,
+  maxResults?: number
+): Promise<
+  Array<{
+    name: string;
+    size: number;
+    contentType: string;
+    timeCreated: Date;
+    updated: Date;
+  }>
+> {
+  try {
+    const bucket = storage.bucket(bucketName);
+
+    const options: any = {};
+    if (prefix) options.prefix = prefix;
+    if (maxResults) options.maxResults = maxResults;
+
+    const [files] = await bucket.getFiles(options);
+
+    return files.map((file) => ({
+      name: file.name,
+      size: parseInt(String(file.metadata.size || '0')),
+      contentType: file.metadata.contentType || 'application/octet-stream',
+      timeCreated: new Date(file.metadata.timeCreated || Date.now()),
+      updated: new Date(file.metadata.updated || Date.now()),
+    }));
+  } catch (error) {
+    console.error('GCS list files error:', error);
+    throw new Error(`Failed to list files: ${error}`);
+  }
+}
+
+export default {
+  uploadToGCS,
+  generateSignedUrl,
+  deleteFromGCS,
+  fileExists,
+  getFileMetadata,
+  listFiles,
+};

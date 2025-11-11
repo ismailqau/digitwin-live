@@ -39,6 +39,7 @@ model User {
 
   // Relations
   voiceModels          VoiceModel[]
+  voiceSamples         VoiceSample[]
   faceModels           FaceModel[]
   conversationSessions ConversationSession[]
   knowledgeDocuments   KnowledgeDocument[]
@@ -62,6 +63,7 @@ model VoiceModel {
   sampleRate   Int       @default(22050) @map("sample_rate")
   qualityScore Float     @map("quality_score")
   isActive     Boolean   @default(false) @map("is_active")
+  status       String    @default("pending") @map("status") // 'pending', 'training', 'completed', 'failed'
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at") // Soft delete
@@ -73,8 +75,42 @@ model VoiceModel {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isActive])
+  @@index([status])
   @@index([deletedAt])
   @@map("voice_models")
+}
+
+// ============================================================================
+// Voice Samples
+// ============================================================================
+
+model VoiceSample {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  filename         String
+  originalFilename String    @map("original_filename")
+  contentType      String    @map("content_type")
+  sizeBytes        Int       @map("size_bytes")
+  duration         Float // Duration in seconds
+  sampleRate       Int       @map("sample_rate")
+  channels         Int       @default(1)
+  qualityScore     Float     @map("quality_score")
+  storagePath      String    @map("storage_path") // GCS path
+  processedPath    String?   @map("processed_path") // Processed audio path
+  status           String    @default("pending") @map("status") // 'pending', 'processing', 'completed', 'failed'
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at") // Soft delete
+
+  // Metadata (stored as JSON)
+  metadata Json @default("{}")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([deletedAt])
+  @@map("voice_samples")
 }
 
 // ============================================================================

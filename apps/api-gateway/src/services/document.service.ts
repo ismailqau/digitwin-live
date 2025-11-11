@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { PrismaClient } from '@clone/database';
 import { logger } from '@clone/logger';
 
-import { StorageService } from './storage.service';
+import storageService from './storage.service';
 
 export interface UploadedFile {
   fieldname: string;
@@ -79,7 +79,7 @@ export interface DocumentStatistics {
 
 export class DocumentService {
   private prisma: PrismaClient;
-  private storageService: StorageService;
+  private storageService: typeof storageService;
   private readonly MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
   private readonly SUPPORTED_TYPES = [
     'application/pdf',
@@ -93,7 +93,7 @@ export class DocumentService {
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
-    this.storageService = new StorageService();
+    this.storageService = storageService;
   }
 
   /**
@@ -125,12 +125,12 @@ export class DocumentService {
     }
 
     // Upload to GCS
-    const storagePath = await this.storageService.uploadDocument(
-      userId,
-      file.originalname,
-      file.buffer,
-      file.mimetype
-    );
+    const bucketName = process.env.GCS_BUCKET_NAME || 'digitwin-live-uploads';
+    const fileName = `documents/${userId}/${file.originalname}`;
+    const uploadResult = await this.storageService.uploadToGCS(bucketName, fileName, file.buffer, {
+      contentType: file.mimetype,
+    });
+    const storagePath = uploadResult.path;
 
     // Create document record
     const document = await this.prisma.knowledgeDocument.create({
@@ -425,7 +425,8 @@ export class DocumentService {
     });
 
     // Delete from storage
-    await this.storageService.deleteDocument(document.storagePath);
+    const bucketName = process.env.GCS_BUCKET_NAME || 'digitwin-live-uploads';
+    await this.storageService.deleteFromGCS(bucketName, document.storagePath);
 
     // Delete chunks from vector database
     // TODO: Implement vector database deletion
@@ -459,8 +460,9 @@ export class DocumentService {
     });
 
     // Delete from storage
+    const bucketName = process.env.GCS_BUCKET_NAME || 'digitwin-live-uploads';
     for (const doc of documents) {
-      await this.storageService.deleteDocument(doc.storagePath);
+      await this.storageService.deleteFromGCS(bucketName, doc.storagePath);
     }
 
     logger.info('Bulk delete completed', { count: documents.length, userId });
