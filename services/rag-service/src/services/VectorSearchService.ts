@@ -7,6 +7,12 @@ export interface SearchResult {
   score: number;
   metadata: Record<string, unknown>;
   content: string;
+  // Enhanced source metadata for tracking
+  documentId?: string;
+  documentTitle?: string;
+  chunkIndex?: number;
+  sourceType?: 'document' | 'faq' | 'conversation';
+  contentSnippet?: string;
 }
 
 export interface SearchFilter {
@@ -76,14 +82,18 @@ export class PostgreSQLVectorSearch {
       // Convert embedding array to pgvector format
       const embeddingStr = `[${embedding.join(',')}]`;
 
-      // Build query with filters
+      // Build query with filters - include document information
       let query = `
         SELECT 
           dc.id,
           dc.content,
           dc.metadata,
+          dc.document_id,
+          dc.chunk_index,
+          kd.title as document_title,
           1 - (dc.embedding <=> $1::vector) as similarity
         FROM document_chunks dc
+        LEFT JOIN knowledge_documents kd ON dc.document_id = kd.id
         WHERE dc.user_id = $2
       `;
 
@@ -116,6 +126,12 @@ export class PostgreSQLVectorSearch {
         score: row.similarity,
         metadata: row.metadata,
         content: row.content,
+        // Enhanced source metadata from query results
+        documentId: row.document_id,
+        documentTitle: row.document_title || 'Untitled Document',
+        chunkIndex: row.chunk_index,
+        sourceType: (row.metadata?.sourceType as 'document' | 'faq' | 'conversation') || 'document',
+        contentSnippet: row.content.substring(0, 200) + (row.content.length > 200 ? '...' : ''),
       }));
 
       logger.info('Vector search completed', {
@@ -148,6 +164,9 @@ export class PostgreSQLVectorSearch {
           dc.id,
           dc.content,
           dc.metadata,
+          dc.document_id,
+          dc.chunk_index,
+          kd.title as document_title,
           (1 - (dc.embedding <=> $1::vector)) as vector_similarity,
           ts_rank(to_tsvector('english', dc.content), plainto_tsquery('english', $3)) as keyword_score,
           (
@@ -155,6 +174,7 @@ export class PostgreSQLVectorSearch {
             ts_rank(to_tsvector('english', dc.content), plainto_tsquery('english', $3)) * 0.3
           ) as hybrid_score
         FROM document_chunks dc
+        LEFT JOIN knowledge_documents kd ON dc.document_id = kd.id
         WHERE dc.user_id = $2
           AND (
             1 - (dc.embedding <=> $1::vector) > $4
@@ -200,6 +220,12 @@ export class PostgreSQLVectorSearch {
           hybridScore: row.hybrid_score,
         },
         content: row.content,
+        // Enhanced source metadata from query results
+        documentId: row.document_id,
+        documentTitle: row.document_title || 'Untitled Document',
+        chunkIndex: row.chunk_index,
+        sourceType: (row.metadata?.sourceType as 'document' | 'faq' | 'conversation') || 'document',
+        contentSnippet: row.content.substring(0, 200) + (row.content.length > 200 ? '...' : ''),
       }));
 
       logger.info('Hybrid search completed', {

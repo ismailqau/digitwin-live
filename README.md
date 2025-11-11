@@ -220,6 +220,7 @@ The system follows a microservices architecture with the following key component
 - **[Document Processing](./docs/DOCUMENT-PROCESSING.md)** - Document upload, extraction, and embedding
 - **[Knowledge Base API](./docs/KNOWLEDGE-BASE-API.md)** - REST API for documents, FAQs, and knowledge sources
 - **[RAG Query Optimization](./docs/RAG-QUERY-OPTIMIZATION.md)** - Query preprocessing, hybrid search, and analytics
+- **[RAG Source Tracking](./docs/RAG-SOURCE-TRACKING.md)** - Source metadata, analytics, and conversation tracking
 
 ### 🔐 Security & Authentication
 

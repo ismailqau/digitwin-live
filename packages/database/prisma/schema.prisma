@@ -206,6 +206,9 @@ model KnowledgeDocument {
   storagePath String   @map("storage_path")
   vectorIds   String[] @map("vector_ids")
 
+  // Analytics metadata (stored as JSON)
+  metadata Json @default("{}")
+
   deletedAt DateTime? @map("deleted_at") // Soft delete
 
   // Relations

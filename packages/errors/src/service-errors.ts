@@ -41,3 +41,9 @@ export class TimeoutError extends BaseError {
     super(message, 'TIMEOUT', 504, true, details);
   }
 }
+
+export class APIError extends BaseError {
+  constructor(message: string, statusCode: number = 500, details?: Record<string, unknown>) {
+    super(message, 'API_ERROR', statusCode, false, details);
+  }
+}

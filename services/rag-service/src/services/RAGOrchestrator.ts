@@ -25,6 +25,15 @@ export interface RAGQueryRequest {
   filters?: Partial<SearchFilter>;
 }
 
+export interface SourceMetadata {
+  documentId: string;
+  documentTitle: string;
+  chunkIndex: number;
+  relevanceScore: number;
+  sourceType: 'document' | 'faq' | 'conversation';
+  contentSnippet: string;
+}
+
 export interface RAGQueryResponse {
   context: LLMContext;
   prompt: string;
@@ -34,6 +43,8 @@ export interface RAGQueryResponse {
     content: string;
     metadata: Record<string, unknown>;
   }>;
+  // Enhanced source metadata for tracking
+  sources: SourceMetadata[];
   optimizedQuery?: OptimizedQuery;
   hasInsufficientKnowledge: boolean;
   fallbackToGeneral: boolean;
@@ -233,11 +244,22 @@ export class RAGOrchestrator {
         });
       }
 
+      // Step 9: Extract source metadata for tracking
+      const sources: SourceMetadata[] = searchResults.map((result) => ({
+        documentId: result.documentId || result.id,
+        documentTitle: result.documentTitle || 'Unknown Document',
+        chunkIndex: result.chunkIndex || 0,
+        relevanceScore: result.score,
+        sourceType: result.sourceType || 'document',
+        contentSnippet: result.contentSnippet || result.content.substring(0, 200),
+      }));
+
       const totalLatencyMs = Date.now() - startTime;
 
       logger.info('RAG query processed successfully', {
         userId: request.userId,
         resultsFound: searchResults.length,
+        sourcesFound: sources.length,
         totalLatencyMs,
         cacheHit,
         hasInsufficientKnowledge,
@@ -248,6 +270,7 @@ export class RAGOrchestrator {
         context,
         prompt,
         searchResults,
+        sources,
         optimizedQuery,
         hasInsufficientKnowledge,
         fallbackToGeneral,

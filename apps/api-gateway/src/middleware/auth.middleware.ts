@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface JWTPayload {
+  id: string; // User ID for convenience
   userId: string;
   email: string;
   subscriptionTier: 'free' | 'pro' | 'enterprise';

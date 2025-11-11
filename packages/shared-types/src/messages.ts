@@ -28,10 +28,20 @@ export interface TranscriptMessage {
   confidence: number;
 }
 
+export interface SourceMetadata {
+  documentId: string;
+  documentTitle: string;
+  chunkIndex: number;
+  relevanceScore: number;
+  sourceType: 'document' | 'faq' | 'conversation';
+  contentSnippet: string;
+}
+
 export interface ResponseStartMessage {
   type: 'response_start';
   sessionId: string;
   turnId: string;
+  sources?: SourceMetadata[];
 }
 
 export interface ResponseAudioMessage {
@@ -57,6 +67,7 @@ export interface ResponseEndMessage {
   type: 'response_end';
   sessionId: string;
   turnId: string;
+  sources?: SourceMetadata[];
   metrics: {
     totalLatencyMs: number;
     asrLatencyMs: number;
