@@ -603,7 +603,7 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
   - _Requirements: 5, 16_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 6.2 Implement voice sample recording and upload
+- [x] 6.2 Implement voice sample recording and upload
   - Create voice recording UI in mobile app with guided prompts
   - Implement audio quality validation (SNR > 20 dB, no clipping, no background noise)
   - Create voice sample upload endpoint with chunked upload support

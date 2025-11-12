@@ -313,10 +313,13 @@ export class VoiceSampleManager {
         currentStep: 'Preparing voice samples for upload',
       });
 
+      const uploadedSampleIds: string[] = [];
+
       // Upload each sample with progress tracking
       for (let i = 0; i < this.samples.length; i++) {
         const sample = this.samples[i];
-        await this.uploadSample(sample, i, this.samples.length);
+        const sampleId = await this.uploadSample(sample, i, this.samples.length);
+        uploadedSampleIds.push(sampleId);
       }
 
       // Start training process
@@ -326,8 +329,8 @@ export class VoiceSampleManager {
         currentStep: 'Processing voice samples',
       });
 
-      // In a real implementation, this would trigger the backend training process
-      await this.startVoiceModelTraining();
+      // Create voice model with uploaded samples
+      await this.createVoiceModel(uploadedSampleIds);
     } catch (error) {
       this.updateTrainingProgress({
         status: 'failed',
@@ -371,7 +374,7 @@ export class VoiceSampleManager {
     const filePath = `voice_sample_${Date.now()}.wav`;
 
     const sample: VoiceSample = {
-      id: `sample_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `sample_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       filename: filePath,
       filePath,
       duration,
@@ -457,39 +460,186 @@ export class VoiceSampleManager {
   /**
    * Upload a single voice sample
    */
-  private async uploadSample(sample: VoiceSample, index: number, total: number): Promise<void> {
+  private async uploadSample(sample: VoiceSample, index: number, total: number): Promise<string> {
     try {
-      // Simulate chunked upload with progress tracking
+      // Create FormData for file upload
+      const formData = new FormData();
+
+      // In a real implementation, you would read the actual audio file
+      // For now, we'll simulate the upload with a blob
+      const audioBlob = new Blob(['simulated audio data'], {
+        type: 'audio/wav',
+        lastModified: Date.now(),
+      });
+      formData.append('audioFile', audioBlob as File);
+      formData.append('originalFilename', sample.filename);
+
+      // Get auth token (you would implement this based on your auth system)
+      const authToken = await this.getAuthToken();
+
+      // Upload with chunked support
       const chunkSize = 64 * 1024; // 64KB chunks
       const totalSize = sample.metadata.fileSize;
-      const chunks = Math.ceil(totalSize / chunkSize);
 
-      for (let chunk = 0; chunk < chunks; chunk++) {
-        // Simulate upload delay
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const chunkProgress = (chunk + 1) / chunks;
-        const overallProgress = ((index + chunkProgress) / total) * 70; // 70% for upload phase
-
-        this.callbacks.onUploadProgress?.(sample.id, chunkProgress * 100);
-        this.updateTrainingProgress({
-          status: 'uploading',
-          progress: overallProgress,
-          currentStep: `Uploading sample ${index + 1}/${total} (${Math.round(chunkProgress * 100)}%)`,
-        });
+      if (totalSize > chunkSize) {
+        // Use chunked upload for large files
+        return await this.uploadSampleChunked(sample, authToken, index, total);
+      } else {
+        // Use single upload for small files
+        return await this.uploadSampleSingle(sample, formData, authToken, index, total);
       }
-
-      console.log(`Uploaded voice sample: ${sample.id}`);
     } catch (error) {
       throw new Error(`Failed to upload sample ${sample.id}: ${error}`);
     }
   }
 
   /**
-   * Start voice model training process
+   * Upload sample in chunks
    */
-  private async startVoiceModelTraining(): Promise<void> {
+  private async uploadSampleChunked(
+    sample: VoiceSample,
+    authToken: string,
+    index: number,
+    total: number
+  ): Promise<string> {
+    const chunkSize = 64 * 1024; // 64KB chunks
+    const totalSize = sample.metadata.fileSize;
+    const totalChunks = Math.ceil(totalSize / chunkSize);
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const formData = new FormData();
+
+      // Create chunk blob (simulated)
+      const chunkBlob = new Blob(['chunk data'], {
+        type: 'audio/wav',
+        lastModified: Date.now(),
+      });
+      formData.append('audioFile', chunkBlob as File);
+      formData.append('chunkIndex', chunkIndex.toString());
+      formData.append('totalChunks', totalChunks.toString());
+      formData.append('originalFilename', sample.filename);
+      formData.append('totalSize', totalSize.toString());
+
+      const response = await fetch('/api/v1/voice/samples', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      const chunkProgress = (chunkIndex + 1) / totalChunks;
+      const overallProgress = ((index + chunkProgress) / total) * 70; // 70% for upload phase
+
+      this.callbacks.onUploadProgress?.(sample.id, chunkProgress * 100);
+      this.updateTrainingProgress({
+        status: 'uploading',
+        progress: overallProgress,
+        currentStep: `Uploading sample ${index + 1}/${total} (${Math.round(chunkProgress * 100)}%)`,
+      });
+
+      // If this is the last chunk, return the sample ID
+      if (chunkIndex === totalChunks - 1) {
+        return result.id;
+      }
+    }
+
+    throw new Error('Chunked upload completed but no sample ID returned');
+  }
+
+  /**
+   * Upload sample as single file
+   */
+  private async uploadSampleSingle(
+    sample: VoiceSample,
+    formData: FormData,
+    authToken: string,
+    index: number,
+    total: number
+  ): Promise<string> {
+    const response = await fetch('/api/v1/voice/samples', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    const overallProgress = ((index + 1) / total) * 70; // 70% for upload phase
+
+    this.callbacks.onUploadProgress?.(sample.id, 100);
+    this.updateTrainingProgress({
+      status: 'uploading',
+      progress: overallProgress,
+      currentStep: `Uploaded sample ${index + 1}/${total}`,
+    });
+
+    return result.id;
+  }
+
+  /**
+   * Get authentication token
+   */
+  private async getAuthToken(): Promise<string> {
+    // In a real implementation, you would get the token from your auth system
+    // For now, return a placeholder
+    return 'placeholder_auth_token';
+  }
+
+  /**
+   * Create voice model with uploaded samples
+   */
+  private async createVoiceModel(sampleIds: string[]): Promise<void> {
     try {
+      const authToken = await this.getAuthToken();
+
+      // Create voice model
+      const response = await fetch('/api/v1/voice/models', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: 'xtts-v2', // Default provider
+          sampleIds,
+          name: `Voice Model ${new Date().toLocaleDateString()}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Voice model creation failed: ${response.statusText}`);
+      }
+
+      const voiceModel = await response.json();
+
+      // Monitor training progress
+      await this.monitorTrainingProgress(voiceModel.id);
+    } catch (error) {
+      throw new Error(`Voice model creation failed: ${error}`);
+    }
+  }
+
+  /**
+   * Monitor voice model training progress
+   */
+  private async monitorTrainingProgress(modelId: string): Promise<void> {
+    try {
+      const authToken = await this.getAuthToken();
+      let isCompleted = false;
+
       this.updateTrainingProgress({
         status: 'training',
         progress: 85,
@@ -497,25 +647,43 @@ export class VoiceSampleManager {
         estimatedTimeRemaining: 1800, // 30 minutes
       });
 
-      // Simulate training process
-      for (let progress = 85; progress <= 100; progress += 5) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+      while (!isCompleted) {
+        const response = await fetch(`/api/v1/voice/models/${modelId}/progress`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
 
-        const remaining = Math.max(0, Math.round((100 - progress) * 18)); // Rough estimate
+        if (!response.ok) {
+          throw new Error(`Failed to get training progress: ${response.statusText}`);
+        }
+
+        const progress = await response.json();
 
         this.updateTrainingProgress({
-          status: 'training',
-          progress,
-          currentStep: 'Training voice model',
-          estimatedTimeRemaining: remaining,
+          status: progress.status,
+          progress: progress.progress,
+          currentStep: progress.currentStep,
+          estimatedTimeRemaining: progress.estimatedTimeRemaining,
         });
-      }
 
-      this.updateTrainingProgress({
-        status: 'completed',
-        progress: 100,
-        currentStep: 'Voice model training completed',
-      });
+        if (progress.status === 'completed') {
+          isCompleted = true;
+          this.updateTrainingProgress({
+            status: 'completed',
+            progress: 100,
+            currentStep: 'Voice model training completed',
+          });
+        } else if (progress.status === 'failed') {
+          throw new Error(`Training failed: ${progress.error || 'Unknown error'}`);
+        }
+
+        // Wait 5 seconds before checking again
+        if (!isCompleted) {
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
+      }
     } catch (error) {
       throw new Error(`Voice model training failed: ${error}`);
     }
