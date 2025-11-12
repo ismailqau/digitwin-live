@@ -663,70 +663,173 @@ Voice Samples → Preprocessing → Training → Voice Model → TTS
 ### 📝 Implementation Notes
 
 - Store face models in GCS bucket: digitwin-live-face-models
-- Store face model metadata in PostgreSQL face_models table
-- Use GKE with GPU nodes for face processing
-- Cache active face models in GPU workers
+- Store face model metadata in PostgreSQL face_models table (already exists)
+- Use GKE with GPU nodes (T4/V100) for face processing workloads
+- Cache active face models in GPU workers for fast access
+- Support multiple face animation models: Wav2Lip, TPSM, SadTalker, Audio2Head
+- Face model quality threshold: minimum 70/100 score before activation
+- Processing time target: < 30 minutes for face model creation
 
-- [ ] 7. Implement face model creation pipeline
-  - Create photo/video upload UI in mobile app
-  - Implement media upload endpoint with progress tracking
-  - Integrate MediaPipe for face detection and landmark extraction in `services/face-processing-service`
-  - Implement face quality validation (lighting, angle, clarity)
-  - Create face embedding generation using FaceNet or ArcFace
-  - Set up GPU workers for face processing
-  - _Requirements: 18_
+### 🎯 Face Model Creation Pipeline
+
+```
+Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates → Model
+     ↓           ↓         ↓          ↓          ↓           ↓         ↓
+  Mobile App   GCS     MediaPipe   468 Points  FaceNet   Expressions Storage
+     ↓           ↓         ↓          ↓          ↓           ↓         ↓
+  Progress    Validation Quality    Identity   Neutral    Quality   Preview
+```
+
+- [ ] 7. Implement face detection and validation service
+  - Integrate MediaPipe for face detection and 468 facial landmark extraction in `services/face-processing-service`
+  - Implement face quality validation (lighting quality, angle detection, resolution check)
+  - Create face detection confidence scoring (reject faces < 80% confidence)
+  - Implement multi-face detection with primary face selection
+  - Create face crop and alignment preprocessing
+  - Implement face quality metrics (blur detection, lighting analysis, pose estimation)
+  - Create face validation API endpoints with detailed feedback
+  - Implement batch processing for multiple photos/video frames
+  - _Requirements: 18.2, 18.5, 18.7_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.1 Implement expression template extraction
-  - Create neutral expression detection logic
-  - Implement talking expression extraction from video
-  - Generate blendshape templates for facial animation
+- [ ] 7.1 Implement face embedding and identity generation
+  - Integrate FaceNet or ArcFace for face embedding generation
+  - Create identity embedding from multiple face samples
+  - Implement embedding quality validation and consistency checks
+  - Create face similarity scoring for identity verification
+  - Implement embedding storage and retrieval optimization
+  - Create face identity clustering for robust representation
+  - Implement embedding versioning for model updates
+  - Create face recognition validation against uploaded samples
+  - _Requirements: 18.3_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 7.2 Implement expression template extraction
+  - Create neutral expression detection and selection logic
+  - Implement talking expression extraction from video sequences
+  - Generate blendshape templates for facial animation (52 Action Units)
   - Create expression keypoint configuration storage
-  - _Requirements: 18_
+  - Implement expression interpolation for smooth transitions
+  - Create expression quality scoring and validation
+  - Implement custom expression template creation
+  - Create expression template optimization for lip-sync models
+  - _Requirements: 18.3, 18.4_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.2 Implement face model storage and management
-  - Create face model data structure and storage schema
-  - Implement face model artifact storage in Cloud Storage
-  - Create face model metadata storage in Cloud SQL
-  - Implement face model versioning and updates
-  - Create face model quality scoring (0-100)
-  - _Requirements: 18_
+- [ ] 7.3 Implement face model storage and management
+  - Implement face model CRUD operations using existing FaceModel schema
+  - Create face model artifact storage in GCS (digitwin-live-face-models bucket)
+  - Implement face model versioning and update management
+  - Create face model quality scoring system (0-100 scale)
+  - Implement face model activation/deactivation logic
+  - Create face model backup and restore functionality
+  - Implement face model sharing (optional, for teams)
+  - Create face model analytics and usage tracking
+  - Implement face model expiration and cleanup policies
+  - _Requirements: 18.5_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.3 Implement face model preview and testing
-  - Create preview UI in mobile app
-  - Implement test video generation with sample audio
-  - Create face model comparison functionality
-  - Implement face model activation/deactivation
-  - _Requirements: 18_
+- [ ] 7.4 Implement face model preview and testing
+  - Create face model preview generation with sample audio
+  - Implement test video generation using multiple lip-sync models
+  - Create face model comparison functionality (A/B testing)
+  - Implement face model quality assessment UI
+  - Create face model recommendation system for improvements
+  - Implement face model validation workflow
+  - Create face model approval/rejection system
+  - Implement face model re-training triggers
+  - _Requirements: 18.6, 18.7_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 7.5 Implement GPU worker infrastructure for face processing
+  - Set up GKE GPU node pools (T4 for development, V100 for production)
+  - Create GPU worker queue management with BullMQ
+  - Implement face processing job scheduling and prioritization
+  - Create GPU resource monitoring and auto-scaling
+  - Implement face model caching in GPU memory
+  - Create GPU worker health monitoring and failover
+  - Implement cost optimization (preemptible instances, auto-shutdown)
+  - Create GPU utilization analytics and reporting
+  - _Requirements: 18.3_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 8: Lip-sync Video Generation
 
-- [ ] 8. Implement lip-sync video generation service
-  - Set up GPU workers for lip-sync processing in `services/lipsync-service`
-  - Integrate TPSM (Thin-Plate Spline Motion) model for real-time lip-sync
-  - Implement audio feature extraction (mel-spectrogram, MFCC)
-  - Create video frame generation logic synchronized with audio
-  - Implement face model loading and caching
-  - _Requirements: 6, 18_
+### 📝 Implementation Notes
+
+- Use GKE GPU workers (same as face processing) for lip-sync generation
+- Support multiple models: TPSM (fast), Wav2Lip (quality), SadTalker (head motion), Audio2Head (advanced)
+- Target: < 500ms latency for first video frame, 15-20 FPS streaming
+- Cache active face models in GPU workers for fast access
+- Implement adaptive quality based on network conditions
+
+### 🎯 Lip-sync Generation Pipeline
+
+```
+Audio Chunks → Feature Extraction → Model Selection → Frame Generation → Encoding → Streaming
+     ↓              ↓                    ↓               ↓              ↓          ↓
+  TTS Output    Mel-spectrogram      TPSM/Wav2Lip    Video Frames    H.264    WebSocket
+     ↓              ↓                    ↓               ↓              ↓          ↓
+  100ms chunks   MFCC Features      Face Model      15-20 FPS      Chunks    Mobile App
+```
+
+- [ ] 8. Implement multi-model lip-sync service
+  - Integrate TPSM (Thin-Plate Spline Motion) for fast real-time lip-sync in `services/lipsync-service`
+  - Integrate Wav2Lip for high-quality lip-sync generation
+  - Integrate SadTalker for head motion and natural lip-sync
+  - Integrate Audio2Head for advanced facial animation (optional)
+  - Create model selection logic based on quality/latency requirements
+  - Implement model performance benchmarking and auto-selection
+  - Create fallback hierarchy: TPSM → Wav2Lip → SadTalker → Static Image
+  - Implement model switching during conversation based on performance
+  - _Requirements: 6, 18.4_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 8.1 Implement alternative lip-sync models
-  - Integrate SadTalker for head motion and lip-sync
-  - Integrate Wav2Lip for high-quality mode
-  - Create model selection logic based on quality/latency requirements
-  - Implement fallback to animated overlay for GPU constraints
+- [ ] 8.1 Implement audio feature extraction and processing
+  - Implement mel-spectrogram extraction from audio chunks
+  - Create MFCC (Mel-Frequency Cepstral Coefficients) feature extraction
+  - Implement audio preprocessing (normalization, windowing)
+  - Create audio-visual alignment optimization
+  - Implement phoneme detection for improved lip-sync accuracy
+  - Create audio feature caching for repeated content
+  - Implement real-time audio feature streaming
+  - Create audio quality assessment for lip-sync optimization
   - _Requirements: 6_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 8.2 Implement video streaming and synchronization
-  - Create video frame streaming over WebSocket
-  - Implement H.264 encoding for video chunks
-  - Create audio-video synchronization logic (< 50ms offset)
-  - Implement frame rate control (15-20 FPS)
-  - Create video buffering for smooth playback
+- [ ] 8.2 Implement face model integration and caching
+  - Implement face model loading from GCS storage
+  - Create face model caching in GPU worker memory
+  - Implement face model preprocessing for lip-sync models
+  - Create face model compatibility validation for each lip-sync model
+  - Implement face model optimization (compression, format conversion)
+  - Create face model preloading for active users
+  - Implement face model hot-swapping during conversations
+  - Create face model performance monitoring
+  - _Requirements: 6, 18_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 8.3 Implement video frame generation and optimization
+  - Create video frame generation synchronized with audio chunks
+  - Implement frame rate control (adaptive 15-20 FPS based on performance)
+  - Create video frame buffering for smooth playback
+  - Implement frame interpolation for smoother animation
+  - Create video quality optimization (resolution, compression)
+  - Implement frame dropping for performance optimization
+  - Create video frame caching for repeated expressions
+  - Implement video generation performance monitoring
+  - _Requirements: 6, 7_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 8.4 Implement video streaming and synchronization
+  - Create video frame streaming over WebSocket with chunked transfer
+  - Implement H.264 encoding for video chunks with hardware acceleration
+  - Create audio-video synchronization logic (< 50ms offset target)
+  - Implement adaptive bitrate streaming based on network conditions
+  - Create video buffering management on client side
+  - Implement frame skipping for network congestion handling
+  - Create video streaming performance analytics
+  - Implement video streaming error recovery and reconnection
   - _Requirements: 6, 7_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
