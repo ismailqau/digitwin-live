@@ -24,6 +24,7 @@ export interface Config {
   };
   ai: {
     googleApiKey: string;
+    geminiApiKey: string;
     openaiApiKey: string;
     groqApiKey: string;
   };
@@ -62,6 +63,7 @@ export function loadConfig(): Config {
     },
     ai: {
       googleApiKey: process.env.GOOGLE_CLOUD_API_KEY || '',
+      geminiApiKey: process.env.GEMINI_API_KEY || '',
       openaiApiKey: process.env.OPENAI_API_KEY || '',
       groqApiKey: process.env.GROQ_API_KEY || '',
     },
