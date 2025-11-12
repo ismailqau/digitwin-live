@@ -770,7 +770,7 @@ export class VoiceModelService {
       const warningDate = new Date();
       warningDate.setMonth(warningDate.getMonth() - 5); // Warn 1 month before expiration
 
-      const where: unknown = {
+      const where: any = {
         deletedAt: null,
         isActive: false,
         qualityScore: { lt: 0.5 },

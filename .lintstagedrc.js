@@ -9,6 +9,14 @@ module.exports = {
     return commands;
   },
 
+  // TypeScript files - run type checking
+  '**/*.{ts,tsx}': () => {
+    // Run type-check on the entire project to catch type issues
+    // We don't run it on individual files because TypeScript needs the full context
+    // This prevents TypeScript errors from being committed
+    return 'pnpm type-check';
+  },
+
   // JSON files (exclude lock files)
   '**/*.json': (files) => {
     const filtered = files.filter(

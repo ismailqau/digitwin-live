@@ -17,11 +17,13 @@ import {
 } from '../types';
 
 import { ProviderSelectionService } from './ProviderSelectionService';
+import { TTSOptimizationService, TTSQualityConfig } from './TTSOptimizationService';
 
 export class TTSService {
   private providers: Map<TTSProvider, ITTSProvider> = new Map();
   private logger: winston.Logger;
   private providerSelection: ProviderSelectionService;
+  private optimization: TTSOptimizationService;
   private fallbackOrder: TTSProvider[] = [
     TTSProvider.XTTS_V2,
     TTSProvider.OPENAI_TTS,
@@ -33,6 +35,7 @@ export class TTSService {
     this.logger = logger || createLogger('tts-service');
     this.initializeProviders();
     this.providerSelection = new ProviderSelectionService(this.providers, this.logger);
+    this.optimization = new TTSOptimizationService(this.logger);
   }
 
   private initializeProviders(): void {
@@ -236,6 +239,180 @@ export class TTSService {
     }
 
     return health;
+  }
+
+  /**
+   * Synthesize with optimization
+   */
+  async synthesizeOptimized(
+    request: TTSRequest,
+    qualityConfig: TTSQualityConfig,
+    criteria?: ProviderSelectionCriteria
+  ): Promise<TTSResponse & { optimizations: string[] }> {
+    const startTime = Date.now();
+
+    // Optimize the request
+    const optimizationResult = await this.optimization.optimizeRequest(request, qualityConfig);
+
+    this.logger.debug('TTS request optimized', {
+      originalProvider: request.provider,
+      optimizedProvider: optimizationResult.selectedProvider,
+      optimizations: optimizationResult.optimizations,
+    });
+
+    // Synthesize with optimized request
+    const response = await this.synthesize(optimizationResult.optimizedRequest, criteria);
+
+    // Update optimization service with actual performance
+    const actualLatency = Date.now() - startTime;
+    this.optimization.updateProviderCapabilities(
+      optimizationResult.selectedProvider,
+      actualLatency,
+      0.8, // Default quality score - would be calculated from actual audio analysis
+      response.metadata.cost
+    );
+
+    return {
+      ...response,
+      optimizations: optimizationResult.optimizations,
+    };
+  }
+
+  /**
+   * Analyze text for optimization recommendations
+   */
+  analyzeText(text: string): {
+    isShortPhrase: boolean;
+    hasSpecialCharacters: boolean;
+    estimatedDuration: number;
+    complexity: 'low' | 'medium' | 'high';
+    suggestions: string[];
+    recommendedConfig: TTSQualityConfig;
+  } {
+    const analysis = this.optimization.analyzeTextForOptimization(text);
+
+    // Determine recommended config based on analysis
+    let recommendedConfig: TTSQualityConfig;
+    if (analysis.isShortPhrase) {
+      recommendedConfig = this.optimization.getRecommendedQualityConfig('conversation');
+    } else if (analysis.complexity === 'high') {
+      recommendedConfig = this.optimization.getRecommendedQualityConfig('narration');
+    } else {
+      recommendedConfig = this.optimization.getRecommendedQualityConfig('announcement');
+    }
+
+    return {
+      ...analysis,
+      recommendedConfig,
+    };
+  }
+
+  /**
+   * Get optimization service metrics
+   */
+  getOptimizationMetrics(): {
+    providerCapabilities: Map<TTSProvider, any>;
+    recommendedConfigs: Record<string, TTSQualityConfig>;
+  } {
+    return {
+      providerCapabilities: this.optimization.getProviderMetrics(),
+      recommendedConfigs: {
+        conversation: this.optimization.getRecommendedQualityConfig('conversation'),
+        narration: this.optimization.getRecommendedQualityConfig('narration'),
+        announcement: this.optimization.getRecommendedQualityConfig('announcement'),
+      },
+    };
+  }
+
+  /**
+   * Chunk text for streaming optimization
+   */
+  chunkTextForStreaming(text: string, maxChunkSize: number = 200): string[] {
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0);
+    const chunks: string[] = [];
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+      const trimmedSentence = sentence.trim();
+      if (currentChunk.length + trimmedSentence.length + 1 <= maxChunkSize) {
+        currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk + '.');
+        }
+        currentChunk = trimmedSentence;
+      }
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk + '.');
+    }
+
+    return chunks;
+  }
+
+  /**
+   * Stream synthesis with chunking optimization
+   */
+  async *synthesizeStreamOptimized(
+    request: TTSRequest,
+    qualityConfig: TTSQualityConfig
+  ): AsyncGenerator<TTSStreamChunk & { chunkIndex: number; totalChunks: number }, void, unknown> {
+    // Chunk the text for optimal streaming
+    const textChunks = this.chunkTextForStreaming(request.text);
+    const totalChunks = textChunks.length;
+
+    let sequenceNumber = 0;
+
+    for (let chunkIndex = 0; chunkIndex < textChunks.length; chunkIndex++) {
+      const chunkRequest: TTSRequest = {
+        ...request,
+        text: textChunks[chunkIndex],
+      };
+
+      // Optimize each chunk
+      const optimizationResult = await this.optimization.optimizeRequest(
+        chunkRequest,
+        qualityConfig
+      );
+
+      try {
+        const provider = await this.selectProvider(optimizationResult.selectedProvider);
+
+        // Stream the chunk
+        for await (const chunk of provider.synthesizeStream(optimizationResult.optimizedRequest)) {
+          yield {
+            ...chunk,
+            sequenceNumber: sequenceNumber++,
+            chunkIndex,
+            totalChunks,
+          };
+        }
+      } catch (error) {
+        this.logger.error(`Failed to stream chunk ${chunkIndex}`, { error });
+
+        // Fallback to regular synthesis for this chunk
+        try {
+          const response = await this.synthesizeWithFallback(
+            optimizationResult.optimizedRequest,
+            optimizationResult.selectedProvider
+          );
+
+          // Convert to stream chunks
+          for await (const chunk of this.chunkAudioData(response.audioData)) {
+            yield {
+              ...chunk,
+              sequenceNumber: sequenceNumber++,
+              chunkIndex,
+              totalChunks,
+            };
+          }
+        } catch (fallbackError) {
+          this.logger.error(`Fallback also failed for chunk ${chunkIndex}`, { fallbackError });
+          // Continue with next chunk
+        }
+      }
+    }
   }
 
   private async selectProvider(preferredProvider?: TTSProvider): Promise<ITTSProvider> {

@@ -35,6 +35,9 @@ export interface TTSResponse {
     voiceModelId?: string;
     cost: number;
     latency: number;
+    cached?: boolean;
+    originalCost?: number;
+    originalLatency?: number;
   };
 }
 

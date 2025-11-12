@@ -14,6 +14,7 @@ export * from './types';
 export * from './interfaces/ITTSProvider';
 export * from './services/TTSService';
 export * from './services/TTSCacheService';
+export * from './services/TTSOptimizationService';
 export * from './services/ProviderSelectionService';
 export * from './services/VoiceModelService';
 export * from './providers/GoogleCloudTTSProvider';
@@ -31,7 +32,7 @@ export async function createTTSService(): Promise<{
 
   // Initialize services
   const ttsService = new TTSService(logger);
-  const cacheService = new TTSCacheService(prisma, logger, config.cache.ttlMedium);
+  const cacheService = new TTSCacheService(prisma, logger, { ttlMedium: config.cache.ttlMedium });
 
   // Initialize providers based on configuration
   const providerConfigs = [

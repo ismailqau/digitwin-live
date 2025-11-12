@@ -252,6 +252,7 @@ The system follows a microservices architecture with the following key component
 - **[Voice Model Training](./docs/VOICE-MODEL-TRAINING.md)** - Complete voice model training pipeline with BullMQ, cost estimation, and multi-provider support
 - **[Voice Model Management](./docs/VOICE-MODEL-MANAGEMENT.md)** - CRUD operations, analytics, backup/restore, and lifecycle management
 - **[Multi-Provider TTS](./docs/TTS-MULTI-PROVIDER.md)** - Text-to-Speech with XTTS-v2, OpenAI, Google Cloud, and ElevenLabs
+- **[TTS Optimization & Caching](./docs/TTS-OPTIMIZATION-CACHING.md)** - TTS result caching, deduplication, pregeneration, streaming optimization, and cost optimization
 
 ### 🤖 AI & Language Models
 

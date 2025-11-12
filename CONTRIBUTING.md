@@ -155,7 +155,10 @@ Pre-commit hooks automatically run when you commit:
 
 - ✅ ESLint with auto-fix
 - ✅ Prettier formatting
+- ✅ TypeScript type checking
 - ✅ Commit message validation
+
+**Note**: Type checking runs on the entire project to catch cross-file type issues. This prevents TypeScript errors from being committed.
 
 ### Pre-push Hooks
 

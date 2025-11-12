@@ -95,6 +95,53 @@ app.post('/synthesize', async (req, res) => {
   }
 });
 
+// TTS synthesis with optimization endpoint
+app.post('/synthesize/optimized', async (req, res) => {
+  try {
+    if (!ttsService) {
+      return res.status(503).json({ error: 'TTS service not initialized' });
+    }
+
+    const { request, qualityConfig, criteria } = req.body;
+
+    // Validate request
+    if (!request?.text) {
+      return res.status(400).json({ error: 'Request with text is required' });
+    }
+
+    if (!qualityConfig) {
+      return res.status(400).json({ error: 'Quality configuration is required' });
+    }
+
+    // Check cache first
+    const cached = await cacheService.get(request);
+    if (cached) {
+      logger.info('Serving cached optimized TTS result');
+      return res.json({
+        ...cached,
+        audioData: cached.audioData.toString('base64'),
+        cached: true,
+        optimizations: ['Cache hit - no optimization needed'],
+      });
+    }
+
+    // Synthesize with optimization
+    const response = await ttsService.synthesizeOptimized(request, qualityConfig, criteria);
+
+    // Cache the result
+    await cacheService.set(request, response);
+
+    return res.json({
+      ...response,
+      audioData: response.audioData.toString('base64'),
+      cached: false,
+    });
+  } catch (error) {
+    logger.error('Optimized TTS synthesis failed', { error, request: req.body });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // TTS streaming endpoint
 app.post('/synthesize/stream', async (req, res) => {
   try {
@@ -255,6 +302,45 @@ app.post('/validate-voice-model', async (req, res) => {
   }
 });
 
+// Text analysis endpoint
+app.post('/analyze-text', async (req, res) => {
+  try {
+    if (!ttsService) {
+      return res.status(503).json({ error: 'TTS service not initialized' });
+    }
+
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const analysis = ttsService.analyzeText(text);
+    return res.json(analysis);
+  } catch (error) {
+    logger.error('Failed to analyze text', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get optimization metrics
+app.get('/optimization/metrics', async (_req, res) => {
+  try {
+    if (!ttsService) {
+      return res.status(503).json({ error: 'TTS service not initialized' });
+    }
+
+    const metrics = ttsService.getOptimizationMetrics();
+    return res.json({
+      providerCapabilities: Object.fromEntries(metrics.providerCapabilities),
+      recommendedConfigs: metrics.recommendedConfigs,
+    });
+  } catch (error) {
+    logger.error('Failed to get optimization metrics', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // Cache management endpoints
 app.delete('/cache', async (_req, res) => {
   try {
@@ -266,6 +352,105 @@ app.delete('/cache', async (_req, res) => {
     return res.json({ deletedCount });
   } catch (error) {
     logger.error('Failed to cleanup cache', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Cache optimization endpoint
+app.post('/cache/optimize', async (_req, res) => {
+  try {
+    if (!cacheService) {
+      return res.status(503).json({ error: 'Cache service not initialized' });
+    }
+
+    const result = await cacheService.optimizeCache();
+    return res.json(result);
+  } catch (error) {
+    logger.error('Failed to optimize cache', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Cache cost savings endpoint
+app.get('/cache/savings', async (_req, res) => {
+  try {
+    if (!cacheService) {
+      return res.status(503).json({ error: 'Cache service not initialized' });
+    }
+
+    const savings = await cacheService.getCostSavings();
+    return res.json(savings);
+  } catch (error) {
+    logger.error('Failed to get cache savings', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Pregenerate common phrases endpoint
+app.post('/cache/pregenerate', async (req, res) => {
+  try {
+    if (!cacheService || !ttsService) {
+      return res.status(503).json({ error: 'Services not initialized' });
+    }
+
+    const { voiceModelId, provider } = req.body;
+
+    const synthesizeFunction = async (request: TTSRequest) => {
+      return await ttsService.synthesize(request);
+    };
+
+    const count = await cacheService.pregenerateCommonPhrases(
+      synthesizeFunction,
+      voiceModelId,
+      provider
+    );
+
+    return res.json({ pregeneratedCount: count });
+  } catch (error) {
+    logger.error('Failed to pregenerate common phrases', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Warm cache endpoint
+app.post('/cache/warm', async (req, res) => {
+  try {
+    if (!cacheService || !ttsService) {
+      return res.status(503).json({ error: 'Services not initialized' });
+    }
+
+    const { phrases, voiceModelId, provider } = req.body;
+
+    if (!phrases || !Array.isArray(phrases)) {
+      return res.status(400).json({ error: 'Phrases array is required' });
+    }
+
+    const synthesizeFunction = async (request: TTSRequest) => {
+      return await ttsService.synthesize(request);
+    };
+
+    const count = await cacheService.warmCache(phrases, synthesizeFunction, voiceModelId, provider);
+
+    return res.json({ warmedCount: count });
+  } catch (error) {
+    logger.error('Failed to warm cache', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get common phrases endpoint
+app.get('/cache/common-phrases', async (req, res) => {
+  try {
+    if (!cacheService) {
+      return res.status(503).json({ error: 'Cache service not initialized' });
+    }
+
+    const limit = parseInt(req.query.limit as string) || 50;
+    const phrases = await cacheService.getCommonPhrases(limit);
+
+    return res.json({ phrases });
+  } catch (error) {
+    logger.error('Failed to get common phrases', { error });
     return res.status(500).json({ error: (error as Error).message });
   }
 });
@@ -316,7 +501,7 @@ app.get('/voice-models/user/:userId', async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    const filters: unknown = {};
+    const filters: any = {};
     if (req.query.provider) filters.provider = req.query.provider;
     if (req.query.isActive !== undefined) filters.isActive = req.query.isActive === 'true';
     if (req.query.minQualityScore)
@@ -685,7 +870,7 @@ app.get('/voice-models/user/:userId/shared', async (req, res) => {
 });
 
 // Cleanup expired models (admin endpoint)
-app.post('/voice-models/cleanup', async (req, res) => {
+app.post('/voice-models/cleanup', async (_req, res) => {
   try {
     if (!voiceModelService) {
       return res.status(503).json({ error: 'Voice model service not initialized' });

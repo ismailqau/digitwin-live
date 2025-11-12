@@ -3,8 +3,12 @@
 
 # Pre-commit hook for code quality checks
 echo "🔍 Running pre-commit checks..."
+echo "   - ESLint (with auto-fix)"
+echo "   - Prettier (formatting)"
+echo "   - TypeScript type checking"
+echo "   - Prisma schema formatting"
 
-# Run lint-staged for staged files (includes linting and formatting)
+# Run lint-staged for staged files (includes linting, formatting, and type checking)
 pnpm lint-staged
 
 echo "✅ Pre-commit checks passed!"
