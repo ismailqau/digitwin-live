@@ -40,6 +40,7 @@ model User {
   // Relations
   voiceModels          VoiceModel[]
   voiceSamples         VoiceSample[]
+  trainingJobs         TrainingJob[]
   faceModels           FaceModel[]
   conversationSessions ConversationSession[]
   knowledgeDocuments   KnowledgeDocument[]
@@ -72,7 +73,8 @@ model VoiceModel {
   metadata Json @default("{}")
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingJobs TrainingJob[]
 
   @@index([userId, isActive])
   @@index([status])
@@ -106,11 +108,71 @@ model VoiceSample {
   metadata Json @default("{}")
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingJobVoiceSamples   TrainingJobVoiceSample[]
 
   @@index([userId, status])
   @@index([deletedAt])
   @@map("voice_samples")
+}
+
+// ============================================================================
+// Training Jobs
+// ============================================================================
+
+model TrainingJob {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  voiceModelId     String?   @map("voice_model_id") // Null until model is created
+  provider         String // 'xtts-v2', 'google-cloud-tts', 'openai-tts'
+  status           String    @default("queued") @map("status") // 'queued', 'running', 'completed', 'failed', 'cancelled'
+  progress         Float     @default(0) @map("progress") // 0-100
+  estimatedCost    Float     @map("estimated_cost")
+  actualCost       Float?    @map("actual_cost")
+  estimatedTimeMs  Int       @map("estimated_time_ms")
+  actualTimeMs     Int?      @map("actual_time_ms")
+  startedAt        DateTime? @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  failedAt         DateTime? @map("failed_at")
+  cancelledAt      DateTime? @map("cancelled_at")
+  errorMessage     String?   @map("error_message")
+  retryCount       Int       @default(0) @map("retry_count")
+  maxRetries       Int       @default(3) @map("max_retries")
+  priority         Int       @default(50) @map("priority") // 0-100, higher = more priority
+  gpuNodeId        String?   @map("gpu_node_id") // Which GPU node is processing
+  jobData          Json      @default("{}") @map("job_data") // Training configuration
+  logs             Json      @default("[]") @map("logs") // Training logs
+  qualityMetrics   Json?     @map("quality_metrics") // Post-training quality assessment
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user                      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voiceModel                VoiceModel?                @relation(fields: [voiceModelId], references: [id], onDelete: SetNull)
+  trainingJobVoiceSamples   TrainingJobVoiceSample[]
+
+  @@index([userId, status])
+  @@index([status, priority])
+  @@index([createdAt])
+  @@index([gpuNodeId])
+  @@map("training_jobs")
+}
+
+// ============================================================================
+// Training Job Voice Samples (Many-to-Many)
+// ============================================================================
+
+model TrainingJobVoiceSample {
+  trainingJobId  String @map("training_job_id")
+  voiceSampleId  String @map("voice_sample_id")
+  assignedAt     DateTime @default(now()) @map("assigned_at")
+
+  // Relations
+  trainingJob  TrainingJob  @relation(fields: [trainingJobId], references: [id], onDelete: Cascade)
+  voiceSample  VoiceSample  @relation(fields: [voiceSampleId], references: [id], onDelete: Cascade)
+
+  @@id([trainingJobId, voiceSampleId])
+  @@map("training_job_voice_samples")
 }
 
 // ============================================================================

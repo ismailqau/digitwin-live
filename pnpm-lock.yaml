@@ -817,9 +817,15 @@ importers:
       '@google-cloud/text-to-speech':
         specifier: ^5.0.0
         version: 5.8.1
+      bullmq:
+        specifier: ^5.15.0
+        version: 5.63.0
       express:
         specifier: ^5.1.0
         version: 5.1.0
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.8.2
       openai:
         specifier: ^4.20.0
         version: 4.104.0
