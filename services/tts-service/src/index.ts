@@ -15,6 +15,7 @@ export * from './interfaces/ITTSProvider';
 export * from './services/TTSService';
 export * from './services/TTSCacheService';
 export * from './services/ProviderSelectionService';
+export * from './services/VoiceModelService';
 export * from './providers/GoogleCloudTTSProvider';
 export * from './providers/OpenAITTSProvider';
 export * from './providers/XTTSProvider';

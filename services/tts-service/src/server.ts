@@ -5,6 +5,7 @@ import express, { Express } from 'express';
 import { TrainingJobQueue } from './services/TrainingJobQueue';
 import { TTSCacheService } from './services/TTSCacheService';
 import { TTSService } from './services/TTSService';
+import { VoiceModelService } from './services/VoiceModelService';
 import { TTSRequest } from './types';
 import { TrainingJobRequest } from './types';
 
@@ -31,6 +32,7 @@ app.get('/health', async (_req, res) => {
 let ttsService: TTSService;
 let cacheService: TTSCacheService;
 let trainingQueue: TrainingJobQueue;
+let voiceModelService: VoiceModelService;
 
 async function initializeServices() {
   try {
@@ -38,10 +40,11 @@ async function initializeServices() {
     ttsService = services.ttsService;
     cacheService = services.cacheService;
 
-    // Initialize training queue
+    // Initialize training queue and voice model service
     const { PrismaClient } = await import('@clone/database');
     const prisma = new PrismaClient();
     trainingQueue = new TrainingJobQueue(prisma, logger);
+    voiceModelService = new VoiceModelService(prisma, logger);
 
     logger.info('TTS services initialized successfully');
   } catch (error) {
@@ -263,6 +266,458 @@ app.delete('/cache', async (_req, res) => {
     return res.json({ deletedCount });
   } catch (error) {
     logger.error('Failed to cleanup cache', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// ============================================================================
+// Voice Model Management Endpoints
+// ============================================================================
+
+// Create voice model
+app.post('/voice-models', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId, provider, modelPath, sampleRate, qualityScore, metadata } = req.body;
+
+    if (!userId || !provider || !modelPath) {
+      return res.status(400).json({
+        error: 'userId, provider, and modelPath are required',
+      });
+    }
+
+    const voiceModel = await voiceModelService.createVoiceModel({
+      userId,
+      provider,
+      modelPath,
+      sampleRate,
+      qualityScore,
+      metadata,
+    });
+
+    return res.status(201).json(voiceModel);
+  } catch (error) {
+    logger.error('Failed to create voice model', { error, request: req.body });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get user's voice models
+app.get('/voice-models/user/:userId', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.params;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const filters: unknown = {};
+    if (req.query.provider) filters.provider = req.query.provider;
+    if (req.query.isActive !== undefined) filters.isActive = req.query.isActive === 'true';
+    if (req.query.minQualityScore)
+      filters.minQualityScore = parseFloat(req.query.minQualityScore as string);
+
+    const result = await voiceModelService.getUserVoiceModels(userId, filters, limit, offset);
+
+    return res.json({
+      models: result.models,
+      pagination: {
+        limit,
+        offset,
+        total: result.total,
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to get user voice models', { error, userId: req.params.userId });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get specific voice model
+app.get('/voice-models/:id', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { userId } = req.query;
+
+    const voiceModel = await voiceModelService.getVoiceModel(id, userId as string);
+
+    if (!voiceModel) {
+      return res.status(404).json({ error: 'Voice model not found' });
+    }
+
+    return res.json(voiceModel);
+  } catch (error) {
+    logger.error('Failed to get voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Update voice model
+app.put('/voice-models/:id', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { userId, ...updates } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const updatedModel = await voiceModelService.updateVoiceModel(id, userId, updates);
+
+    return res.json(updatedModel);
+  } catch (error) {
+    logger.error('Failed to update voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Delete voice model
+app.delete('/voice-models/:id', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    await voiceModelService.deleteVoiceModel(id, userId);
+
+    return res.json({ success: true, message: 'Voice model deleted successfully' });
+  } catch (error) {
+    logger.error('Failed to delete voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Activate voice model
+app.post('/voice-models/:id/activate', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const activatedModel = await voiceModelService.activateVoiceModel(id, userId);
+
+    return res.json(activatedModel);
+  } catch (error) {
+    logger.error('Failed to activate voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Deactivate voice model
+app.post('/voice-models/:id/deactivate', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const deactivatedModel = await voiceModelService.deactivateVoiceModel(id, userId);
+
+    return res.json(deactivatedModel);
+  } catch (error) {
+    logger.error('Failed to deactivate voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get active voice model
+app.get('/voice-models/user/:userId/active', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.params;
+
+    const activeModel = await voiceModelService.getActiveVoiceModel(userId);
+
+    if (!activeModel) {
+      return res.status(404).json({ error: 'No active voice model found' });
+    }
+
+    return res.json(activeModel);
+  } catch (error) {
+    logger.error('Failed to get active voice model', { error, userId: req.params.userId });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Compare voice models
+app.post('/voice-models/compare', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { modelIds, userId } = req.body;
+
+    if (!modelIds || !Array.isArray(modelIds) || modelIds.length === 0) {
+      return res.status(400).json({ error: 'modelIds array is required' });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const comparison = await voiceModelService.compareVoiceModels(modelIds, userId);
+
+    return res.json(comparison);
+  } catch (error) {
+    logger.error('Failed to compare voice models', { error, request: req.body });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Select best voice model
+app.post('/voice-models/select-best', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId, criteria } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const bestModel = await voiceModelService.selectBestVoiceModel(userId, criteria);
+
+    if (!bestModel) {
+      return res.status(404).json({ error: 'No suitable voice model found' });
+    }
+
+    return res.json(bestModel);
+  } catch (error) {
+    logger.error('Failed to select best voice model', { error, request: req.body });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get voice model analytics
+app.get('/voice-models/user/:userId/analytics', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.params;
+
+    const analytics = await voiceModelService.getVoiceModelAnalytics(userId);
+
+    return res.json(analytics);
+  } catch (error) {
+    logger.error('Failed to get voice model analytics', { error, userId: req.params.userId });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get voice model usage stats
+app.get('/voice-models/:id/usage-stats', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+
+    const usageStats = await voiceModelService.getVoiceModelUsageStats(id);
+
+    if (!usageStats) {
+      return res.status(404).json({ error: 'No usage stats found for this model' });
+    }
+
+    return res.json(usageStats);
+  } catch (error) {
+    logger.error('Failed to get voice model usage stats', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Export voice model
+app.get('/voice-models/:id/export', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query parameter is required' });
+    }
+
+    const exportData = await voiceModelService.exportVoiceModel(id, userId as string);
+
+    return res.json(exportData);
+  } catch (error) {
+    logger.error('Failed to export voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Create backup
+app.post('/voice-models/user/:userId/backup', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.params;
+
+    const backup = await voiceModelService.createBackup(userId);
+
+    return res.status(201).json(backup);
+  } catch (error) {
+    logger.error('Failed to create voice model backup', { error, userId: req.params.userId });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Restore from backup
+app.post('/voice-models/user/:userId/restore', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.params;
+    const { backupPath, overwriteExisting, activateRestored } = req.body;
+
+    if (!backupPath) {
+      return res.status(400).json({ error: 'backupPath is required' });
+    }
+
+    const restoredModels = await voiceModelService.restoreFromBackup(userId, backupPath, {
+      overwriteExisting,
+      activateRestored,
+    });
+
+    return res.json({
+      success: true,
+      restoredCount: restoredModels.length,
+      models: restoredModels,
+    });
+  } catch (error) {
+    logger.error('Failed to restore from backup', { error, userId: req.params.userId });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Share voice model (optional - for teams)
+app.post('/voice-models/:id/share', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { id } = req.params;
+    const { ownerId, targetUserIds, permissions } = req.body;
+
+    if (!ownerId || !targetUserIds || !Array.isArray(targetUserIds)) {
+      return res.status(400).json({
+        error: 'ownerId and targetUserIds array are required',
+      });
+    }
+
+    await voiceModelService.shareVoiceModel(id, ownerId, targetUserIds, permissions);
+
+    return res.json({
+      success: true,
+      message: 'Voice model shared successfully',
+    });
+  } catch (error) {
+    logger.error('Failed to share voice model', { error, id: req.params.id });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get shared voice models
+app.get('/voice-models/user/:userId/shared', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.params;
+
+    const sharedModels = await voiceModelService.getSharedVoiceModels(userId);
+
+    return res.json(sharedModels);
+  } catch (error) {
+    logger.error('Failed to get shared voice models', { error, userId: req.params.userId });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Cleanup expired models (admin endpoint)
+app.post('/voice-models/cleanup', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const cleanedCount = await voiceModelService.cleanupExpiredModels();
+
+    return res.json({
+      success: true,
+      cleanedCount,
+      message: `Cleaned up ${cleanedCount} expired voice models`,
+    });
+  } catch (error) {
+    logger.error('Failed to cleanup expired models', { error });
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// Get expiring models
+app.get('/voice-models/expiring', async (req, res) => {
+  try {
+    if (!voiceModelService) {
+      return res.status(503).json({ error: 'Voice model service not initialized' });
+    }
+
+    const { userId } = req.query;
+
+    const expiringModels = await voiceModelService.getExpiringModels(userId as string);
+
+    return res.json(expiringModels);
+  } catch (error) {
+    logger.error('Failed to get expiring models', { error });
     return res.status(500).json({ error: (error as Error).message });
   }
 });

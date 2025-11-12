@@ -250,6 +250,7 @@ The system follows a microservices architecture with the following key component
 - **[ASR Service](./docs/ASR-SERVICE.md)** - Google Chirp speech-to-text integration
 - **[Voice Sample Recording](./docs/VOICE-SAMPLE-RECORDING.md)** - Voice sample recording, validation, and voice model training
 - **[Voice Model Training](./docs/VOICE-MODEL-TRAINING.md)** - Complete voice model training pipeline with BullMQ, cost estimation, and multi-provider support
+- **[Voice Model Management](./docs/VOICE-MODEL-MANAGEMENT.md)** - CRUD operations, analytics, backup/restore, and lifecycle management
 - **[Multi-Provider TTS](./docs/TTS-MULTI-PROVIDER.md)** - Text-to-Speech with XTTS-v2, OpenAI, Google Cloud, and ElevenLabs
 
 ### 🤖 AI & Language Models
