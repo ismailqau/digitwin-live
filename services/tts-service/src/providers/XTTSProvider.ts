@@ -5,86 +5,290 @@ import { TTSRequest, TTSResponse, TTSStreamChunk, TTSOptions } from '../types';
 
 import { BaseProvider } from './BaseProvider';
 
+interface XTTSConfig {
+  serviceUrl?: string;
+  gpuEnabled?: boolean;
+}
+
+interface XTTSHealthResponse {
+  status: string;
+  device?: string;
+  platform?: string;
+  model_loaded?: boolean;
+}
+
+interface XTTSSynthesizeResponse {
+  audio_data: string;
+  sample_rate?: number;
+  duration: number;
+  device_used?: string;
+}
+
+interface XTTSLanguage {
+  code: string;
+  name: string;
+}
+
+interface XTTSLanguagesResponse {
+  languages: XTTSLanguage[];
+}
+
 export class XTTSProvider extends BaseProvider {
   private initialized = false;
-  private modelPath?: string;
+  private serviceUrl: string;
+  private gpuEnabled: boolean;
 
-  constructor(logger?: winston.Logger) {
+  constructor(logger?: winston.Logger, config: XTTSConfig = {}) {
     super(TTSProvider.XTTS_V2, logger);
+    this.serviceUrl = config.serviceUrl || process.env.XTTS_SERVICE_URL || 'http://localhost:8000';
+    this.gpuEnabled =
+      config.gpuEnabled !== undefined
+        ? config.gpuEnabled
+        : (process.env.XTTS_GPU_ENABLED || 'true').toLowerCase() === 'true';
   }
 
   get isAvailable(): boolean {
-    return this.initialized && !!this.modelPath;
+    return this.initialized;
   }
 
-  async initialize(config: Record<string, unknown>): Promise<void> {
+  async initialize(config: Record<string, unknown> = {}): Promise<void> {
     try {
-      this.config = config;
-      this.modelPath = config.modelPath as string;
+      // Test connection to XTTS service
+      const healthResponse = await fetch(`${this.serviceUrl}/health`);
 
-      // TODO: Initialize XTTS-v2 model
-      // This would require GPU setup and model loading
-      // For now, we'll mark as initialized if model path is provided
-      this.initialized = !!this.modelPath;
+      if (!healthResponse.ok) {
+        throw new Error(`XTTS service health check failed: ${healthResponse.status}`);
+      }
+
+      const healthData = (await healthResponse.json()) as XTTSHealthResponse;
+      this.initialized = healthData.status === 'healthy' || healthData.status === 'initializing';
 
       this.logger.info('XTTS-v2 provider initialized', {
         available: this.initialized,
-        modelPath: this.modelPath,
+        serviceUrl: this.serviceUrl,
+        device: healthData.device,
+        platform: healthData.platform,
+        modelLoaded: healthData.model_loaded,
+        config,
       });
     } catch (error) {
       this.logger.error('Failed to initialize XTTS-v2 provider', { error });
-      throw error;
+      this.initialized = false;
+      // Don't throw error - allow service to start without XTTS
     }
   }
 
   async synthesize(request: TTSRequest): Promise<TTSResponse> {
     if (!this.initialized) {
-      throw new Error('XTTS-v2 provider not initialized or GPU not available');
+      throw new Error('XTTS-v2 provider not initialized');
     }
 
     const startTime = Date.now();
 
     try {
-      // TODO: Implement XTTS-v2 synthesis
+      this.logger.debug('Starting XTTS-v2 synthesis', {
+        textLength: request.text.length,
+        voiceModelId: request.voiceModelId,
+      });
 
-      // TODO: Implement XTTS-v2 synthesis
-      // This would require:
-      // 1. Loading the voice model from storage
-      // 2. Running inference on GPU
-      // 3. Streaming audio chunks
+      // Prepare request for XTTS service
+      const xttsRequest = {
+        text: request.text,
+        language: request.options?.languageCode || 'en',
+        speed: request.options?.speed || 1.0,
+        speaker_wav: request.voiceModelId
+          ? await this.getVoiceModelAudio(request.voiceModelId)
+          : undefined,
+      };
 
-      // For now, throw an error indicating this needs GPU setup
-      throw new Error('XTTS-v2 synthesis requires GPU worker setup (Phase 6 task 6.3)');
+      // Call XTTS service
+      const response = await fetch(`${this.serviceUrl}/synthesize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(xttsRequest),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`XTTS service error: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
+
+      const data = (await response.json()) as XTTSSynthesizeResponse;
+      const duration = Date.now() - startTime;
+      const cost = this.calculateCost(request.text.length);
+
+      this.logger.debug('XTTS-v2 synthesis completed', {
+        duration,
+        cost,
+        audioSize: data.audio_data?.length || 0,
+        deviceUsed: data.device_used,
+      });
+
+      // Update metrics
+      this.updateMetrics(duration, cost, false);
+      this.updateQuotaUsage(request.text.length);
+
+      return {
+        audioData: Buffer.from(data.audio_data, 'base64'),
+        format: 'wav',
+        sampleRate: data.sample_rate || 24000,
+        duration: data.duration * 1000, // Convert to milliseconds
+        metadata: {
+          provider: TTSProvider.XTTS_V2,
+          voiceModelId: request.voiceModelId,
+          cost,
+          latency: duration,
+        },
+      };
     } catch (error) {
-      const latency = Date.now() - startTime;
-      this.updateMetrics(latency, 0, true);
+      const _latency = Date.now() - startTime;
+      this.updateMetrics(_latency, 0, true);
       this.logger.error('XTTS-v2 synthesis failed', { error, request });
+      throw new Error(`XTTS-v2 synthesis failed: ${(error as Error).message}`);
+    }
+  }
+
+  async *synthesizeStream(request: TTSRequest): AsyncGenerator<TTSStreamChunk, void, unknown> {
+    try {
+      this.logger.debug('Starting XTTS-v2 streaming synthesis');
+
+      // For streaming, we'll chunk the text and synthesize each chunk
+      const textChunks = this.chunkText(request.text, 100);
+      let sequenceNumber = 0;
+
+      for (let i = 0; i < textChunks.length; i++) {
+        const chunkRequest = { ...request, text: textChunks[i] };
+        const chunkResponse = await this.synthesize(chunkRequest);
+
+        yield {
+          chunk: chunkResponse.audioData,
+          isLast: i === textChunks.length - 1,
+          sequenceNumber: sequenceNumber++,
+          timestamp: Date.now(),
+        };
+
+        // Small delay between chunks for realistic streaming
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    } catch (error) {
+      this.logger.error('XTTS-v2 streaming failed', { error });
       throw error;
     }
   }
 
-  async *synthesizeStream(_request: TTSRequest): AsyncGenerator<TTSStreamChunk, void, unknown> {
-    // TODO: Implement streaming synthesis for XTTS-v2
-    // This is a placeholder generator that throws an error
-    // eslint-disable-next-line no-constant-condition
-    if (false) {
-      yield {} as TTSStreamChunk; // This will never execute but satisfies the generator requirement
-    }
-    throw new Error('XTTS-v2 streaming synthesis requires GPU worker setup (Phase 6 task 6.3)');
-  }
-
   async getAvailableVoices(): Promise<string[]> {
-    // TODO: Get available voice models from storage
-    // This would query the database for user's trained voice models
-    return [];
+    try {
+      // Get supported languages from XTTS service
+      const response = await fetch(`${this.serviceUrl}/languages`);
+
+      if (!response.ok) {
+        this.logger.warn('Failed to get XTTS languages, using defaults');
+        return this.getDefaultVoiceIds();
+      }
+
+      const data = (await response.json()) as XTTSLanguagesResponse;
+
+      return data.languages.map((lang: XTTSLanguage) => `xtts-${lang.code}`);
+    } catch (error) {
+      this.logger.error('Failed to get available voices', { error });
+      return this.getDefaultVoiceIds();
+    }
   }
 
   async estimateCost(text: string, _options?: TTSOptions): Promise<number> {
-    // XTTS-v2 cost is primarily GPU compute time
-    // Rough estimation based on text length and GPU usage
-    const charactersPerSecond = 100; // Rough estimate
-    const gpuCostPerSecond = 0.001; // $0.001 per second of GPU time
+    // XTTS-v2 cost is primarily compute time
+    // Lower cost for self-hosted solution
+    const charactersPerSecond = this.gpuEnabled ? 200 : 50; // GPU is faster
+    const computeCostPerSecond = this.gpuEnabled ? 0.001 : 0.0001; // GPU costs more
     const estimatedSeconds = text.length / charactersPerSecond;
-    return estimatedSeconds * gpuCostPerSecond;
+    return estimatedSeconds * computeCostPerSecond;
+  }
+
+  async healthCheck(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${this.serviceUrl}/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = (await response.json()) as XTTSHealthResponse;
+      return data.status === 'healthy';
+    } catch (error) {
+      this.logger.error('XTTS health check failed', { error });
+      return false;
+    }
+  }
+
+  // Private methods
+
+  private async getVoiceModelAudio(voiceModelId: string): Promise<string | undefined> {
+    // TODO: Implement voice model retrieval from database
+    // For now, return undefined to use default voice
+    this.logger.debug('Voice model requested but not implemented yet', { voiceModelId });
+    return undefined;
+  }
+
+  private calculateCost(characterCount: number): number {
+    // XTTS-v2 cost estimation
+    const computeTimeSeconds = characterCount / (this.gpuEnabled ? 200 : 50);
+    const costPerSecond = this.gpuEnabled ? 0.001 : 0.0001;
+    return computeTimeSeconds * costPerSecond;
+  }
+
+  private chunkText(text: string, maxChunkSize: number): string[] {
+    const chunks: string[] = [];
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0);
+
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+      const trimmedSentence = sentence.trim();
+      if (currentChunk.length + trimmedSentence.length + 1 <= maxChunkSize) {
+        currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk + '.');
+        }
+        currentChunk = trimmedSentence;
+      }
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk + '.');
+    }
+
+    return chunks.length > 0 ? chunks : [text];
+  }
+
+  private getDefaultVoiceIds(): string[] {
+    return [
+      'xtts-en',
+      'xtts-es',
+      'xtts-fr',
+      'xtts-de',
+      'xtts-it',
+      'xtts-pt',
+      'xtts-pl',
+      'xtts-tr',
+      'xtts-ru',
+      'xtts-nl',
+      'xtts-cs',
+      'xtts-ar',
+      'xtts-zh-cn',
+      'xtts-ja',
+      'xtts-hu',
+      'xtts-ko',
+    ];
   }
 }

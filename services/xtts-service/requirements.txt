@@ -1,0 +1,37 @@
+# XTTS-v2 Service Dependencies
+# Universal requirements for GPU, CPU, and Apple Silicon
+
+# Core dependencies (install first)
+numpy==1.24.4
+scipy==1.11.4
+soundfile==0.12.1
+librosa==0.10.1
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# Core XTTS
+TTS==0.21.3
+
+# Utilities
+requests==2.31.0
+aiofiles==23.2.1
+python-multipart==0.0.6
+python-dotenv==1.0.0
+psutil==5.9.6
+
+# Model management
+huggingface-hub==0.17.3
+transformers==4.35.2
+
+# Audio format support
+pydub==0.25.1
+
+# Additional stability packages
+packaging==23.2
+filelock==3.13.1
+typing-extensions==4.8.0
+wheel==0.41.2
+setuptools==68.2.2

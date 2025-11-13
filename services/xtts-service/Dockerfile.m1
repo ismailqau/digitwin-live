@@ -1,0 +1,58 @@
+# XTTS-v2 Dockerfile optimized for Apple Silicon (M1/M2/M3)
+FROM --platform=linux/arm64 python:3.10-slim
+
+# Set environment variables for Apple Silicon optimization
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PIP_NO_CACHE_DIR=1
+ENV PYTORCH_ENABLE_MPS_FALLBACK=1
+ENV OMP_NUM_THREADS=8
+ENV MKL_NUM_THREADS=8
+
+# Install system dependencies optimized for ARM64
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    wget \
+    curl \
+    ffmpeg \
+    libsndfile1 \
+    espeak-ng \
+    espeak-ng-data \
+    libsndfile1-dev \
+    pkg-config \
+    libblas-dev \
+    liblapack-dev \
+    gfortran \
+    rustc \
+    cargo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Upgrade pip and install build tools
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install dependencies optimized for Apple Silicon
+RUN pip install --no-cache-dir torch==2.1.0 torchaudio==2.1.0 && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY main.py .
+
+# Create directories
+RUN mkdir -p /app/models /app/cache /app/logs
+
+# Expose port
+EXPOSE 8000
+
+# Health check with longer timeout for model loading
+HEALTHCHECK --interval=30s --timeout=15s --start-period=180s --retries=5 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Start the service
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
