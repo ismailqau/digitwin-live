@@ -17,6 +17,7 @@ digitwinlive/
 │   ├── rag-service/          # Retrieval-Augmented Generation pipeline
 │   ├── llm-service/          # LLM service (Gemini, OpenAI, Groq)
 │   ├── tts-service/          # Text-to-Speech with voice cloning
+│   ├── xtts-service/         # XTTS-v2 Docker service for voice synthesis
 │   ├── lipsync-service/      # Lip-sync video generation
 │   └── face-processing-service/  # Face detection and model creation
 ├── packages/                  # Shared libraries
@@ -89,7 +90,12 @@ docker run -d --name weaviate -p 8080:8080 \
   -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
   semitechnologies/weaviate:latest
 
-# 6. Validate and start
+# 6. Set up XTTS service (for voice cloning)
+cd services/xtts-service
+./setup.sh  # Automatically detects platform and sets up Docker container
+cd ../..
+
+# 7. Validate and start
 node scripts/validate-env.js
 pnpm dev
 ```
@@ -182,8 +188,9 @@ The system follows a microservices architecture with the following key component
 5. **RAG Service**: Retrieves relevant knowledge from vector database
 6. **LLM Service**: Generates contextual responses using multiple LLM providers
 7. **TTS Service**: Synthesizes speech in user's cloned voice
-8. **Lip-sync Service**: Generates synchronized video frames
-9. **Face Processing Service**: Creates face models from photos/videos
+8. **XTTS Service**: Self-hosted XTTS-v2 Docker service for voice synthesis
+9. **Lip-sync Service**: Generates synchronized video frames
+10. **Face Processing Service**: Creates face models from photos/videos
 
 ### Technology Stack
 
@@ -251,6 +258,7 @@ The system follows a microservices architecture with the following key component
 - **[Voice Sample Recording](./docs/VOICE-SAMPLE-RECORDING.md)** - Voice sample recording, validation, and voice model training
 - **[Voice Model Training](./docs/VOICE-MODEL-TRAINING.md)** - Complete voice model training pipeline with BullMQ, cost estimation, and multi-provider support
 - **[Voice Model Management](./docs/VOICE-MODEL-MANAGEMENT.md)** - CRUD operations, analytics, backup/restore, and lifecycle management
+- **[XTTS Service](./docs/XTTS-SERVICE.md)** - Self-hosted XTTS-v2 Docker service setup and configuration
 - **[Multi-Provider TTS](./docs/TTS-MULTI-PROVIDER.md)** - Text-to-Speech with XTTS-v2, OpenAI, Google Cloud, and ElevenLabs
 - **[TTS Optimization & Caching](./docs/TTS-OPTIMIZATION-CACHING.md)** - TTS result caching, deduplication, pregeneration, streaming optimization, and cost optimization
 
@@ -340,6 +348,10 @@ WEAVIATE_ENABLED=true
 NODE_ENV=development
 API_GATEWAY_PORT=3000
 WEBSOCKET_PORT=3001
+
+# XTTS Service (Voice Synthesis)
+XTTS_SERVICE_URL=http://localhost:8000
+XTTS_GPU_ENABLED=true
 
 # Caching (PostgreSQL-based)
 ENABLE_CACHING=true

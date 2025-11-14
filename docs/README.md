@@ -78,11 +78,23 @@ Complete documentation for the DigitWin Live platform.
 
 ### 🎤 Audio & Speech Processing
 
-| Document                                        | Description                                   |
-| ----------------------------------------------- | --------------------------------------------- |
-| [Audio Processing](./AUDIO-PROCESSING.md)       | Audio capture, streaming, and ASR integration |
-| [Audio Preprocessing](./AUDIO-PREPROCESSING.md) | Audio enhancement and quality optimization    |
-| [ASR Service](./ASR-SERVICE.md)                 | Google Chirp speech-to-text integration       |
+| Document                                              | Description                                   |
+| ----------------------------------------------------- | --------------------------------------------- |
+| [Audio Processing](./AUDIO-PROCESSING.md)             | Audio capture, streaming, and ASR integration |
+| [Audio Preprocessing](./AUDIO-PREPROCESSING.md)       | Audio enhancement and quality optimization    |
+| [Audio Caching & Storage](./AUDIO-CACHING-STORAGE.md) | Audio chunk caching and GCS archival          |
+| [ASR Service](./ASR-SERVICE.md)                       | Google Chirp speech-to-text integration       |
+
+### 🎙️ Text-to-Speech & Voice
+
+| Document                                                    | Description                                        |
+| ----------------------------------------------------------- | -------------------------------------------------- |
+| [XTTS Service](./XTTS-SERVICE.md)                           | Self-hosted XTTS-v2 Docker service setup           |
+| [Multi-Provider TTS](./TTS-MULTI-PROVIDER.md)               | TTS with XTTS-v2, OpenAI, Google Cloud, ElevenLabs |
+| [TTS Optimization & Caching](./TTS-OPTIMIZATION-CACHING.md) | Performance optimization and caching               |
+| [Voice Sample Recording](./VOICE-SAMPLE-RECORDING.md)       | Voice sample recording and validation              |
+| [Voice Model Training](./VOICE-MODEL-TRAINING.md)           | Voice model training pipeline                      |
+| [Voice Model Management](./VOICE-MODEL-MANAGEMENT.md)       | CRUD operations and lifecycle management           |
 
 ---
 
@@ -146,6 +158,13 @@ Complete documentation for the DigitWin Live platform.
 2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
 3. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
 4. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
+
+### "I want to set up voice synthesis"
+
+1. [XTTS Service](./XTTS-SERVICE.md) - Self-hosted XTTS-v2 setup
+2. [Multi-Provider TTS](./TTS-MULTI-PROVIDER.md) - TTS provider integration
+3. [Voice Model Training](./VOICE-MODEL-TRAINING.md) - Train custom voices
+4. [Voice Sample Recording](./VOICE-SAMPLE-RECORDING.md) - Record voice samples
 
 ### "I'm having issues"
 
