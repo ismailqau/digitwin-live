@@ -59,12 +59,12 @@ Complete documentation for the DigitWin Live platform.
 
 ### 🏗️ Architecture
 
-| Document                                                           | Description                              |
-| ------------------------------------------------------------------ | ---------------------------------------- |
-| [Design Document](../.kiro/specs/real-time-digitwinlive/design.md) | Complete system design                   |
-| [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)        | Event bus and event sourcing             |
-| [CQRS Architecture](./CQRS-ARCHITECTURE.md)                        | Command Query Responsibility Segregation |
-| [Microservices Communication](./microservices-communication.md)    | gRPC and service discovery               |
+| Document                                                                   | Description                              |
+| -------------------------------------------------------------------------- | ---------------------------------------- |
+| [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) | Complete system design                   |
+| [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)                | Event bus and event sourcing             |
+| [CQRS Architecture](./CQRS-ARCHITECTURE.md)                                | Command Query Responsibility Segregation |
+| [Microservices Communication](./microservices-communication.md)            | gRPC and service discovery               |
 
 ### 🛠️ Development & Quality
 
@@ -95,6 +95,12 @@ Complete documentation for the DigitWin Live platform.
 | [Voice Sample Recording](./VOICE-SAMPLE-RECORDING.md)       | Voice sample recording and validation              |
 | [Voice Model Training](./VOICE-MODEL-TRAINING.md)           | Voice model training pipeline                      |
 | [Voice Model Management](./VOICE-MODEL-MANAGEMENT.md)       | CRUD operations and lifecycle management           |
+
+### 👤 Face Processing & Cloning
+
+| Document                                | Description                                        |
+| --------------------------------------- | -------------------------------------------------- |
+| [Face Processing](./FACE-PROCESSING.md) | Face detection, embedding, and identity management |
 
 ---
 
@@ -154,7 +160,7 @@ Complete documentation for the DigitWin Live platform.
 
 ### "I want to understand the architecture"
 
-1. [Design Document](../.kiro/specs/real-time-digitwinlive/design.md) - System design
+1. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
 2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
 3. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
 4. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
@@ -165,6 +171,12 @@ Complete documentation for the DigitWin Live platform.
 2. [Multi-Provider TTS](./TTS-MULTI-PROVIDER.md) - TTS provider integration
 3. [Voice Model Training](./VOICE-MODEL-TRAINING.md) - Train custom voices
 4. [Voice Sample Recording](./VOICE-SAMPLE-RECORDING.md) - Record voice samples
+
+### "I want to set up face processing"
+
+1. [Face Processing](./FACE-PROCESSING.md) - Face detection and embedding
+2. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Face model storage
+3. [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - GPU worker setup
 
 ### "I'm having issues"
 

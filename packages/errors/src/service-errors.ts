@@ -30,6 +30,24 @@ export class LipSyncError extends BaseError {
   }
 }
 
+export class FaceProcessingError extends BaseError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'FACE_PROCESSING_ERROR', 500, true, details);
+  }
+}
+
+export class FaceDetectionError extends BaseError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'FACE_DETECTION_ERROR', 400, true, details);
+  }
+}
+
+export class FaceQualityError extends BaseError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'FACE_QUALITY_ERROR', 400, true, details);
+  }
+}
+
 export class ConnectionError extends BaseError {
   constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'CONNECTION_ERROR', 503, true, details);

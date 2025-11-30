@@ -763,7 +763,7 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   Progress    Validation Quality    Identity   Neutral    Quality   Preview
 ```
 
-- [ ] 7. Implement face detection and validation service
+- [x] 7. Implement face detection and validation service
   - Integrate MediaPipe for face detection and 468 facial landmark extraction in `services/face-processing-service`
   - Implement face quality validation (lighting quality, angle detection, resolution check)
   - Create face detection confidence scoring (reject faces < 80% confidence)
@@ -775,7 +775,7 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   - _Requirements: 18.2, 18.5, 18.7_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.1 Implement face embedding and identity generation
+- [x] 7.1 Implement face embedding and identity generation
   - Integrate FaceNet or ArcFace for face embedding generation
   - Create identity embedding from multiple face samples
   - Implement embedding quality validation and consistency checks
@@ -787,7 +787,7 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   - _Requirements: 18.3_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.2 Implement expression template extraction
+- [x] 7.2 Implement expression template extraction
   - Create neutral expression detection and selection logic
   - Implement talking expression extraction from video sequences
   - Generate blendshape templates for facial animation (52 Action Units)
@@ -799,7 +799,7 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   - _Requirements: 18.3, 18.4_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.3 Implement face model storage and management
+- [x] 7.3 Implement face model storage and management
   - Implement face model CRUD operations using existing FaceModel schema
   - Create face model artifact storage in GCS (digitwin-live-face-models bucket)
   - Implement face model versioning and update management
@@ -812,7 +812,7 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   - _Requirements: 18.5_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.4 Implement face model preview and testing
+- [x] 7.4 Implement face model preview and testing
   - Create face model preview generation with sample audio
   - Implement test video generation using multiple lip-sync models
   - Create face model comparison functionality (A/B testing)
@@ -824,7 +824,7 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   - _Requirements: 18.6, 18.7_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 7.5 Implement GPU worker infrastructure for face processing
+- [x] 7.5 Implement GPU worker infrastructure for face processing
   - Set up GKE GPU node pools (T4 for development, V100 for production)
   - Create GPU worker queue management with BullMQ
   - Implement face processing job scheduling and prioritization
@@ -834,6 +834,43 @@ Photos/Video → Upload → Detection → Landmarks → Embeddings → Templates
   - Implement cost optimization (preemptible instances, auto-shutdown)
   - Create GPU utilization analytics and reporting
   - _Requirements: 18.3_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 7.6 Test face processing service locally and on GCP
+  - **Local Testing:**
+    - Create `scripts/test-face-processing-local.sh` script for local testing
+    - Test all face detection endpoints with sample images
+    - Test face embedding generation and identity creation
+    - Test expression template extraction
+    - Test face model storage CRUD operations
+    - Test face model preview generation
+    - Verify all 121 unit tests pass locally
+    - Test API endpoints with curl/httpie commands
+    - Create sample test images in `test-data/face-samples/`
+  - **GCP Testing:**
+    - Create `scripts/test-face-processing-gcp.sh` script for GCP deployment testing
+    - Deploy face-processing-service to Cloud Run
+    - Test service health endpoint on GCP
+    - Test face detection with GCS-stored images
+    - Test face model storage with GCS bucket (digitwin-live-face-models)
+    - Test GPU worker queue integration (if GPU nodes available)
+    - Verify PostgreSQL cache operations on Cloud SQL
+    - Test service-to-service authentication
+    - Create load test script for concurrent face processing requests
+    - Verify auto-scaling behavior under load
+  - **Integration Testing:**
+    - Create `scripts/test-face-processing-integration.sh` for end-to-end testing
+    - Test complete flow: upload image → detect face → generate embedding → create identity
+    - Test face model creation from multiple samples
+    - Test face model activation and retrieval
+    - Verify event publishing (FaceModelCreated, FaceModelActivated)
+    - Test error handling and retry logic
+  - **Documentation:**
+    - Update docs/FACE-PROCESSING.md with testing instructions
+    - Add troubleshooting section for common issues
+    - Document GCP deployment steps
+    - Create test data README with sample image requirements
+  - _Requirements: 5, 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 8: Lip-sync Video Generation

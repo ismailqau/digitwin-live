@@ -236,7 +236,7 @@ The system follows a microservices architecture with the following key component
 
 ### 🏗️ Architecture
 
-- **[Design Document](./.kiro/specs/real-time-digitwinlive/design.md)** - System design
+- **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - System design
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus
 - **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query separation
 - **[Microservices Communication](./docs/microservices-communication.md)** - gRPC & service discovery
@@ -265,6 +265,10 @@ The system follows a microservices architecture with the following key component
 ### 🤖 AI & Language Models
 
 - **[LLM Service Guide](./docs/LLM-SERVICE-GUIDE.md)** - Multi-provider LLM integration (Gemini, OpenAI, Groq)
+
+### 👤 Face Processing
+
+- **[Face Processing](./docs/FACE-PROCESSING.md)** - Face detection, embedding, and identity management
 
 **📖 Complete Documentation**: [docs/README.md](./docs/README.md)
 
