@@ -98,9 +98,16 @@ Complete documentation for the DigitWin Live platform.
 
 ### 👤 Face Processing & Cloning
 
-| Document                                | Description                                        |
-| --------------------------------------- | -------------------------------------------------- |
-| [Face Processing](./FACE-PROCESSING.md) | Face detection, embedding, and identity management |
+| Document                                        | Description                                        |
+| ----------------------------------------------- | -------------------------------------------------- |
+| [Face Processing](./FACE-PROCESSING.md)         | Face detection, embedding, and identity management |
+| [Face Processing API](./FACE-PROCESSING-API.md) | Complete API reference for face processing         |
+
+### 🎬 Lip-Sync & Video Generation
+
+| Document                                 | Description                                   |
+| ---------------------------------------- | --------------------------------------------- |
+| [Lip-Sync Service](./LIPSYNC-SERVICE.md) | Multi-model lip-sync video generation service |
 
 ---
 
@@ -175,8 +182,15 @@ Complete documentation for the DigitWin Live platform.
 ### "I want to set up face processing"
 
 1. [Face Processing](./FACE-PROCESSING.md) - Face detection and embedding
-2. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Face model storage
-3. [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - GPU worker setup
+2. [Face Processing API](./FACE-PROCESSING-API.md) - Complete API reference
+3. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Face model storage
+4. [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - GPU worker setup
+
+### "I want to set up lip-sync video generation"
+
+1. [Lip-Sync Service](./LIPSYNC-SERVICE.md) - Multi-model lip-sync service
+2. [Face Processing](./FACE-PROCESSING.md) - Face model creation
+3. [Audio Processing](./AUDIO-PROCESSING.md) - Audio feature extraction
 
 ### "I'm having issues"
 
