@@ -11,6 +11,77 @@
  * - Voice sample deletion and privacy controls
  */
 
+/**
+ * @swagger
+ * tags:
+ *   name: Voice
+ *   description: Voice sample and voice model management for voice cloning
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     VoiceSample:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         filename:
+ *           type: string
+ *         originalFilename:
+ *           type: string
+ *         duration:
+ *           type: number
+ *           description: Duration in seconds
+ *         qualityScore:
+ *           type: number
+ *           minimum: 0
+ *           maximum: 100
+ *         status:
+ *           type: string
+ *           enum: [pending, processing, completed, failed]
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         validation:
+ *           type: object
+ *           properties:
+ *             isValid:
+ *               type: boolean
+ *             issues:
+ *               type: array
+ *               items:
+ *                 type: string
+ *             recommendations:
+ *               type: array
+ *               items:
+ *                 type: string
+ *     VoiceModelCreate:
+ *       type: object
+ *       required:
+ *         - provider
+ *         - sampleIds
+ *       properties:
+ *         provider:
+ *           type: string
+ *           enum: [xtts-v2, google-cloud-tts, openai-tts]
+ *         sampleIds:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: uuid
+ *           minItems: 3
+ *           maxItems: 10
+ *         name:
+ *           type: string
+ *           maxLength: 100
+ *         description:
+ *           type: string
+ *           maxLength: 500
+ */
+
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
@@ -107,8 +178,60 @@ const VoiceModelUpdateSchema = z.object({
 });
 
 /**
- * Upload voice sample with chunked upload support
- * POST /api/v1/voice/samples
+ * @swagger
+ * /voice/samples:
+ *   post:
+ *     summary: Upload voice sample
+ *     description: Upload a voice sample for voice cloning. Supports chunked uploads for large files.
+ *     tags: [Voice]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - audioFile
+ *             properties:
+ *               audioFile:
+ *                 type: string
+ *                 format: binary
+ *                 description: Audio file (WAV, MP3, FLAC, M4A, AAC)
+ *               chunkIndex:
+ *                 type: integer
+ *                 description: Chunk index for chunked uploads
+ *               totalChunks:
+ *                 type: integer
+ *                 description: Total number of chunks
+ *               originalFilename:
+ *                 type: string
+ *                 description: Original filename
+ *     responses:
+ *       201:
+ *         description: Voice sample uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/VoiceSample'
+ *       202:
+ *         description: Chunk uploaded, waiting for more chunks
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 uploadSessionId:
+ *                   type: string
+ *                 progress:
+ *                   type: number
+ *                 chunksReceived:
+ *                   type: integer
+ *                 totalChunks:
+ *                   type: integer
+ *       400:
+ *         description: Invalid file or missing audio file
+ *       429:
+ *         description: Rate limit exceeded
  */
 export const uploadVoiceSample = [
   authMiddleware,
@@ -379,8 +502,54 @@ async function processSingleVoiceSample(
 }
 
 /**
- * Get voice samples
- * GET /api/v1/voice/samples
+ * @swagger
+ * /voice/samples:
+ *   get:
+ *     summary: Get voice samples
+ *     description: Retrieve all voice samples for the authenticated user
+ *     tags: [Voice]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, processing, completed, failed]
+ *         description: Filter by status
+ *     responses:
+ *       200:
+ *         description: List of voice samples
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 samples:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/VoiceSample'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
  */
 export const getVoiceSamples = [
   authMiddleware,
@@ -435,8 +604,25 @@ export const getVoiceSamples = [
 ];
 
 /**
- * Delete voice sample
- * DELETE /api/v1/voice/samples/:id
+ * @swagger
+ * /voice/samples/{id}:
+ *   delete:
+ *     summary: Delete voice sample
+ *     description: Delete a voice sample by ID
+ *     tags: [Voice]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Voice sample ID
+ *     responses:
+ *       204:
+ *         description: Voice sample deleted successfully
+ *       404:
+ *         description: Voice sample not found
  */
 export const deleteVoiceSample = [
   authMiddleware,
@@ -505,8 +691,27 @@ export const deleteVoiceSample = [
 ];
 
 /**
- * Create voice model
- * POST /api/v1/voice/models
+ * @swagger
+ * /voice/models:
+ *   post:
+ *     summary: Create voice model
+ *     description: Create a new voice model from voice samples for voice cloning
+ *     tags: [Voice]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/VoiceModelCreate'
+ *     responses:
+ *       201:
+ *         description: Voice model created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/VoiceModel'
+ *       403:
+ *         description: Quota exceeded for subscription tier
  */
 export const createVoiceModel = [
   authMiddleware,
@@ -585,8 +790,42 @@ export const createVoiceModel = [
 ];
 
 /**
- * Get voice models
- * GET /api/v1/voice/models
+ * @swagger
+ * /voice/models:
+ *   get:
+ *     summary: Get voice models
+ *     description: Retrieve all voice models for the authenticated user
+ *     tags: [Voice]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: provider
+ *         schema:
+ *           type: string
+ *           enum: [xtts-v2, google-cloud-tts, openai-tts]
+ *     responses:
+ *       200:
+ *         description: List of voice models
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 models:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/VoiceModel'
+ *                 pagination:
+ *                   type: object
  */
 export const getVoiceModels = [
   authMiddleware,
@@ -639,8 +878,43 @@ export const getVoiceModels = [
 ];
 
 /**
- * Get voice model training progress
- * GET /api/v1/voice/models/:id/progress
+ * @swagger
+ * /voice/models/{id}/progress:
+ *   get:
+ *     summary: Get voice model training progress
+ *     description: Get the training progress of a voice model
+ *     tags: [Voice]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Training progress
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                   enum: [pending, training, completed, failed]
+ *                 progress:
+ *                   type: number
+ *                   minimum: 0
+ *                   maximum: 100
+ *                 estimatedTimeRemaining:
+ *                   type: number
+ *                   description: Estimated time remaining in seconds
+ *                 currentStep:
+ *                   type: string
+ *       404:
+ *         description: Voice model not found
  */
 export const getVoiceModelProgress = [
   authMiddleware,
@@ -689,8 +963,44 @@ export const getVoiceModelProgress = [
 ];
 
 /**
- * Update voice model
- * PUT /api/v1/voice/models/:id
+ * @swagger
+ * /voice/models/{id}:
+ *   put:
+ *     summary: Update voice model
+ *     description: Update voice model name, description, or activation status
+ *     tags: [Voice]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 maxLength: 100
+ *               description:
+ *                 type: string
+ *                 maxLength: 500
+ *               isActive:
+ *                 type: boolean
+ *                 description: Set as active voice model (deactivates others)
+ *     responses:
+ *       200:
+ *         description: Voice model updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/VoiceModel'
+ *       404:
+ *         description: Voice model not found
  */
 export const updateVoiceModel = [
   authMiddleware,
@@ -774,8 +1084,24 @@ export const updateVoiceModel = [
 ];
 
 /**
- * Delete voice model
- * DELETE /api/v1/voice/models/:id
+ * @swagger
+ * /voice/models/{id}:
+ *   delete:
+ *     summary: Delete voice model
+ *     description: Delete a voice model by ID
+ *     tags: [Voice]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       204:
+ *         description: Voice model deleted successfully
+ *       404:
+ *         description: Voice model not found
  */
 export const deleteVoiceModel = [
   authMiddleware,

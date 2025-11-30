@@ -1,0 +1,30 @@
+# Git
+.git
+.github
+
+# IDE
+.vscode
+.idea
+
+# Dependencies (will be installed fresh in Docker)
+node_modules
+
+# Build cache
+.turbo
+dist
+
+# Test & coverage
+coverage
+
+# Docs (not needed for build)
+docs
+
+# Infrastructure & scripts (root level only, not needed for build)
+/infrastructure
+/scripts
+/test-data
+/test-results
+
+# Misc
+.DS_Store
+*.log

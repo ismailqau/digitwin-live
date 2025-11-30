@@ -227,7 +227,10 @@ export class FaceModelPreviewService {
     // Calculate face quality based on keypoints
     const avgKeypointConfidence =
       model.keypoints.length > 0
-        ? model.keypoints.reduce((sum, k) => sum + k.confidence, 0) / model.keypoints.length
+        ? model.keypoints.reduce(
+            (sum: number, k: { confidence: number }) => sum + k.confidence,
+            0
+          ) / model.keypoints.length
         : 0;
     const faceQuality = avgKeypointConfidence * 100;
     if (faceQuality < 80) {
@@ -397,7 +400,10 @@ export class FaceModelPreviewService {
     const hasEnough = model.embeddings.length >= minEmbeddings;
     const avgConfidence =
       model.embeddings.length > 0
-        ? model.embeddings.reduce((sum, e) => sum + e.confidence, 0) / model.embeddings.length
+        ? model.embeddings.reduce(
+            (sum: number, e: { confidence: number }) => sum + e.confidence,
+            0
+          ) / model.embeddings.length
         : 0;
     const goodConfidence = avgConfidence >= minConfidence;
 
@@ -424,7 +430,10 @@ export class FaceModelPreviewService {
     const hasEnough = model.keypoints.length >= minKeypoints;
     const avgConfidence =
       model.keypoints.length > 0
-        ? model.keypoints.reduce((sum, k) => sum + k.confidence, 0) / model.keypoints.length
+        ? model.keypoints.reduce(
+            (sum: number, k: { confidence: number }) => sum + k.confidence,
+            0
+          ) / model.keypoints.length
         : 0;
     const goodConfidence = avgConfidence >= minConfidence;
 
@@ -446,8 +455,12 @@ export class FaceModelPreviewService {
    */
   private checkExpressionTemplates(model: FaceModel): ValidationCheck {
     const minTemplates = 2;
-    const hasNeutral = model.expressionTemplates.some((t) => t.name === 'neutral');
-    const hasTalking = model.expressionTemplates.some((t) => t.name === 'talking');
+    const hasNeutral = model.expressionTemplates.some(
+      (t: { name: string }) => t.name === 'neutral'
+    );
+    const hasTalking = model.expressionTemplates.some(
+      (t: { name: string }) => t.name === 'talking'
+    );
 
     const hasEnough = model.expressionTemplates.length >= minTemplates;
     const hasRequired = hasNeutral && hasTalking;
@@ -569,11 +582,14 @@ export class FaceModelPreviewService {
     }
 
     // Keypoint recommendations
-    const avgKeypointConfidence =
+    const avgKeypointConfidenceRec =
       model.keypoints.length > 0
-        ? model.keypoints.reduce((sum, k) => sum + k.confidence, 0) / model.keypoints.length
+        ? model.keypoints.reduce(
+            (sum: number, k: { confidence: number }) => sum + k.confidence,
+            0
+          ) / model.keypoints.length
         : 0;
-    if (avgKeypointConfidence < 0.9) {
+    if (avgKeypointConfidenceRec < 0.9) {
       recommendations.push({
         type: 'improvement',
         category: 'lighting',

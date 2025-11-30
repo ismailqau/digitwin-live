@@ -306,6 +306,69 @@ node scripts/your-script.js
 6. **Use strong secrets** (minimum 32 bytes)
 7. **Test scripts locally** before using in CI/CD
 
+## Face Processing Test Scripts
+
+### Local Testing (`test-face-processing-local.sh`)
+
+Tests the face processing service running locally.
+
+```bash
+# Run all local tests
+./scripts/test-face-processing-local.sh
+
+# Run with specific test image
+./scripts/test-face-processing-local.sh --image /path/to/face.jpg
+
+# Run with unit tests
+./scripts/test-face-processing-local.sh --unit-tests
+
+# Specify custom port
+./scripts/test-face-processing-local.sh --port 3007
+```
+
+**NPM command:** `pnpm test:face-processing:local`
+
+### GCP Testing (`test-face-processing-gcp.sh`)
+
+Tests the face processing service deployed on Google Cloud Platform.
+
+```bash
+# Test deployed service
+./scripts/test-face-processing-gcp.sh
+
+# Deploy and test
+./scripts/test-face-processing-gcp.sh --deploy
+
+# Run load test
+./scripts/test-face-processing-gcp.sh --load-test
+
+# Test in specific region
+./scripts/test-face-processing-gcp.sh --region us-central1
+```
+
+**NPM command:** `pnpm test:face-processing:gcp`
+
+### Integration Testing (`test-face-processing-integration.sh`)
+
+Runs end-to-end integration tests for face processing flows.
+
+```bash
+# Run integration tests
+./scripts/test-face-processing-integration.sh
+
+# Test against specific URL
+./scripts/test-face-processing-integration.sh --url https://face-service.example.com
+
+# Keep test data after tests
+./scripts/test-face-processing-integration.sh --skip-cleanup
+```
+
+**NPM command:** `pnpm test:face-processing:integration`
+
+### Test Data
+
+Test images should be placed in `test-data/face-samples/`. See the README in that directory for image requirements.
+
 ## Future Scripts
 
 Planned scripts for future implementation:

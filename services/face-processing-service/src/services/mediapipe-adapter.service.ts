@@ -98,6 +98,7 @@ export class MediaPipeAdapterService {
   /**
    * Simulate face detection for development/testing
    * Generates realistic 468 landmarks based on image dimensions
+   * Detects multiple faces for wider images (simulating group photos)
    */
   private simulateDetection(
     imageBuffer: Buffer,
@@ -113,28 +114,125 @@ export class MediaPipeAdapterService {
       return [];
     }
 
-    // Generate a single face detection with realistic landmarks
-    const centerX = imageWidth / 2;
-    const centerY = imageHeight / 2;
-    const faceWidth = Math.min(imageWidth, imageHeight) * 0.4;
-    const faceHeight = faceWidth * 1.2; // Faces are typically taller than wide
+    // Estimate number of faces based on image content and size
+    const aspectRatio = imageWidth / imageHeight;
+    const imageArea = imageWidth * imageHeight;
 
-    const boundingBox: BoundingBox = {
-      x: centerX - faceWidth / 2,
-      y: centerY - faceHeight / 2,
-      width: faceWidth,
-      height: faceHeight,
-    };
+    // Use buffer content analysis to estimate face count
+    // This simulates what real face detection would do
+    const bufferVariance = this.calculateBufferVariance(imageBuffer);
+    const bufferComplexity = this.calculateBufferComplexity(imageBuffer);
 
-    const landmarks = this.generate468Landmarks(boundingBox, imageWidth, imageHeight);
+    // Heuristic for estimating face count based on image characteristics
+    let estimatedFaces = 1;
 
-    return [
-      {
+    // Large images with high complexity likely have multiple faces
+    if (imageArea > 500000 && bufferComplexity > 0.5) {
+      // High complexity suggests multiple subjects
+      estimatedFaces = Math.min(4, Math.ceil(bufferComplexity * 4));
+    }
+
+    // Wider images are more likely to have multiple faces
+    if (aspectRatio > 1.3 && imageArea > 300000) {
+      estimatedFaces = Math.max(estimatedFaces, Math.floor(aspectRatio * 1.5));
+    }
+
+    // High variance in buffer suggests multiple distinct regions (faces)
+    if (bufferVariance > 0.25 && imageArea > 400000) {
+      estimatedFaces = Math.max(estimatedFaces, 2);
+    }
+
+    // Cap at reasonable maximum
+    estimatedFaces = Math.min(estimatedFaces, 10);
+
+    const detections: MediaPipeDetection[] = [];
+    const faceWidth = Math.min(imageWidth / (estimatedFaces + 0.5), imageHeight * 0.35);
+    const faceHeight = faceWidth * 1.2;
+
+    for (let i = 0; i < estimatedFaces; i++) {
+      // Distribute faces horizontally across the image
+      const spacing = imageWidth / (estimatedFaces + 1);
+      const centerX = spacing * (i + 1);
+      const centerY = imageHeight * (0.4 + Math.random() * 0.1); // Slight vertical variation
+
+      const boundingBox: BoundingBox = {
+        x: centerX - faceWidth / 2,
+        y: centerY - faceHeight / 2,
+        width: faceWidth,
+        height: faceHeight,
+      };
+
+      const landmarks = this.generate468Landmarks(boundingBox, imageWidth, imageHeight);
+
+      detections.push({
         landmarks,
         boundingBox,
-        confidence: 0.92 + Math.random() * 0.08, // 0.92-1.0
-      },
-    ];
+        confidence: 0.9 + Math.random() * 0.1, // 0.90-1.0
+      });
+    }
+
+    logger.debug('Simulated face detection', {
+      imageWidth,
+      imageHeight,
+      aspectRatio: aspectRatio.toFixed(2),
+      estimatedFaces,
+      detectedFaces: detections.length,
+    });
+
+    return detections;
+  }
+
+  /**
+   * Calculate variance in buffer content to estimate image complexity
+   */
+  private calculateBufferVariance(buffer: Buffer): number {
+    if (buffer.length < 1000) return 0;
+
+    // Sample buffer at regular intervals
+    const sampleSize = Math.min(1000, buffer.length);
+    const step = Math.floor(buffer.length / sampleSize);
+    let sum = 0;
+    let sumSq = 0;
+    let count = 0;
+
+    for (let i = 0; i < buffer.length; i += step) {
+      const val = buffer[i];
+      sum += val;
+      sumSq += val * val;
+      count++;
+    }
+
+    const mean = sum / count;
+    const variance = sumSq / count - mean * mean;
+    // Normalize variance to 0-1 range
+    return Math.min(1, variance / 10000);
+  }
+
+  /**
+   * Calculate buffer complexity to estimate number of distinct regions
+   * Higher complexity suggests more faces/subjects in the image
+   */
+  private calculateBufferComplexity(buffer: Buffer): number {
+    if (buffer.length < 5000) return 0.3;
+
+    // Analyze buffer for distinct regions by checking value transitions
+    const sampleSize = Math.min(2000, buffer.length);
+    const step = Math.floor(buffer.length / sampleSize);
+    let transitions = 0;
+    let prevVal = buffer[0];
+
+    for (let i = step; i < buffer.length; i += step) {
+      const val = buffer[i];
+      // Count significant transitions (changes > 30)
+      if (Math.abs(val - prevVal) > 30) {
+        transitions++;
+      }
+      prevVal = val;
+    }
+
+    // Normalize: more transitions = higher complexity
+    const transitionRate = transitions / (sampleSize / step);
+    return Math.min(1, transitionRate * 2);
   }
 
   /**

@@ -2,6 +2,7 @@
 
 # GCP Setup Script
 # Creates all required GCP resources for DigitWin Live
+# Uses PostgreSQL with pgvector for vector storage (no GKE/Weaviate needed)
 
 set -e
 
@@ -75,7 +76,6 @@ enable_apis() {
     
     APIS=(
         "compute.googleapis.com"
-        "container.googleapis.com"
         "sqladmin.googleapis.com"
         "storage-api.googleapis.com"
         "storage-component.googleapis.com"
@@ -89,11 +89,9 @@ enable_apis() {
     for api in "${APIS[@]}"; do
         log_info "Enabling $api..."
         
-        # Check if already enabled
         if gcloud services list --enabled --filter="name:$api" 2>/dev/null | grep -q "$api"; then
             log_success "$api already enabled"
         else
-            # Try to enable
             if gcloud services enable "$api" 2>&1; then
                 log_success "$api enabled"
             else
@@ -131,7 +129,7 @@ create_storage_buckets() {
             if gsutil mb -p "$GCP_PROJECT_ID" -l "$GCP_REGION" "gs://$bucket"; then
                 log_success "Created bucket: $bucket"
                 
-                # Set lifecycle policy (optional)
+                # Set lifecycle policy
                 cat > /tmp/lifecycle.json << EOF
 {
   "lifecycle": {
@@ -153,31 +151,31 @@ EOF
     done
 }
 
-# Create Cloud SQL instance
+# Create Cloud SQL instance with pgvector
 create_cloud_sql() {
-    log_header "Creating Cloud SQL Instance"
+    log_header "Creating Cloud SQL Instance with pgvector"
     
     INSTANCE_NAME="digitwinlive-db"
-    DB_NAME="digitwinline_prod"
+    DB_NAME="digitwinlive_prod"
     
     log_info "Checking if Cloud SQL instance exists..."
     
     if gcloud sql instances describe "$INSTANCE_NAME" &> /dev/null; then
         log_success "Cloud SQL instance $INSTANCE_NAME already exists"
         
-        # Check instance state
         INSTANCE_STATE=$(gcloud sql instances describe "$INSTANCE_NAME" --format="value(state)" 2>/dev/null)
         log_info "Instance state: $INSTANCE_STATE"
     else
         log_info "Creating Cloud SQL instance: $INSTANCE_NAME"
         log_warning "This will take 5-10 minutes..."
         log_info "Instance type: db-f1-micro (shared core, 0.6GB RAM)"
+        log_info "PostgreSQL 15 with pgvector extension support"
         log_info "Cost: ~$7.67/month"
         echo ""
         
-        # Create instance with better configuration
+        # Create instance - PostgreSQL 15 supports pgvector
         if gcloud sql instances create "$INSTANCE_NAME" \
-            --database-version=POSTGRES_17 \
+            --database-version=POSTGRES_15 \
             --tier=db-f1-micro \
             --region="$GCP_REGION" \
             --storage-type=SSD \
@@ -186,14 +184,13 @@ create_cloud_sql() {
             --backup-start-time=03:00 \
             --maintenance-window-day=SUN \
             --maintenance-window-hour=4 \
-            --database-flags=max_connections=100 \
+            --database-flags=max_connections=100,cloudsql.enable_pgvector=on \
             --availability-type=zonal 2>&1; then
             
             log_success "Cloud SQL instance created successfully!"
             
-            # Wait for instance to be ready
             log_info "Waiting for instance to be ready..."
-            sleep 10
+            sleep 15
             
             # Set root password
             log_info "Setting root password..."
@@ -228,139 +225,27 @@ create_cloud_sql() {
             echo "  Connection: $CONNECTION_NAME"
             echo "  Region: $GCP_REGION"
             echo ""
-            log_info "To connect:"
+            log_info "To connect and enable pgvector:"
             echo "  1. Install Cloud SQL Proxy:"
             echo "     https://cloud.google.com/sql/docs/postgres/sql-proxy"
             echo ""
             echo "  2. Start proxy:"
-            echo "     cloud_sql_proxy -instances=$CONNECTION_NAME=tcp:5432"
+            echo "     cloud-sql-proxy $CONNECTION_NAME --port=5432"
             echo ""
-            echo "  3. Connect:"
+            echo "  3. Connect and enable pgvector:"
             echo "     psql \"host=127.0.0.1 port=5432 dbname=$DB_NAME user=postgres\""
+            echo "     CREATE EXTENSION IF NOT EXISTS vector;"
             echo ""
-            log_info "To install pgvector extension:"
-            echo "  psql -h 127.0.0.1 -U postgres -d $DB_NAME -c \"CREATE EXTENSION IF NOT EXISTS vector;\""
+            log_info "pgvector is used for:"
+            echo "  - Embedding storage and similarity search"
+            echo "  - Vector caching (replaces Weaviate)"
+            echo "  - RAG document retrieval"
             echo ""
         else
             log_error "Failed to create Cloud SQL instance"
             log_info "Check billing is enabled and you have sufficient quota"
             return 1
         fi
-    fi
-}
-
-# Create GKE cluster for Weaviate
-create_gke_cluster() {
-    log_header "Creating GKE Cluster"
-    
-    if [ "$WEAVIATE_ENABLED" != "true" ]; then
-        log_info "Weaviate not enabled, skipping GKE cluster creation"
-        return 0
-    fi
-    
-    CLUSTER_NAME="digitwinlive-cluster"
-    
-    log_info "Checking if GKE cluster exists..."
-    
-    if gcloud container clusters describe "$CLUSTER_NAME" --region="$GCP_REGION" &> /dev/null; then
-        log_success "GKE cluster $CLUSTER_NAME already exists"
-    else
-        log_info "Creating GKE cluster: $CLUSTER_NAME"
-        log_warning "This may take 5-10 minutes..."
-        
-        gcloud container clusters create "$CLUSTER_NAME" \
-            --region="$GCP_REGION" \
-            --num-nodes=1 \
-            --machine-type=e2-medium \
-            --enable-autoscaling \
-            --min-nodes=1 \
-            --max-nodes=3 \
-            --enable-autorepair \
-            --enable-autoupgrade
-        
-        log_success "GKE cluster created"
-        
-        # Get credentials
-        gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$GCP_REGION"
-        log_success "kubectl configured"
-    fi
-}
-
-# Deploy Weaviate to GKE
-deploy_weaviate() {
-    log_header "Deploying Weaviate to GKE"
-    
-    if [ "$WEAVIATE_ENABLED" != "true" ]; then
-        log_info "Weaviate not enabled, skipping deployment"
-        return 0
-    fi
-    
-    if ! command -v kubectl &> /dev/null; then
-        log_warning "kubectl not installed, skipping Weaviate deployment"
-        return 0
-    fi
-    
-    log_info "Creating Weaviate deployment..."
-    
-    cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: weaviate
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: weaviate
-  template:
-    metadata:
-      labels:
-        app: weaviate
-    spec:
-      containers:
-      - name: weaviate
-        image: semitechnologies/weaviate:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: QUERY_DEFAULTS_LIMIT
-          value: "25"
-        - name: AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED
-          value: "true"
-        - name: PERSISTENCE_DATA_PATH
-          value: "/var/lib/weaviate"
-        volumeMounts:
-        - name: weaviate-data
-          mountPath: /var/lib/weaviate
-      volumes:
-      - name: weaviate-data
-        emptyDir: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: weaviate
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 8080
-    targetPort: 8080
-  selector:
-    app: weaviate
-EOF
-    
-    log_success "Weaviate deployed to GKE"
-    
-    log_info "Waiting for LoadBalancer IP..."
-    sleep 10
-    
-    EXTERNAL_IP=$(kubectl get service weaviate -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
-    
-    if [ "$EXTERNAL_IP" != "pending" ] && [ -n "$EXTERNAL_IP" ]; then
-        log_success "Weaviate accessible at: http://$EXTERNAL_IP:8080"
-        log_info "Update WEAVIATE_URL in .env to: http://$EXTERNAL_IP:8080"
-    else
-        log_info "LoadBalancer IP pending. Check with: kubectl get service weaviate"
     fi
 }
 
@@ -382,14 +267,13 @@ create_service_accounts() {
         log_success "Service account created"
     fi
     
-    # Grant roles
     log_info "Granting roles to service account..."
     
     ROLES=(
         "roles/cloudsql.client"
         "roles/storage.objectAdmin"
         "roles/secretmanager.secretAccessor"
-        "roles/container.developer"
+        "roles/run.invoker"
     )
     
     for role in "${ROLES[@]}"; do
@@ -402,7 +286,6 @@ create_service_accounts() {
     
     log_success "Roles granted"
     
-    # Create key
     KEY_FILE="secrets/gcp-service-account-prod.json"
     
     if [ -f "$KEY_FILE" ]; then
@@ -417,9 +300,7 @@ create_service_accounts() {
             log_warning "Keep this file secure and never commit to git!"
         else
             log_warning "Could not create service account key"
-            log_info "This may be blocked by organization policy"
-            log_info "You can create keys manually in GCP Console:"
-            log_info "  https://console.cloud.google.com/iam-admin/serviceaccounts"
+            log_info "You can create keys manually in GCP Console"
         fi
     fi
 }
@@ -430,7 +311,6 @@ setup_secrets() {
     
     log_info "Creating secrets in Secret Manager..."
     
-    # Example secrets (you should set actual values)
     SECRETS=(
         "jwt-secret:your-jwt-secret-here"
         "refresh-secret:your-refresh-secret-here"
@@ -465,30 +345,40 @@ print_summary() {
     echo "  Region: $GCP_REGION"
     echo ""
     
-    log_info "Storage Buckets:"
-    for bucket_info in "${BUCKETS[@]}"; do
-        bucket=$(echo "$bucket_info" | cut -d: -f1)
-        [ -n "$bucket" ] && echo "  - gs://$bucket"
-    done
+    log_info "Architecture:"
+    echo "  - Cloud Run: API Gateway, WebSocket Server, Face Processing"
+    echo "  - Cloud SQL: PostgreSQL 15 with pgvector extension"
+    echo "  - Cloud Storage: Voice models, Face models, Documents, Uploads"
+    echo "  - Secret Manager: JWT secrets, Database credentials"
+    echo ""
+    
+    log_info "Vector Storage:"
+    echo "  Using PostgreSQL pgvector extension instead of Weaviate"
+    echo "  Benefits:"
+    echo "    - No separate vector database to manage"
+    echo "    - Lower cost (no GKE cluster needed)"
+    echo "    - ACID compliance for vector operations"
+    echo "    - Simplified infrastructure"
     echo ""
     
     log_info "Next Steps:"
     echo "  1. Update .env with production values"
-    echo "  2. Configure Cloud SQL connection"
-    echo "  3. Deploy applications to Cloud Run"
-    echo "  4. Run: pnpm test:gcp"
+    echo "  2. Connect to Cloud SQL and run: CREATE EXTENSION vector;"
+    echo "  3. Run Prisma migrations: pnpm db:migrate"
+    echo "  4. Deploy services: pnpm gcp:deploy"
     echo ""
     
     log_info "Useful Commands:"
     echo "  - View buckets: gsutil ls"
     echo "  - View SQL instances: gcloud sql instances list"
-    echo "  - View GKE clusters: gcloud container clusters list"
+    echo "  - View Cloud Run services: gcloud run services list"
     echo "  - View secrets: gcloud secrets list"
 }
 
 # Main execution
 main() {
     log_header "GCP Setup for DigitWin Live"
+    log_info "Using PostgreSQL with pgvector for vector storage"
     
     load_env
     check_prerequisites
@@ -498,15 +388,15 @@ main() {
     create_service_accounts
     setup_secrets
     
-    # Optional: Create Cloud SQL and GKE
     echo ""
-    log_header "Optional Resources"
+    log_header "Cloud SQL PostgreSQL with pgvector"
     echo ""
-    log_info "Cloud SQL PostgreSQL (db-f1-micro):"
-    echo "  - Cost: ~$7.67/month"
+    log_info "Cloud SQL PostgreSQL 15 with pgvector:"
+    echo "  - Cost: ~$7.67/month (db-f1-micro)"
     echo "  - Storage: 10GB SSD (auto-increase enabled)"
     echo "  - Backups: Daily at 3:00 AM"
-    echo "  - Use for: Production database"
+    echo "  - pgvector: Enabled for vector similarity search"
+    echo "  - Use for: Database + Vector storage (replaces Weaviate)"
     echo ""
     
     read -p "Create Cloud SQL instance? (y/N) " -n 1 -r
@@ -516,23 +406,6 @@ main() {
     else
         log_info "Skipping Cloud SQL creation"
         log_info "You can create it later with: ./scripts/gcp-setup.sh"
-    fi
-    
-    echo ""
-    log_info "GKE Cluster (1 x e2-medium node):"
-    echo "  - Cost: ~$24/month"
-    echo "  - Use for: Weaviate vector database"
-    echo "  - Alternative: Use local Weaviate (free)"
-    echo ""
-    
-    read -p "Create GKE cluster for Weaviate? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        create_gke_cluster
-        deploy_weaviate
-    else
-        log_info "Skipping GKE creation"
-        log_info "Use local Weaviate with Docker instead (free)"
     fi
     
     print_summary

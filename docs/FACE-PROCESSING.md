@@ -357,3 +357,260 @@ const stats = gpuService.getQueueStats();
 - [GCP Infrastructure](./GCP-INFRASTRUCTURE.md) - Cloud infrastructure setup
 - [Database Architecture](./DATABASE-ARCHITECTURE.md) - Data models and storage
 - [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching strategy
+
+## Testing
+
+### Test Scripts
+
+The face processing service includes comprehensive test scripts for local, GCP, and integration testing.
+
+#### Local Testing
+
+```bash
+# Run all local API tests
+./scripts/test-face-processing-local.sh
+
+# Run with specific test image
+FACE_TEST_IMAGE=/path/to/face.jpg ./scripts/test-face-processing-local.sh
+
+# Run with unit tests
+./scripts/test-face-processing-local.sh --unit-tests
+
+# Specify custom port
+./scripts/test-face-processing-local.sh --port 3007
+```
+
+#### GCP Testing
+
+```bash
+# Test deployed service on Cloud Run
+./scripts/test-face-processing-gcp.sh
+
+# Deploy and test
+./scripts/test-face-processing-gcp.sh --deploy
+
+# Run load test
+./scripts/test-face-processing-gcp.sh --load-test
+
+# Test in specific region
+./scripts/test-face-processing-gcp.sh --region us-west1
+```
+
+#### Integration Testing
+
+```bash
+# Run end-to-end integration tests
+./scripts/test-face-processing-integration.sh
+
+# Test against specific URL
+./scripts/test-face-processing-integration.sh --url https://face-service.example.com
+
+# Keep test data after tests
+./scripts/test-face-processing-integration.sh --skip-cleanup
+```
+
+### Test Data
+
+Test images should be placed in `test-data/face-samples/`. See the README in that directory for image requirements.
+
+**Required test images:**
+
+- `sample-face-1.jpg` - Single frontal face
+- `sample-face-2.jpg` - Same person, different angle
+- `sample-face-3.jpg` - Same person, different lighting
+
+### Unit Tests
+
+Run Jest unit tests:
+
+```bash
+# Run all tests
+pnpm --filter @clone/face-processing-service test
+
+# Run with coverage
+pnpm --filter @clone/face-processing-service test -- --coverage
+
+# Run specific test file
+pnpm --filter @clone/face-processing-service test -- face-detection.service.test.ts
+```
+
+### Manual API Testing
+
+Test endpoints with curl:
+
+```bash
+# Health check
+curl http://localhost:3006/health
+
+# Face detection
+curl -X POST http://localhost:3006/api/v1/face/detect \
+  -H "Content-Type: application/json" \
+  -d '{"imageData": "'$(base64 -i image.jpg | tr -d '\n')'", "userId": "test"}'
+
+# Quality check
+curl -X POST http://localhost:3006/api/v1/face/quality-check \
+  -H "Content-Type: application/json" \
+  -d '{"imageData": "'$(base64 -i image.jpg | tr -d '\n')'", "userId": "test"}'
+
+# Get thresholds
+curl http://localhost:3006/api/v1/face/thresholds
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### "No face detected"
+
+**Causes:**
+
+- Face not visible or too small
+- Poor lighting
+- Extreme head angle
+- Low image resolution
+
+**Solutions:**
+
+1. Ensure face occupies at least 20% of image
+2. Use good lighting (natural or soft artificial)
+3. Face camera directly (< 30° rotation)
+4. Use minimum 256x256 resolution
+
+#### "Quality score too low"
+
+**Causes:**
+
+- Blurry image
+- Poor lighting
+- Face too small
+- Extreme expression
+
+**Solutions:**
+
+1. Use sharper images (avoid motion blur)
+2. Improve lighting conditions
+3. Move closer to camera
+4. Use neutral expression
+
+#### "Consistency check failed"
+
+**Causes:**
+
+- Images are of different people
+- Extreme lighting differences
+- Very different angles between images
+
+**Solutions:**
+
+1. Verify all images are of same person
+2. Use similar lighting conditions
+3. Keep angles within 30° of frontal
+
+#### "Service not responding"
+
+**Causes:**
+
+- Service not started
+- Wrong port
+- Network issues
+
+**Solutions:**
+
+1. Start service: `pnpm --filter @clone/face-processing-service dev`
+2. Check port: default is 3006
+3. Verify network connectivity
+
+### GCP-Specific Issues
+
+#### "Service not found"
+
+Deploy the service first:
+
+```bash
+./scripts/test-face-processing-gcp.sh --deploy
+```
+
+#### "Authentication failed"
+
+Ensure you're authenticated:
+
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+#### "Cloud SQL connection failed"
+
+1. Verify Cloud SQL instance is running
+2. Check connection string in environment
+3. Ensure Cloud SQL Proxy is running (for local development)
+
+### Logs
+
+View service logs:
+
+```bash
+# Local logs
+pnpm --filter @clone/face-processing-service dev 2>&1 | tee face-processing.log
+
+# GCP Cloud Run logs
+gcloud run services logs read face-processing-service --region=us-central1
+
+# Follow logs in real-time
+gcloud run services logs tail face-processing-service --region=us-central1
+```
+
+## GCP Deployment
+
+### Prerequisites
+
+1. GCP project with billing enabled
+2. Cloud Run API enabled
+3. Cloud SQL instance (for caching)
+4. GCS bucket for face models
+
+### Deploy to Cloud Run
+
+```bash
+# Build and deploy
+gcloud run deploy face-processing-service \
+  --source=services/face-processing-service \
+  --region=us-central1 \
+  --platform=managed \
+  --allow-unauthenticated \
+  --memory=1Gi \
+  --cpu=1 \
+  --min-instances=0 \
+  --max-instances=10 \
+  --set-env-vars="NODE_ENV=production"
+```
+
+### Environment Variables
+
+Required environment variables for GCP deployment:
+
+| Variable                 | Description             | Example                     |
+| ------------------------ | ----------------------- | --------------------------- |
+| `NODE_ENV`               | Environment             | `production`                |
+| `GCP_PROJECT_ID`         | GCP project ID          | `my-project`                |
+| `GCS_BUCKET_FACE_MODELS` | Face models bucket      | `digitwin-live-face-models` |
+| `DATABASE_URL`           | PostgreSQL connection   | `postgresql://...`          |
+| `ENABLE_CACHING`         | Enable PostgreSQL cache | `true`                      |
+
+### Auto-Scaling Configuration
+
+The service auto-scales based on:
+
+- CPU utilization (target: 80%)
+- Request concurrency (default: 80)
+- Min instances: 0 (scale to zero)
+- Max instances: 10
+
+Adjust scaling:
+
+```bash
+gcloud run services update face-processing-service \
+  --min-instances=1 \
+  --max-instances=20 \
+  --concurrency=100
+```

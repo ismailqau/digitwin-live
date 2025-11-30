@@ -121,8 +121,44 @@ const options: swaggerJsdoc.Options = {
             status: { type: 'string', enum: ['pending', 'processing', 'completed', 'failed'] },
           },
         },
+        FAQ: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            userId: { type: 'string', format: 'uuid' },
+            question: { type: 'string' },
+            answer: { type: 'string' },
+            priority: { type: 'integer' },
+            isActive: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        Conversation: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            userId: { type: 'string', format: 'uuid' },
+            startedAt: { type: 'string', format: 'date-time' },
+            endedAt: { type: 'string', format: 'date-time' },
+            durationSeconds: { type: 'integer' },
+            totalTurns: { type: 'integer' },
+            state: { type: 'string', enum: ['active', 'paused', 'ended'] },
+          },
+        },
       },
     },
+    externalDocs: {
+      description: 'Face Processing Service API',
+      url: 'http://localhost:3006/api/v1/face/health',
+    },
+    tags: [
+      { name: 'Authentication', description: 'User authentication and authorization' },
+      { name: 'Documents', description: 'Knowledge base document management' },
+      { name: 'FAQs', description: 'Frequently asked questions management' },
+      { name: 'Voice', description: 'Voice sample and model management' },
+      { name: 'Conversations', description: 'Conversation session management' },
+      { name: 'Knowledge', description: 'Knowledge source configuration' },
+    ],
     security: [
       {
         bearerAuth: [],

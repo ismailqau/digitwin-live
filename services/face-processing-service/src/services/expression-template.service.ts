@@ -496,12 +496,12 @@ export class ExpressionTemplateService {
       const t = i / steps;
       const easedT = this.applyEasing(t, easing);
 
-      const blendshapes = from.blendshapes.map((fromVal, idx) => {
+      const blendshapes = from.blendshapes.map((fromVal: number, idx: number) => {
         const toVal = to.blendshapes[idx] || 0;
         return fromVal + (toVal - fromVal) * easedT;
       });
 
-      const keypoints = from.keypoints.map((fromKp, idx) => {
+      const keypoints = from.keypoints.map((fromKp: FacialKeypoint, idx: number) => {
         const toKp = to.keypoints[idx];
         if (!toKp) return { ...fromKp };
 
@@ -563,7 +563,9 @@ export class ExpressionTemplateService {
     }
 
     // Check for invalid values
-    const hasInvalidBlendshapes = template.blendshapes.some((v) => !isFinite(v) || v < 0 || v > 1);
+    const hasInvalidBlendshapes = template.blendshapes.some(
+      (v: number) => !isFinite(v) || v < 0 || v > 1
+    );
     if (hasInvalidBlendshapes) {
       issues.push('Blendshapes contain invalid values');
       qualityScore -= 25;
@@ -571,7 +573,8 @@ export class ExpressionTemplateService {
 
     // Check keypoint confidence
     const avgConfidence =
-      template.keypoints.reduce((sum, kp) => sum + kp.confidence, 0) / template.keypoints.length;
+      template.keypoints.reduce((sum: number, kp: FacialKeypoint) => sum + kp.confidence, 0) /
+      template.keypoints.length;
     if (avgConfidence < this.config.minConfidence) {
       issues.push('Low keypoint confidence');
       recommendations.push('Use higher quality images with better lighting');
@@ -593,7 +596,7 @@ export class ExpressionTemplateService {
     // Focus on mouth-related blendshapes for lip-sync
     const mouthIndices = [15, 16, 17, 18]; // AU25, AU26, AU27, AU28
 
-    const optimizedBlendshapes = template.blendshapes.map((val, idx) => {
+    const optimizedBlendshapes = template.blendshapes.map((val: number, idx: number) => {
       if (mouthIndices.includes(idx)) {
         // Enhance mouth-related values
         return Math.min(1, val * 1.2);

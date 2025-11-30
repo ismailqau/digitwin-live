@@ -82,11 +82,18 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
+// Face processing service default port
+const FACE_PROCESSING_DEFAULT_PORT = 3006;
+
 // Start server if running standalone
 if (require.main === module) {
-  const port = config.port || 3006;
+  const port = process.env.FACE_PROCESSING_PORT
+    ? parseInt(process.env.FACE_PROCESSING_PORT, 10)
+    : config.port !== 3000
+      ? config.port
+      : FACE_PROCESSING_DEFAULT_PORT;
 
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     logger.info(`Face Processing Service started`, {
       port,
       version: FACE_PROCESSING_SERVICE_VERSION,
@@ -95,9 +102,23 @@ if (require.main === module) {
   });
 
   // Graceful shutdown
+  let isShuttingDown = false;
   const shutdown = (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
     logger.info(`${signal} received, shutting down gracefully`);
-    process.exit(0);
+
+    server.close(() => {
+      logger.info('HTTP server closed');
+      process.exit(0);
+    });
+
+    // Force exit after 5 seconds if server doesn't close
+    setTimeout(() => {
+      logger.warn('Forcing shutdown after timeout');
+      process.exit(1);
+    }, 5000);
   };
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));

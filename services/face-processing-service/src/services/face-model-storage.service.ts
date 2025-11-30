@@ -364,8 +364,10 @@ export class FaceModelStorageService {
     // Embedding quality (0-30 points)
     if (modelData.embeddings && modelData.embeddings.length > 0) {
       const avgConfidence =
-        modelData.embeddings.reduce((sum, e) => sum + e.confidence, 0) /
-        modelData.embeddings.length;
+        modelData.embeddings.reduce(
+          (sum: number, e: { confidence: number }) => sum + e.confidence,
+          0
+        ) / modelData.embeddings.length;
       score += avgConfidence * 30;
       factors++;
     }
@@ -373,7 +375,10 @@ export class FaceModelStorageService {
     // Keypoint quality (0-25 points)
     if (modelData.keypoints && modelData.keypoints.length > 0) {
       const avgConfidence =
-        modelData.keypoints.reduce((sum, k) => sum + k.confidence, 0) / modelData.keypoints.length;
+        modelData.keypoints.reduce(
+          (sum: number, k: { confidence: number }) => sum + k.confidence,
+          0
+        ) / modelData.keypoints.length;
       const keypointCoverage = Math.min(1, modelData.keypoints.length / 468);
       score += (avgConfidence * 0.5 + keypointCoverage * 0.5) * 25;
       factors++;
@@ -406,7 +411,11 @@ export class FaceModelStorageService {
     // Embedding quality
     const embeddingQuality =
       model.embeddings.length > 0
-        ? (model.embeddings.reduce((sum, e) => sum + e.confidence, 0) / model.embeddings.length) *
+        ? (model.embeddings.reduce(
+            (sum: number, e: { confidence: number }) => sum + e.confidence,
+            0
+          ) /
+            model.embeddings.length) *
           100
         : 0;
     if (embeddingQuality < 80) {
@@ -416,7 +425,11 @@ export class FaceModelStorageService {
     // Keypoint quality
     const keypointQuality =
       model.keypoints.length > 0
-        ? (model.keypoints.reduce((sum, k) => sum + k.confidence, 0) / model.keypoints.length) *
+        ? (model.keypoints.reduce(
+            (sum: number, k: { confidence: number }) => sum + k.confidence,
+            0
+          ) /
+            model.keypoints.length) *
           (model.keypoints.length / 468) *
           100
         : 0;

@@ -219,7 +219,7 @@ export class FaceEmbeddingService {
    * Normalize vector to unit length (L2 normalization)
    */
   private normalizeVector(vector: number[]): number[] {
-    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    const magnitude = Math.sqrt(vector.reduce((sum: number, val: number) => sum + val * val, 0));
     if (magnitude === 0) return vector;
     return vector.map((val) => val / magnitude);
   }
@@ -312,14 +312,16 @@ export class FaceEmbeddingService {
     }
 
     // Check for NaN or Infinity values
-    const valuesValid = !embedding.vector.some((v) => !isFinite(v));
+    const valuesValid = !embedding.vector.some((v: number) => !isFinite(v));
     if (!valuesValid) {
       issues.push('Embedding contains invalid values (NaN or Infinity)');
       qualityScore -= 30;
     }
 
     // Check vector magnitude (should be close to 1 for normalized vectors)
-    const magnitude = Math.sqrt(embedding.vector.reduce((sum, v) => sum + v * v, 0));
+    const magnitude = Math.sqrt(
+      embedding.vector.reduce((sum: number, v: number) => sum + v * v, 0)
+    );
     const magnitudeValid = Math.abs(magnitude - 1) <= 0.1;
     if (!magnitudeValid) {
       issues.push(
