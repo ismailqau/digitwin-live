@@ -84,6 +84,8 @@ enable_apis() {
         "cloudresourcemanager.googleapis.com"
         "iam.googleapis.com"
         "servicenetworking.googleapis.com"
+        "artifactregistry.googleapis.com"
+        "cloudbuild.googleapis.com"
     )
     
     for api in "${APIS[@]}"; do
@@ -99,6 +101,37 @@ enable_apis() {
             fi
         fi
     done
+}
+
+# Create Artifact Registry repository
+create_artifact_registry() {
+    log_header "Creating Artifact Registry Repository"
+    
+    REPO_NAME="digitwinlive"
+    REPO_LOCATION="$GCP_REGION"
+    
+    log_info "Checking if Artifact Registry repository exists..."
+    
+    if gcloud artifacts repositories describe "$REPO_NAME" --location="$REPO_LOCATION" &> /dev/null; then
+        log_success "Artifact Registry repository $REPO_NAME already exists"
+    else
+        log_info "Creating Artifact Registry repository: $REPO_NAME"
+        
+        if gcloud artifacts repositories create "$REPO_NAME" \
+            --repository-format=docker \
+            --location="$REPO_LOCATION" \
+            --description="DigitWin Live container images" 2>&1; then
+            log_success "Artifact Registry repository created: $REPO_NAME"
+        else
+            log_error "Failed to create Artifact Registry repository"
+            return 1
+        fi
+    fi
+    
+    # Configure Docker authentication
+    log_info "Configuring Docker authentication for Artifact Registry..."
+    gcloud auth configure-docker "$REPO_LOCATION-docker.pkg.dev" --quiet 2>/dev/null || true
+    log_success "Docker authentication configured"
 }
 
 # Create Cloud Storage buckets
@@ -384,6 +417,7 @@ main() {
     check_prerequisites
     setup_project
     enable_apis
+    create_artifact_registry
     create_storage_buckets
     create_service_accounts
     setup_secrets

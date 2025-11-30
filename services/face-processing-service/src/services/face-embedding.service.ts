@@ -337,7 +337,7 @@ export class FaceEmbeddingService {
     }
 
     // Check for zero vector
-    const isZeroVector = embedding.vector.every((v) => v === 0);
+    const isZeroVector = embedding.vector.every((v: number) => v === 0);
     if (isZeroVector) {
       issues.push('Embedding is a zero vector');
       qualityScore = 0;

@@ -331,8 +331,8 @@ show_costs() {
     
     echo ""
     log_info "Cloud SQL PostgreSQL (with pgvector):"
-    echo "  db-f1-micro: ~$7.67/month (if running)"
-    echo "  Storage: ~$0.17/GB/month"
+    echo '  db-f1-micro: ~$7.67/month (if running)'
+    echo '  Storage: ~$0.17/GB/month'
     echo ""
     
     log_info "Storage Buckets:"
@@ -345,22 +345,22 @@ show_costs() {
         fi
     done
     TOTAL_GB=$((TOTAL_SIZE / 1024 / 1024 / 1024))
-    echo "  Total Storage: ${TOTAL_GB}GB (~$0.02/GB/month)"
+    echo "  Total Storage: ${TOTAL_GB}GB (~\$0.02/GB/month)"
     
     echo ""
     log_info "Cloud Run (pay per use):"
-    echo "  First 2M requests: Free"
-    echo "  CPU: $0.00002400/vCPU-second"
-    echo "  Memory: $0.00000250/GiB-second"
-    echo "  Typically very low cost for moderate usage"
+    echo '  First 2M requests: Free'
+    echo '  CPU: $0.00002400/vCPU-second'
+    echo '  Memory: $0.00000250/GiB-second'
+    echo '  Typically very low cost for moderate usage'
     
     echo ""
     log_info "Estimated Total (minimal usage):"
-    echo "  ~$8-15/month"
+    echo '  ~$8-15/month'
     echo ""
     log_info "Cost Savings vs Weaviate/GKE:"
-    echo "  No GKE cluster needed: Saves ~$24/month"
-    echo "  pgvector in PostgreSQL handles all vector operations"
+    echo '  No GKE cluster needed: Saves ~$24/month'
+    echo '  pgvector in PostgreSQL handles all vector operations'
     
     echo ""
     log_warning "Note: Actual costs may vary based on usage"
@@ -369,13 +369,19 @@ show_costs() {
 
 # Deploy Cloud Run services
 deploy_services() {
-    if [ -f "./scripts/gcp-deploy-services.sh" ]; then
-        ./scripts/gcp-deploy-services.sh deploy "$@"
-    else
-        log_error "Deployment script not found"
+    local script="./scripts/gcp-deploy-services.sh"
+    
+    if [ ! -f "$script" ]; then
+        log_error "Deployment script not found: $script"
         log_info "Run from project root directory"
         exit 1
     fi
+    
+    if [ ! -x "$script" ]; then
+        chmod +x "$script"
+    fi
+    
+    "$script" deploy "$@"
 }
 
 # Main

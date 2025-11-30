@@ -165,7 +165,11 @@ const options: swaggerJsdoc.Options = {
       },
     ],
   },
-  apis: ['./src/routes/**/*.ts', './src/controllers/**/*.ts'],
+  // In production, look for compiled .js files; in development, look for .ts files
+  apis:
+    process.env.NODE_ENV === 'production'
+      ? ['./dist/routes/**/*.js', './dist/controllers/**/*.js']
+      : ['./src/routes/**/*.ts', './src/controllers/**/*.ts'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

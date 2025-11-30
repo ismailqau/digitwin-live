@@ -1,0 +1,112 @@
+# Implementation Plan
+
+- [x] 1. Create Artifact Registry repository and enable required APIs
+  - [x] 1.1 Update gcp-setup.sh to enable Artifact Registry API
+    - Add `artifactregistry.googleapis.com` to the APIS array
+    - Add `cloudbuild.googleapis.com` to the APIS array
+    - _Requirements: 1.3_
+  - [x] 1.2 Create Artifact Registry repository in gcp-setup.sh
+    - Create repository named `digitwinlive` in the configured region
+    - Use Docker format for container images
+    - _Requirements: 1.3_
+
+- [-] 2. Create Dockerfiles for services
+  - [x] 2.1 Create Dockerfile for api-gateway service
+    - Use multi-stage build with node:22-slim base
+    - Copy workspace configuration and shared packages
+    - Build production artifacts
+    - Expose port 8080
+    - _Requirements: 2.1, 2.3, 2.5_
+
+  - [ ] 2.2 Write property test for Dockerfile multi-stage build
+    - **Property 3: Multi-stage Dockerfile structure**
+    - **Validates: Requirements 2.3**
+
+  - [x] 2.3 Create Dockerfile for websocket-server service
+    - Use multi-stage build with node:22-slim base
+    - Copy workspace configuration and shared packages
+    - Build production artifacts
+    - Expose port 8080
+    - _Requirements: 2.2, 2.3, 2.5_
+  - [ ] 2.4 Write property test for port 8080 exposure
+    - **Property 4: Port 8080 exposure**
+    - **Validates: Requirements 2.5**
+
+- [-] 3. Create the deployment script
+  - [x] 3.1 Create gcp-deploy-services.sh with environment loading
+    - Create script file in scripts/ directory
+    - Implement load_env() function matching gcp-setup.sh pattern
+    - Implement validate_env() to check required variables
+    - Add color logging functions (log_info, log_success, log_error, log_warning)
+    - _Requirements: 7.2, 7.3_
+  - [ ] 3.2 Write property test for consistent script conventions
+    - **Property 9: Consistent script conventions**
+    - **Validates: Requirements 7.2, 7.3**
+  - [x] 3.3 Implement build_and_push_image function
+    - Build Docker image using gcloud builds submit
+    - Tag image with service name and timestamp
+    - Push to Artifact Registry
+    - Handle build errors with clear messages
+    - _Requirements: 1.3, 1.5_
+  - [x] 3.4 Implement deploy_service function
+    - Deploy to Cloud Run with gcloud run deploy
+    - Configure min/max instances (0/10)
+    - Configure memory (512Mi) and CPU (1)
+    - Configure timeout (300s)
+    - Add --allow-unauthenticated flag
+    - Add Cloud SQL connection
+    - Add environment variables
+    - Add Secret Manager references
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 5.1, 5.2, 5.3, 5.4_
+  - [ ] 3.5 Write property test for Cloud Run configuration parameters
+    - **Property 5: Cloud Run configuration parameters**
+    - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
+  - [ ] 3.6 Write property test for environment variable injection
+    - **Property 6: Environment variable injection**
+    - **Validates: Requirements 3.5, 5.1, 5.2, 5.3**
+  - [ ] 3.7 Write property test for Cloud SQL connection configuration
+    - **Property 7: Cloud SQL connection configuration**
+    - **Validates: Requirements 4.1, 4.2**
+  - [ ] 3.8 Write property test for Secret Manager integration
+    - **Property 8: Secret Manager integration**
+    - **Validates: Requirements 5.4**
+  - [x] 3.9 Implement deploy command handler
+    - Parse service name argument (optional)
+    - If no argument, deploy all services sequentially
+    - If argument provided, deploy only specified service
+    - Display service URL after successful deployment
+    - _Requirements: 1.1, 1.2, 6.1_
+  - [ ] 3.10 Write property test for service argument validation
+    - **Property 1: Service argument validation**
+    - **Validates: Requirements 1.2**
+  - [x] 3.11 Implement error handling and exit codes
+    - Exit code 0 for success
+    - Exit code 1 for environment validation errors
+    - Exit code 2 for build errors
+    - Exit code 3 for deployment errors
+    - Display clear error messages for each failure type
+    - _Requirements: 1.5, 5.5_
+  - [ ] 3.12 Write property test for error exit code on failure
+    - **Property 2: Error exit code on failure**
+    - **Validates: Requirements 1.5, 5.5**
+
+- [x] 4. Implement status and delete commands
+  - [x] 4.1 Implement status command
+    - List all Cloud Run services in the project
+    - Display service name, URL, revision, status
+    - Display last deployment time
+    - _Requirements: 6.2, 6.3_
+  - [x] 4.2 Implement delete command
+    - Delete specified service or all services
+    - Confirm before deletion
+    - Display success/failure message
+    - _Requirements: 6.4_
+
+- [x] 5. Update gcp-manage.sh integration
+  - [x] 5.1 Update deploy command in gcp-manage.sh
+    - Call gcp-deploy-services.sh for deploy command
+    - Pass through service name argument if provided
+    - _Requirements: 7.1_
+
+- [x] 6. Checkpoint - Verify deployment works
+  - Ensure all tests pass, ask the user if questions arise.
