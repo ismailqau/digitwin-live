@@ -99,7 +99,7 @@ pnpm dev
 
 # API Gateway: http://localhost:3000
 # WebSocket Server: http://localhost:3001
-# API Docs: http://localhost:3000/api-docs
+# API Docs: http://localhost:3000/docs
 ```
 
 ## Test the API
@@ -123,7 +123,7 @@ curl http://localhost:3000/health
 - **[Environment Setup](./ENVIRONMENT-SETUP.md)** - Detailed configuration
 - **[Vector Database](./VECTOR-DATABASE.md)** - Complete vector database guide
 - **[Authentication Guide](../apps/api-gateway/docs/authentication-flow.md)** - Learn about auth
-- **[API Documentation](http://localhost:3000/api-docs)** - Explore the API
+- **[API Documentation](http://localhost:3000/docs)** - Explore the API
 
 ## Troubleshooting
 

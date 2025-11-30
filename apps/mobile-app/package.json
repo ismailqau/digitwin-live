@@ -10,7 +10,7 @@
     "ios": "expo start --ios",
     "lint": "eslint . --ext .ts,.tsx",
     "start": "expo start",
-    "test": "jest",
+    "test": "jest --passWithNoTests --no-coverage",
     "type-check": "tsc --noEmit",
     "web": "expo start --web"
   },

@@ -1,0 +1,63 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: 'Warm up'
+    - duration: 60
+      arrivalRate: 10
+      name: 'Sustained load'
+    - duration: 30
+      arrivalRate: 25
+      name: 'Peak load'
+    - duration: 30
+      arrivalRate: 5
+      name: 'Cool down'
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+  plugins:
+    expect: {}
+  ensure:
+    p95: 2500
+    maxErrorRate: 10
+
+scenarios:
+  - name: 'Health Check Flow'
+    weight: 40
+    flow:
+      - get:
+          url: '/health'
+          expect:
+            - statusCode: 200
+            - contentType: application/json
+            - hasProperty: status
+      - think: 1
+
+  - name: 'WebSocket Health Check'
+    weight: 20
+    flow:
+      - get:
+          url: 'http://localhost:3001/health'
+          expect:
+            - statusCode: 200
+      - think: 1
+
+  - name: 'API Endpoints'
+    weight: 40
+    flow:
+      - get:
+          url: '/api/v1/voice/models'
+          expect:
+            - statusCode: 401
+          capture:
+            - json: '$.error.code'
+              as: 'errorCode'
+      - think: 0.5
+      - get:
+          url: '/api/v1/documents'
+          headers:
+            Authorization: 'Bearer mock-token'
+          expect:
+            - statusCode: [200, 401]
+      - think: 1

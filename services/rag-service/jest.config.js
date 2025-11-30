@@ -6,12 +6,7 @@ module.exports = {
   displayName: 'rag-service',
   rootDir: '.',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  coveragePathIgnorePatterns: [
-    ...(baseConfig.coveragePathIgnorePatterns || []),
-    '/node_modules/',
-    '/dist/',
-    '/coverage/',
-  ],
+  coveragePathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/'],
   forceExit: true,
   detectOpenHandles: true,
 };

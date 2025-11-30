@@ -46,7 +46,7 @@ app.get('/health', (_req, res) => {
 
 // API Documentation
 app.use(
-  '/api-docs',
+  '/docs',
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, {
     explorer: true,
@@ -56,7 +56,7 @@ app.use(
 );
 
 // Serve OpenAPI spec as JSON
-app.get('/api-docs.json', (_req, res) => {
+app.get('/docs.json', (_req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
@@ -69,22 +69,25 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`API Gateway listening on port ${PORT}`);
-  console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-  console.log(`OpenAPI spec available at http://localhost:${PORT}/api-docs.json`);
+  console.log(`API Documentation available at http://localhost:${PORT}/docs`);
+  console.log(`OpenAPI spec available at http://localhost:${PORT}/docs.json`);
   console.log(`CORS origin: ${CORS_ORIGIN}`);
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
+const shutdown = (signal: string) => {
+  console.log(`[api-gateway] ${signal} received, shutting down...`);
+  server.close(() => {
+    console.log('[api-gateway] Server closed');
+    process.exit(0);
+  });
+  // Force exit after 3 seconds
+  setTimeout(() => process.exit(0), 3000);
+};
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 export default app;

@@ -43,7 +43,7 @@ Visual guide to all documentation in the DigitWin Live platform.
 │   └── docs/DOCUMENTATION-MAP.md           → Visual navigation (this file)
 │
 └── 🌐 API DOCUMENTATION
-    └── http://localhost:3000/api-docs      → OpenAPI docs (when running)
+    └── http://localhost:3000/docs      → OpenAPI docs (when running)
 ```
 
 ## 🎯 Navigation Paths

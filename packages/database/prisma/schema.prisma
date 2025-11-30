@@ -53,6 +53,26 @@ model User {
 }
 
 // ============================================================================
+// WebSocket Sessions
+// ============================================================================
+
+model WebSocketSession {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  connectionId        String   @unique @map("connection_id")
+  state               String   @default("idle")
+  conversationHistory Json     @default("[]") @map("conversation_history")
+  createdAt           DateTime @default(now()) @map("created_at")
+  lastActivityAt      DateTime @default(now()) @map("last_activity_at")
+  expiresAt           DateTime @map("expires_at")
+
+  @@index([userId])
+  @@index([connectionId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ============================================================================
 // Voice Models
 // ============================================================================
 

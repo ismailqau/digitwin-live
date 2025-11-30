@@ -1,3 +1,6 @@
+-- Enable pgvector extension for vector similarity search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -303,3 +306,10 @@ ALTER TABLE "document_chunks" ADD CONSTRAINT "document_chunks_document_id_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- Alter document_chunks embedding column to use pgvector type
+ALTER TABLE "document_chunks" ALTER COLUMN "embedding" TYPE vector(768) USING embedding::vector(768);
+
+-- Create vector similarity search index
+CREATE INDEX IF NOT EXISTS "document_chunks_embedding_idx" ON "document_chunks" USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);

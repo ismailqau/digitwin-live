@@ -1,9 +1,14 @@
 import 'reflect-metadata';
 import { createServer } from 'http';
+import { resolve } from 'path';
 
 import cors from 'cors';
+import { config } from 'dotenv';
 import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
+
+// Load environment variables from root .env file
+config({ path: resolve(__dirname, '../../../.env') });
 
 import { setupContainer, container } from './infrastructure/config/container';
 import logger from './infrastructure/logging/logger';
@@ -66,21 +71,19 @@ async function bootstrap() {
   });
 
   // Graceful shutdown
-  process.on('SIGTERM', () => {
-    logger.info('SIGTERM received, shutting down gracefully');
+  const shutdown = (signal: string) => {
+    logger.info(`[websocket-server] ${signal} received, shutting down...`);
+    io.close();
     httpServer.close(() => {
-      logger.info('Server closed');
+      logger.info('[websocket-server] Server closed');
       process.exit(0);
     });
-  });
+    // Force exit after 3 seconds
+    setTimeout(() => process.exit(0), 3000);
+  };
 
-  process.on('SIGINT', () => {
-    logger.info('SIGINT received, shutting down gracefully');
-    httpServer.close(() => {
-      logger.info('Server closed');
-      process.exit(0);
-    });
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 bootstrap().catch((error) => {

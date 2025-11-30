@@ -55,7 +55,7 @@ Quick reference for all documentation in the DigitWin Live platform.
 - **[Requirements](../.kiro/specs/real-time-digitwinlive/requirements.md)** - System requirements
 - **[Tasks](../.kiro/specs/real-time-digitwinlive/tasks.md)** - Implementation tasks
 - **[Scripts README](../scripts/README.md)** - Utility scripts
-- **[API Docs](http://localhost:3000/api-docs)** - OpenAPI (when running)
+- **[API Docs](http://localhost:3000/docs)** - OpenAPI (when running)
 
 ## ✨ Documentation Principles
 

@@ -22,31 +22,7 @@ export class PostgresSessionRepository implements ISessionRepository {
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
     });
-    this.initializeSchema();
-  }
-
-  private async initializeSchema(): Promise<void> {
-    const client = await this.pool.connect();
-    try {
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS sessions (
-          id UUID PRIMARY KEY,
-          user_id VARCHAR(255) NOT NULL,
-          connection_id VARCHAR(255) NOT NULL UNIQUE,
-          state VARCHAR(50) NOT NULL,
-          conversation_history JSONB DEFAULT '[]'::jsonb,
-          created_at TIMESTAMP DEFAULT NOW(),
-          last_activity_at TIMESTAMP DEFAULT NOW(),
-          expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '${this.SESSION_TTL_HOURS} hours'
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-        CREATE INDEX IF NOT EXISTS idx_sessions_connection_id ON sessions(connection_id);
-        CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
-      `);
-    } finally {
-      client.release();
-    }
+    // Schema is managed by Prisma migrations - see packages/database/prisma/schema.prisma
   }
 
   async create(userId: string, connectionId: string): Promise<Session> {

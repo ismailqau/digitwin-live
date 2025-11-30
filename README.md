@@ -247,7 +247,7 @@ The system follows a microservices architecture with the following key component
 - **[Code Quality Guide](./docs/CODE-QUALITY-GUIDE.md)** - Linting, testing, and best practices
 - **[Testing Guide](./docs/TESTING-GUIDE.md)** - Comprehensive testing guide
 - **[Scripts Documentation](./scripts/README.md)** - Utility scripts
-- **[API Documentation](http://localhost:3000/api-docs)** - OpenAPI docs (when running)
+- **[API Documentation](http://localhost:3000/docs)** - OpenAPI docs (when running)
 
 ### 🎤 Audio & Speech Processing
 

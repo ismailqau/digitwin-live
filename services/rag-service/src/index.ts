@@ -1,6 +1,12 @@
 // RAG Service - Retrieval-Augmented Generation pipeline
+import { resolve } from 'path';
+
 import { PrismaClient } from '@clone/database';
 import { logger } from '@clone/logger';
+import { config } from 'dotenv';
+
+// Load environment variables from root .env file
+config({ path: resolve(__dirname, '../../../.env') });
 
 import { CacheService } from './services/CacheService';
 import { ContextAssembler } from './services/ContextAssembler';
@@ -174,4 +180,13 @@ if (require.main === module) {
   }, 3600000); // 1 hour
 
   logger.info('RAG service started', { version: RAG_SERVICE_VERSION });
+
+  // Graceful shutdown
+  const shutdown = (signal: string) => {
+    logger.info(`[rag-service] ${signal} received, shutting down...`);
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }

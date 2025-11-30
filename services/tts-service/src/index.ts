@@ -78,6 +78,17 @@ export async function createTTSService(): Promise<{
   return { ttsService, cacheService };
 }
 
+// Graceful shutdown handlers (for standalone mode)
+if (require.main === module) {
+  const shutdown = (signal: string) => {
+    console.log(`${signal} received, shutting down gracefully`);
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
+
 // Health check function
 export async function healthCheck(): Promise<{
   status: 'healthy' | 'degraded' | 'unhealthy';

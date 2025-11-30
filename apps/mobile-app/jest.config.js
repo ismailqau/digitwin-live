@@ -25,4 +25,7 @@ module.exports = {
   testTimeout: 10000,
   forceExit: false,
   detectOpenHandles: false,
+  // Disable coverage collection to avoid babel-plugin-istanbul errors
+  collectCoverage: false,
+  collectCoverageFrom: [],
 };

@@ -340,7 +340,7 @@ curl -X POST http://localhost:3000/api/v1/auth/refresh \
 
 ### Using Postman
 
-1. Import the OpenAPI spec from `/api-docs.json`
+1. Import the OpenAPI spec from `/docs.json`
 2. Set up environment variables for tokens
 3. Use the "Bearer Token" auth type
 4. Configure automatic token refresh in pre-request scripts

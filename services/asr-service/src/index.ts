@@ -9,3 +9,14 @@ export { ASRErrorHandler, ASRError, ASRErrorCode } from './error-handler';
 export { AudioPreprocessingService, audioPreprocessing } from './audio-preprocessing';
 export * from './types';
 export * from './config';
+
+// Graceful shutdown handlers (for standalone mode)
+if (require.main === module) {
+  const shutdown = (signal: string) => {
+    console.log(`${signal} received, shutting down gracefully`);
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
