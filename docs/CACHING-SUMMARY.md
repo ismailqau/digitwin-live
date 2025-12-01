@@ -349,3 +349,329 @@ For DigitWin Live, this approach offers the best balance of performance, simplic
 - [Caching Architecture](./CACHING-ARCHITECTURE.md) - Detailed architecture
 - [Database Architecture](./DATABASE-ARCHITECTURE.md) - Database design
 - [PostgreSQL Performance Tuning](https://www.postgresql.org/docs/current/performance-tips.html)
+
+## @clone/cache-service Package
+
+### Overview
+
+The `@clone/cache-service` package provides a unified caching interface for all cache operations in DigitWin Live. It implements the PostgreSQL-based caching strategy with type-safe APIs and automatic cleanup.
+
+### Installation
+
+```bash
+pnpm add @clone/cache-service
+```
+
+### Usage
+
+```typescript
+import { CacheManager } from '@clone/cache-service';
+import { PrismaClient } from '@clone/database';
+
+const prisma = new PrismaClient();
+const cacheManager = new CacheManager(prisma);
+
+// Embedding cache
+const embedding = await cacheManager.embedding.get('What is AI?');
+if (!embedding) {
+  const newEmbedding = await generateEmbedding('What is AI?');
+  await cacheManager.embedding.set('What is AI?', { embedding: newEmbedding });
+}
+
+// LLM response cache
+const llmPrompt = {
+  prompt: 'Explain quantum computing',
+  context: 'User is a beginner',
+  provider: 'gemini-flash',
+};
+const cachedResponse = await cacheManager.llmResponse.get(llmPrompt);
+if (!cachedResponse) {
+  const response = await generateLLMResponse(llmPrompt);
+  await cacheManager.llmResponse.set(llmPrompt, {
+    response,
+    provider: 'gemini-flash',
+  });
+}
+
+// Vector search cache
+const searchQuery = {
+  embedding: [0.1, 0.2, ...],
+  topK: 5,
+  userId: 'user-123',
+};
+const cachedResults = await cacheManager.vectorSearch.get(searchQuery);
+
+// Audio chunk cache
+const audioKey = {
+  text: 'Hello world',
+  voiceModelId: 'voice-123',
+  provider: 'xtts-v2',
+};
+const cachedAudio = await cacheManager.audioChunk.get(audioKey);
+```
+
+### Cache Services
+
+#### EmbeddingCacheService
+
+Caches query embeddings to avoid redundant API calls.
+
+- **Default TTL**: 1 hour (CACHE_TTL_MEDIUM)
+- **Key**: SHA-256 hash of query text
+- **Table**: `embedding_cache`
+
+#### VectorSearchCacheService
+
+Caches vector search results to avoid redundant database queries.
+
+- **Default TTL**: 5 minutes (CACHE_TTL_SHORT)
+- **Key**: SHA-256 hash of query embedding + filters + userId
+- **Table**: `vector_search_cache`
+
+#### LLMResponseCacheService
+
+Caches LLM responses for FAQs and common queries.
+
+- **Default TTL**: 1 hour (CACHE_TTL_MEDIUM)
+- **Key**: SHA-256 hash of prompt + context + provider
+- **Table**: `llm_response_cache`
+- **Features**: Hit count tracking, top cached responses
+
+#### AudioChunkCacheService
+
+Caches TTS-generated audio chunks to avoid redundant synthesis.
+
+- **Default TTL**: 5 minutes (CACHE_TTL_SHORT)
+- **Key**: SHA-256 hash of text + voice model + provider + settings
+- **Table**: `audio_chunk_cache`
+- **Features**: LRU cleanup, cache statistics, storage path tracking
+
+### Automatic Cleanup
+
+Run cache cleanup regularly using the provided scripts:
+
+```bash
+# Clean up all expired cache entries
+pnpm cache:cleanup
+
+# View cache statistics
+pnpm cache:stats
+```
+
+Schedule cleanup with cron:
+
+```bash
+# Run every hour
+0 * * * * cd /path/to/project && pnpm cache:cleanup
+```
+
+### Cache Statistics
+
+Get detailed cache statistics:
+
+```typescript
+const stats = await cacheManager.getStats();
+console.log('Cache statistics:', stats);
+```
+
+Output:
+
+```
+=== Cache Statistics ===
+
+Embedding Cache:
+  Total Entries: 1234
+
+Vector Search Cache:
+  Total Entries: 567
+
+LLM Response Cache:
+  Total Entries: 890
+  Top Cached Responses:
+    1. Hash: a1b2c3d4e5f6g7h8... (45 hits, gemini-flash)
+    2. Hash: i9j0k1l2m3n4o5p6... (32 hits, gpt-4-turbo)
+
+Audio Chunk Cache:
+  Total Entries: 456
+  Total Size: 12.34 MB
+  Average Hit Count: 3.45
+  Most Accessed:
+    1. Hash: q7r8s9t0u1v2w3x4... (78 hits)
+    2. Hash: y5z6a7b8c9d0e1f2... (56 hits)
+
+Total Cache Entries: 3147
+```
+
+### Cache Warmup
+
+Pre-populate cache with frequently accessed data:
+
+```typescript
+await cacheManager.warmup({
+  embeddings: [
+    { queryText: 'What is AI?', embedding: [0.1, 0.2, ...] },
+    { queryText: 'How does ML work?', embedding: [0.3, 0.4, ...] },
+  ],
+  llmResponses: [
+    {
+      prompt: 'Explain AI',
+      provider: 'gemini-flash',
+      response: 'AI is...',
+    },
+  ],
+});
+```
+
+### User Cache Invalidation
+
+Invalidate all cache entries for a specific user:
+
+```typescript
+await cacheManager.invalidateUser('user-123');
+```
+
+### Package Documentation
+
+For detailed documentation, see:
+
+- [packages/cache-service/README.md](../packages/cache-service/README.md)
+- Package source: `packages/cache-service/src/`
+
+### Integration Examples
+
+#### RAG Service Integration
+
+```typescript
+import { CacheManager } from '@clone/cache-service';
+import { PrismaClient } from '@clone/database';
+
+export class RAGService {
+  private cacheManager: CacheManager;
+
+  constructor(prisma: PrismaClient) {
+    this.cacheManager = new CacheManager(prisma);
+  }
+
+  async embedQuery(queryText: string): Promise<number[]> {
+    // Try cache first
+    const cached = await this.cacheManager.embedding.get(queryText);
+    if (cached) {
+      return cached.embedding;
+    }
+
+    // Generate embedding
+    const embedding = await this.generateEmbedding(queryText);
+
+    // Store in cache
+    await this.cacheManager.embedding.set(queryText, { embedding });
+
+    return embedding;
+  }
+
+  async searchVectors(query: VectorSearchQuery): Promise<SearchResult[]> {
+    // Try cache first
+    const cached = await this.cacheManager.vectorSearch.get(query);
+    if (cached) {
+      return cached.results;
+    }
+
+    // Perform search
+    const results = await this.performVectorSearch(query);
+
+    // Store in cache
+    await this.cacheManager.vectorSearch.set(query, { results });
+
+    return results;
+  }
+}
+```
+
+#### LLM Service Integration
+
+```typescript
+import { CacheManager } from '@clone/cache-service';
+import { PrismaClient } from '@clone/database';
+
+export class LLMService {
+  private cacheManager: CacheManager;
+
+  constructor(prisma: PrismaClient) {
+    this.cacheManager = new CacheManager(prisma);
+  }
+
+  async generateResponse(llmPrompt: LLMPrompt): Promise<string> {
+    // Try cache first
+    const cached = await this.cacheManager.llmResponse.get(llmPrompt);
+    if (cached) {
+      return cached.response;
+    }
+
+    // Generate response
+    const response = await this.callLLM(llmPrompt);
+
+    // Store in cache
+    await this.cacheManager.llmResponse.set(llmPrompt, {
+      response,
+      provider: llmPrompt.provider,
+    });
+
+    return response;
+  }
+}
+```
+
+#### TTS Service Integration
+
+```typescript
+import { CacheManager } from '@clone/cache-service';
+import { PrismaClient } from '@clone/database';
+
+export class TTSService {
+  private cacheManager: CacheManager;
+
+  constructor(prisma: PrismaClient) {
+    this.cacheManager = new CacheManager(prisma);
+  }
+
+  async synthesize(audioKey: AudioChunkKey): Promise<Buffer> {
+    // Try cache first
+    const cached = await this.cacheManager.audioChunk.get(audioKey);
+    if (cached) {
+      return cached.audioData;
+    }
+
+    // Synthesize audio
+    const audioData = await this.synthesizeAudio(audioKey);
+
+    // Store in cache
+    await this.cacheManager.audioChunk.set(audioKey, {
+      audioData,
+      format: 'opus',
+      durationMs: 1000,
+      sampleRate: 16000,
+      channels: 1,
+      compression: 'opus',
+    });
+
+    return audioData;
+  }
+}
+```
+
+### Best Practices with @clone/cache-service
+
+1. **Always check cache first**: Implement cache-aside pattern
+2. **Use appropriate TTLs**: Short for dynamic data, long for static data
+3. **Handle cache misses gracefully**: Always have a fallback
+4. **Monitor cache hit rates**: Aim for >70% hit rate
+5. **Run cleanup regularly**: Schedule hourly cleanup jobs
+6. **Warm up cache on startup**: Pre-populate frequently accessed data
+7. **Invalidate on updates**: Clear cache when underlying data changes
+
+### Performance Tips
+
+1. **Batch operations**: Use Promise.all() for multiple cache operations
+2. **Use connection pooling**: Configure Prisma connection pool
+3. **Monitor query performance**: Use PostgreSQL EXPLAIN ANALYZE
+4. **Index optimization**: Ensure proper indexes on cache tables
+5. **Cleanup scheduling**: Run cleanup during low-traffic periods

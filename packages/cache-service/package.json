@@ -1,0 +1,23 @@
+{
+  "name": "@clone/cache-service",
+  "version": "1.0.0",
+  "description": "PostgreSQL-based caching service for Real-Time Conversational Clone System",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "eslint . --ext .ts",
+    "test": "jest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clone/database": "workspace:*",
+    "@clone/logger": "workspace:*",
+    "@clone/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "typescript": "^5.9.3"
+  }
+}

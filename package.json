@@ -11,6 +11,8 @@
   "scripts": {
     "audit:check": "pnpm audit --audit-level=moderate",
     "build": "turbo run build",
+    "cache:cleanup": "ts-node scripts/cache-cleanup.ts",
+    "cache:stats": "ts-node scripts/cache-stats.ts",
     "clean": "turbo run clean && rimraf node_modules",
     "complexity:check": "npx madge --circular --extensions ts,tsx .",
     "coverage:check": "pnpm test:coverage && npx nyc check-coverage --lines 80",
@@ -124,7 +126,20 @@
       "rimraf@<4": ">=6.0.0",
       "shelljs>glob": "11.1.0",
       "swagger-jsdoc>glob": "11.1.0",
-      "tar@7.5.1": ">=7.5.2"
+      "tar@7.5.1": ">=7.5.2",
+      "@babel/plugin-proposal-async-generator-functions": ">=7.20.7",
+      "@babel/plugin-proposal-class-properties": ">=7.18.6",
+      "@babel/plugin-proposal-nullish-coalescing-operator": ">=7.18.6",
+      "@babel/plugin-proposal-numeric-separator": ">=7.18.6",
+      "@babel/plugin-proposal-object-rest-spread": ">=7.20.7",
+      "@babel/plugin-proposal-optional-catch-binding": ">=7.18.6",
+      "@babel/plugin-proposal-optional-chaining": ">=7.21.0",
+      "abab": ">=2.0.6",
+      "are-we-there-yet": ">=4.0.0",
+      "domexception": ">=4.0.0",
+      "flatten": ">=1.0.3",
+      "gauge": ">=5.0.0",
+      "npmlog": ">=7.0.0"
     }
   }
 }

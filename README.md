@@ -206,6 +206,7 @@ The system follows a microservices architecture with the following key component
 - **[Tool Installation](./docs/TOOL-INSTALLATION.md)** - Install Node.js, PostgreSQL, etc.
 - **[Environment Setup](./docs/ENVIRONMENT-SETUP.md)** - Complete configuration guide
 - **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Known Issues](./docs/KNOWN-ISSUES.md)** - Deprecated dependencies and workarounds
 
 ### ☁️ GCP & Infrastructure
 
