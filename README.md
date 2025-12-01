@@ -232,6 +232,7 @@ The system follows a microservices architecture with the following key component
 ### 🏗️ Architecture
 
 - **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - System design
+- **[Conversation Flow Orchestration](./docs/CONVERSATION-FLOW-ORCHESTRATION.md)** - End-to-end pipeline coordination (Audio → ASR → RAG → LLM → TTS → Lip-sync)
 - **[Conversation State Management](./docs/CONVERSATION-STATE-MANAGEMENT.md)** - State machine, session management, and WebSocket events
 - **[Interruption Handling](./docs/INTERRUPTION-HANDLING.md)** - Natural conversation interruptions with VAD-based detection
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus

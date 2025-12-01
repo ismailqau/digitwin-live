@@ -3,6 +3,8 @@ import { container } from 'tsyringe';
 
 import { AuthService } from '../../application/services/AuthService';
 import { ConnectionService } from '../../application/services/ConnectionService';
+import { ConversationOrchestrator } from '../../application/services/ConversationOrchestrator';
+import { ConversationSessionService } from '../../application/services/ConversationSessionService';
 import { MessageRouterService } from '../../application/services/MessageRouterService';
 import { SessionService } from '../../application/services/SessionService';
 import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
@@ -18,6 +20,8 @@ export function setupContainer(): void {
   // Register services
   container.registerSingleton(SessionService);
   container.registerSingleton(ConnectionService);
+  container.registerSingleton(ConversationSessionService);
+  container.registerSingleton(ConversationOrchestrator);
   container.registerSingleton(MessageRouterService);
   container.registerSingleton(AuthService);
 

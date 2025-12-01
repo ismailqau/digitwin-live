@@ -59,12 +59,13 @@ Complete documentation for the DigitWin Live platform.
 
 ### 🏗️ Architecture
 
-| Document                                                                   | Description                              |
-| -------------------------------------------------------------------------- | ---------------------------------------- |
-| [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) | Complete system design                   |
-| [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)                | Event bus and event sourcing             |
-| [CQRS Architecture](./CQRS-ARCHITECTURE.md)                                | Command Query Responsibility Segregation |
-| [Microservices Communication](./microservices-communication.md)            | gRPC and service discovery               |
+| Document                                                                   | Description                                                                 |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) | Complete system design                                                      |
+| [Conversation Flow Orchestration](./CONVERSATION-FLOW-ORCHESTRATION.md)    | End-to-end pipeline coordination (Audio → ASR → RAG → LLM → TTS → Lip-sync) |
+| [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)                | Event bus and event sourcing                                                |
+| [CQRS Architecture](./CQRS-ARCHITECTURE.md)                                | Command Query Responsibility Segregation                                    |
+| [Microservices Communication](./microservices-communication.md)            | gRPC and service discovery                                                  |
 
 ### 🛠️ Development & Quality
 
@@ -168,9 +169,10 @@ Complete documentation for the DigitWin Live platform.
 ### "I want to understand the architecture"
 
 1. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
-2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
-3. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
-4. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
+2. [Conversation Flow Orchestration](./CONVERSATION-FLOW-ORCHESTRATION.md) - Pipeline coordination
+3. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
+4. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
+5. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
 
 ### "I want to set up voice synthesis"
 

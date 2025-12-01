@@ -2,26 +2,29 @@ import {
   ConversationState,
   ConversationInterruptedMessage,
   InterruptionMessage,
+  AudioChunkMessage,
 } from '@clone/shared-types';
 import { injectable, inject } from 'tsyringe';
 
 import { ClientMessage, ServerMessage, ErrorMessage } from '../../domain/models/Message';
 
 import { ConnectionService } from './ConnectionService';
+import { ConversationOrchestrator } from './ConversationOrchestrator';
 import { SessionService } from './SessionService';
 
 @injectable()
 export class MessageRouterService {
   constructor(
     @inject(ConnectionService) private connectionService: ConnectionService,
-    @inject(SessionService) private sessionService: SessionService
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(ConversationOrchestrator) private orchestrator: ConversationOrchestrator
   ) {}
 
   async routeClientMessage(sessionId: string, message: ClientMessage): Promise<void> {
     try {
       switch (message.type) {
         case 'audio_chunk':
-          await this.handleAudioChunk(sessionId, message);
+          await this.handleAudioChunk(sessionId, message as AudioChunkMessage);
           break;
         case 'interruption':
           await this.handleInterruption(sessionId, message);
@@ -37,15 +40,15 @@ export class MessageRouterService {
     }
   }
 
-  private async handleAudioChunk(sessionId: string, _message: ClientMessage): Promise<void> {
+  private async handleAudioChunk(sessionId: string, message: AudioChunkMessage): Promise<void> {
     // Update session state to listening if idle
     const session = await this.sessionService.getSession(sessionId);
     if (session?.state === ConversationState.IDLE) {
       await this.sessionService.updateSessionState(sessionId, ConversationState.LISTENING);
     }
 
-    // TODO: Forward to ASR service
-    console.log(`Received audio chunk for session ${sessionId}`);
+    // Forward to orchestrator for pipeline processing
+    await this.orchestrator.handleAudioChunk(sessionId, message);
   }
 
   private async handleInterruption(sessionId: string, message: ClientMessage): Promise<void> {
@@ -67,10 +70,8 @@ export class MessageRouterService {
       turnIndex: interruptionMsg.turnIndex,
     });
 
-    // TODO: Cancel ongoing LLM streaming request
-    // TODO: Cancel ongoing TTS generation jobs
-    // TODO: Cancel ongoing lip-sync generation jobs
-    // TODO: Clear response buffers and queues
+    // Cancel active turn in orchestrator
+    await this.orchestrator.cancelTurn(sessionId);
 
     console.log(
       `Interruption received for session ${sessionId}, turn ${interruptionMsg.turnIndex}`
@@ -94,8 +95,8 @@ export class MessageRouterService {
   private async handleEndUtterance(sessionId: string, _message: ClientMessage): Promise<void> {
     await this.sessionService.updateSessionState(sessionId, ConversationState.PROCESSING);
 
-    // TODO: Signal ASR service to finalize transcript
-    console.log(`End utterance for session ${sessionId}`);
+    // Signal orchestrator to finalize ASR
+    await this.orchestrator.handleEndUtterance(sessionId);
   }
 
   sendToClient(sessionId: string, message: ServerMessage): void {
