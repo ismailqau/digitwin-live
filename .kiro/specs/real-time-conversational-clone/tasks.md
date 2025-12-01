@@ -1300,66 +1300,103 @@ idle → listening → processing → speaking → idle
 
 ## Phase 11: Error Handling and Security
 
-- [ ] 11. Implement error handling and recovery
+### 📝 Implementation Notes
+
+- ✅ Data encryption at rest already configured (Cloud Storage, Cloud SQL)
+- ✅ TLS configuration already in place for all connections
+- ✅ Audit logging model already exists in Prisma schema
+- ✅ RateLimit model already exists in Prisma schema
+- Focus on requirements 10, 11, 12, 13 - all are essential for production
+
+### 🎯 Implementation Order (Prioritized)
+
+1. **Task 11** - Health checks (foundational for monitoring)
+2. **Task 11.1** - Error handling (critical for user experience)
+3. **Task 11.2** - Rate limiting (important for cost control)
+4. **Task 11.3** - Content safety (required for production safety)
+5. **Task 11.4** - Security audit (final validation)
+   - [x] 11. Implement health checks and monitoring
+
+- Create health check endpoints for all services:
+  - GET /health - Basic liveness check
+  - GET /health/ready - Readiness check (dependencies available)
+- Implement component health status tracking
+- Create liveness and readiness probes for Cloud Run deployment
+- Implement dependency health checks:
+  - Database connectivity
+  - External API availability (ASR, LLM, TTS)
+  - Storage bucket access
+- Return health status: { status: 'healthy' | 'degraded' | 'unhealthy', components: {...} }
+- _Requirements: 11_
+- Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 11.1 Implement error handling and recovery
   - Create centralized error handler middleware in API Gateway and WebSocket Server
-  - Implement error categorization (client, server, external)
+  - Implement error categorization (client 4xx, server 5xx, external service errors)
   - Create custom error classes with error codes in @clone/errors package
-  - Implement retry logic with exponential backoff
-  - Create fallback strategies for each service failure
-  - Implement circuit breaker pattern for external APIs
-  - Create user-friendly error messages and recovery flows
-  - Implement error serialization for API responses
-  - Create error tracking and aggregation
+  - Implement user-friendly error messages for common scenarios:
+    - ASR failure: "Could not understand audio. Please try again."
+    - Knowledge base empty: "Please upload documents to your knowledge base first."
+    - GPU unavailable: "Processing queue is full. Estimated wait: X minutes."
+    - Service timeout: "Request took too long. Please try again."
+  - Create error serialization for API responses (consistent format)
+  - Implement WebSocket error messages (sent within 1000ms of failure)
+  - Create retry option for ASR failures in mobile app
+  - Implement fallback strategies for service failures (already in Phase 9.2)
   - _Requirements: 13_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 11.1 Implement API validation and sanitization
+- [ ] 11.2 Implement rate limiting and usage controls
+  - ✅ RateLimit model already exists in Prisma schema
+  - Create rate limiting service using PostgreSQL rate_limits table
+  - Implement per-user rate limits based on subscription tier:
+    - Free tier: 60 minutes conversation per day, 100 API requests per hour
+    - Pro tier: unlimited conversation, 1000 API requests per hour
+  - Create rate limit enforcement middleware for API Gateway
+  - Implement graceful degradation when rate limit exceeded:
+    - Return 429 status with Retry-After header
+    - Display user-friendly message with upgrade option
+  - Use PostgreSQL for rate limiting storage (sliding window algorithm)
+  - Track usage per user for billing and analytics
+  - _Requirements: 12_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 11.3 Implement API validation and content safety
   - Create request validation using Zod schemas in @clone/validation package
-  - Implement input sanitization to prevent injection attacks
-  - Create DTO validation with class-validator
-  - Implement file upload validation (size, type, content)
-  - Create business rule validation
-  - Implement cross-field validation
+  - Implement input sanitization to prevent injection attacks (XSS, SQL injection)
+  - Implement file upload validation:
+    - Size limits: max 50MB per file
+    - Type validation: PDF, DOCX, TXT, HTML, Markdown only
+    - Content validation: scan for malicious content
+  - Implement content safety filtering:
+    - Filter inappropriate content in user input before processing
+    - Filter LLM responses before synthesis
+    - Reject queries with inappropriate content (send policy message)
+    - Log flagged content for review (maintain user privacy)
   - Create validation error formatting for API responses
   - _Requirements: 12, 13_
+  - _Note: Content filtering can use simple keyword lists initially, Perspective API optional_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 11.2 Implement health checks and monitoring
-  - Create health check endpoints for all services (/health, /health/live, /health/ready)
-  - Implement component health status tracking
-  - Create liveness and readiness probes for Kubernetes
-  - Implement deep health checks for dependencies (database, external APIs)
-  - _Requirements: 11_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 11.3 Implement security and privacy features
-  - ✅ Data encryption at rest already configured (Cloud Storage, Cloud SQL)
-  - ✅ TLS configuration already in place for all connections
-  - Implement user data isolation and access controls (row-level security)
-  - Create data retention policies and cleanup jobs
-  - ✅ Audit logging model already exists in Prisma schema
-  - Implement audit logging for sensitive operations
+- [ ] 11.4 Implement security and access controls
+  - ✅ Data encryption at rest already configured
+  - ✅ TLS configuration already in place
+  - Implement user data isolation:
+    - Ensure all queries filter by userId
+    - Validate user owns resources before access
+    - Prevent cross-user data leakage
+  - Implement audit logging for sensitive operations:
+    - User authentication events
+    - Document uploads/deletions
+    - Voice/face model creation
+    - Rate limit violations
+    - Content policy violations
+  - Create data retention policies:
+    - Conversation history: 30 days (configurable per user)
+    - Cached data: TTL-based expiration
+    - Audit logs: 90 days
+  - Implement cleanup jobs for expired data
   - _Requirements: 10, 12_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 11.4 Implement content safety and filtering
-  - Integrate Perspective API for toxicity detection
-  - Create content filtering for user input and LLM output
-  - Implement inappropriate content blocking
-  - Create user reporting mechanism
-  - _Requirements: 12_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 11.5 Implement rate limiting
-  - ✅ RateLimit model already exists in Prisma schema
-  - Create rate limiting service with PostgreSQL indexed rate_limits table
-  - Implement per-user rate limits based on subscription tier
-  - Create rate limit enforcement middleware
-  - Implement graceful degradation on rate limit exceeded
-  - Use PostgreSQL for rate limiting storage (NOT Redis)
-  - Implement sliding window algorithm using PostgreSQL
-  - _Requirements: 12_
-  - _Note: Use PostgreSQL for rate limiting, consistent with caching architecture_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 12: Monitoring and Observability

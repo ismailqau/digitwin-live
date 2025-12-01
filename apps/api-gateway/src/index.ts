@@ -12,6 +12,7 @@ import { paginationMiddleware } from './middleware/pagination.middleware';
 import { apiLimiter } from './middleware/rateLimit.middleware';
 import { correlationIdMiddleware, requestLogger } from './middleware/requestLogger.middleware';
 import v1Routes from './routes/v1';
+import { getHealthService } from './services/health.service';
 
 const PORT = process.env.PORT || 3000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
@@ -47,14 +48,53 @@ app.use(fieldFilteringMiddleware); // Field filtering for partial responses
 // Rate limiting
 app.use('/api', apiLimiter);
 
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'healthy',
-    service: 'api-gateway',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-  });
+// Health check endpoints
+const healthService = getHealthService();
+
+// Basic liveness check - is the service running?
+app.get('/health', async (_req, res) => {
+  try {
+    const health = await healthService.getHealthCheck();
+    const statusCode = health.status === 'healthy' ? 200 : health.status === 'degraded' ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch {
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'api-gateway',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed',
+    });
+  }
+});
+
+// Readiness check - is the service ready to accept traffic?
+app.get('/health/ready', async (_req, res) => {
+  try {
+    const readiness = await healthService.getReadinessCheck();
+    const statusCode = readiness.ready ? 200 : 503;
+    res.status(statusCode).json(readiness);
+  } catch {
+    res.status(503).json({
+      ready: false,
+      service: 'api-gateway',
+      timestamp: new Date().toISOString(),
+      error: 'Readiness check failed',
+    });
+  }
+});
+
+// Liveness check - minimal check for Cloud Run probes
+app.get('/health/live', async (_req, res) => {
+  try {
+    const liveness = await healthService.getLivenessCheck();
+    res.status(200).json(liveness);
+  } catch {
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'api-gateway',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // API Documentation

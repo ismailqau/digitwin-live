@@ -10,6 +10,7 @@ import { Server as SocketIOServer } from 'socket.io';
 // Load environment variables from root .env file
 config({ path: resolve(__dirname, '../../../.env') });
 
+import { getHealthService } from './application/services/health.service';
 import { setupContainer, container } from './infrastructure/config/container';
 import logger from './infrastructure/logging/logger';
 import { WebSocketController } from './presentation/controllers/WebSocketController';
@@ -33,13 +34,54 @@ async function bootstrap() {
   );
   app.use(express.json());
 
-  // Health check endpoint
-  app.get('/health', (_req, res) => {
-    res.json({
-      status: 'healthy',
-      service: 'websocket-server',
-      timestamp: new Date().toISOString(),
-    });
+  // Health check endpoints
+  const healthService = getHealthService();
+
+  // Full health check with dependency status
+  app.get('/health', async (_req, res) => {
+    try {
+      const health = await healthService.getHealthCheck();
+      const statusCode =
+        health.status === 'healthy' ? 200 : health.status === 'degraded' ? 200 : 503;
+      res.status(statusCode).json(health);
+    } catch {
+      res.status(503).json({
+        status: 'unhealthy',
+        service: 'websocket-server',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
+      });
+    }
+  });
+
+  // Readiness check - is the service ready to accept traffic?
+  app.get('/health/ready', async (_req, res) => {
+    try {
+      const readiness = await healthService.getReadinessCheck();
+      const statusCode = readiness.ready ? 200 : 503;
+      res.status(statusCode).json(readiness);
+    } catch {
+      res.status(503).json({
+        ready: false,
+        service: 'websocket-server',
+        timestamp: new Date().toISOString(),
+        error: 'Readiness check failed',
+      });
+    }
+  });
+
+  // Liveness check - minimal check for Cloud Run probes
+  app.get('/health/live', async (_req, res) => {
+    try {
+      const liveness = await healthService.getLivenessCheck();
+      res.status(200).json(liveness);
+    } catch {
+      res.status(503).json({
+        status: 'unhealthy',
+        service: 'websocket-server',
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
   // Create HTTP server
@@ -59,9 +101,15 @@ async function bootstrap() {
   // Get WebSocket controller from DI container
   const wsController = container.resolve(WebSocketController);
 
-  // Handle WebSocket connections
+  // Handle WebSocket connections and track connection count
   io.on('connection', (socket) => {
     wsController.handleConnection(socket);
+    // Update health service with connection count
+    healthService.setActiveConnections(io.engine.clientsCount);
+
+    socket.on('disconnect', () => {
+      healthService.setActiveConnections(io.engine.clientsCount);
+    });
   });
 
   // Start server

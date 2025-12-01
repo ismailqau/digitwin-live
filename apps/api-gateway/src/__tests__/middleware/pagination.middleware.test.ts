@@ -6,8 +6,20 @@ import { Request, Response, NextFunction } from 'express';
 
 import { paginationMiddleware } from '../../middleware/pagination.middleware';
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  offset: number;
+  sortOrder?: string;
+  sortBy?: string;
+}
+
+interface RequestWithPagination extends Request {
+  pagination?: PaginationInfo;
+}
+
 describe('Pagination Middleware', () => {
-  let mockReq: Partial<Request>;
+  let mockReq: Partial<RequestWithPagination>;
   let mockRes: Partial<Response>;
   let mockNext: NextFunction;
 
@@ -28,7 +40,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination).toEqual({
+    expect(mockReq.pagination).toEqual({
       page: 2,
       limit: 20,
       offset: 20,
@@ -42,7 +54,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination).toEqual({
+    expect(mockReq.pagination).toEqual({
       page: 1,
       limit: 20,
       offset: 0,
@@ -56,7 +68,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination.page).toBe(1);
+    expect(mockReq.pagination?.page).toBe(1);
     expect(mockNext).toHaveBeenCalled();
   });
 
@@ -65,7 +77,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination.limit).toBe(20);
+    expect(mockReq.pagination?.limit).toBe(20);
     expect(mockNext).toHaveBeenCalled();
   });
 
@@ -74,7 +86,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination.limit).toBeLessThanOrEqual(100);
+    expect(mockReq.pagination?.limit).toBeLessThanOrEqual(100);
     expect(mockNext).toHaveBeenCalled();
   });
 
@@ -83,7 +95,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination.page).toBeGreaterThanOrEqual(1);
+    expect(mockReq.pagination?.page).toBeGreaterThanOrEqual(1);
     expect(mockNext).toHaveBeenCalled();
   });
 
@@ -102,7 +114,7 @@ describe('Pagination Middleware', () => {
 
       paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect((mockReq as any).pagination.offset).toBe(expectedOffset);
+      expect(mockReq.pagination?.offset).toBe(expectedOffset);
     });
   });
 
@@ -116,7 +128,7 @@ describe('Pagination Middleware', () => {
 
     paginationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
-    expect((mockReq as any).pagination).toMatchObject({
+    expect(mockReq.pagination).toMatchObject({
       page: 1,
       limit: 10,
       offset: 0,

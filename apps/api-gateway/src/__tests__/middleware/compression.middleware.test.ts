@@ -19,7 +19,7 @@ describe('Compression Middleware', () => {
           return 'gzip, deflate, br';
         }
         return undefined;
-      }) as any,
+      }) as Request['get'],
     };
 
     mockRes = {
@@ -51,7 +51,7 @@ describe('Compression Middleware', () => {
         return 'gzip';
       }
       return undefined;
-    }) as any;
+    }) as Request['get'];
 
     compressionMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
@@ -64,7 +64,7 @@ describe('Compression Middleware', () => {
         return 'br';
       }
       return undefined;
-    }) as any;
+    }) as Request['get'];
 
     compressionMiddleware(mockReq as Request, mockRes as Response, mockNext);
 

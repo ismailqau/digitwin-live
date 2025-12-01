@@ -7,3 +7,4 @@ export * from './face';
 export * from './messages';
 export * from './ai-providers';
 export * from './errors';
+export * from './health';
