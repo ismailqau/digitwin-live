@@ -15,7 +15,7 @@ interface AuditLogData {
   result: 'success' | 'failure';
   ipAddress?: string;
   userAgent?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -31,7 +31,7 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
         result: data.result,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
-        metadata: data.metadata || {},
+        metadata: (data.metadata || {}) as Record<string, never>,
       },
     });
   } catch (error) {

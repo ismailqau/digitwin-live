@@ -9,7 +9,10 @@ import { BaseRepository } from './BaseRepository';
 export class VoiceModelRepository implements BaseRepository<VoiceModel> {
   constructor(private prisma: PrismaClient) {}
 
-  private buildWhereClause(where: any = {}, includeDeleted = false): any {
+  private buildWhereClause(
+    where: Prisma.VoiceModelWhereInput = {},
+    includeDeleted = false
+  ): Prisma.VoiceModelWhereInput {
     if (includeDeleted) {
       return where;
     }
@@ -25,14 +28,20 @@ export class VoiceModelRepository implements BaseRepository<VoiceModel> {
     });
   }
 
-  async findMany(where: any = {}, includeDeleted = false): Promise<VoiceModel[]> {
+  async findMany(
+    where: Prisma.VoiceModelWhereInput = {},
+    includeDeleted = false
+  ): Promise<VoiceModel[]> {
     return this.prisma.voiceModel.findMany({
       where: this.buildWhereClause(where, includeDeleted),
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(where: any, includeDeleted = false): Promise<VoiceModel | null> {
+  async findOne(
+    where: Prisma.VoiceModelWhereInput,
+    includeDeleted = false
+  ): Promise<VoiceModel | null> {
     return this.prisma.voiceModel.findFirst({
       where: this.buildWhereClause(where, includeDeleted),
     });
@@ -80,13 +89,13 @@ export class VoiceModelRepository implements BaseRepository<VoiceModel> {
     });
   }
 
-  async count(where: any = {}, includeDeleted = false): Promise<number> {
+  async count(where: Prisma.VoiceModelWhereInput = {}, includeDeleted = false): Promise<number> {
     return this.prisma.voiceModel.count({
       where: this.buildWhereClause(where, includeDeleted),
     });
   }
 
-  async exists(where: any, includeDeleted = false): Promise<boolean> {
+  async exists(where: Prisma.VoiceModelWhereInput, includeDeleted = false): Promise<boolean> {
     const count = await this.count(where, includeDeleted);
     return count > 0;
   }

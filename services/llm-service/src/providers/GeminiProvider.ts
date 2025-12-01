@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Gemini Provider Implementation
  * Integrates with Google Vertex AI Gemini models

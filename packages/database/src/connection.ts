@@ -89,9 +89,17 @@ export class DatabaseConnection {
 }
 
 /**
+ * Prisma error with code
+ */
+interface PrismaErrorWithCode extends Error {
+  code?: string;
+  meta?: Record<string, unknown>;
+}
+
+/**
  * Global error handler for Prisma
  */
-export function handlePrismaError(error: any): Error {
+export function handlePrismaError(error: PrismaErrorWithCode): Error {
   if (error.code === 'P2002') {
     return new Error('Unique constraint violation');
   }

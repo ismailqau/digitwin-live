@@ -1,4 +1,4 @@
-import { PrismaClient, AuditLog } from '@prisma/client';
+import { PrismaClient, AuditLog, Prisma } from '@prisma/client';
 
 import { PaginatedResult, PaginationOptions } from './BaseRepository';
 
@@ -19,7 +19,7 @@ export class AuditLogRepository {
     result: 'success' | 'failure';
     ipAddress?: string;
     userAgent?: string;
-    metadata?: any;
+    metadata?: Prisma.JsonValue;
   }): Promise<AuditLog> {
     return this.prisma.auditLog.create({
       data: {
@@ -94,7 +94,7 @@ export class AuditLogRepository {
     userId?: string,
     options?: PaginationOptions
   ): Promise<PaginatedResult<AuditLog> | AuditLog[]> {
-    const where: any = {
+    const where: Prisma.AuditLogWhereInput = {
       result: 'failure',
     };
 
@@ -116,7 +116,7 @@ export class AuditLogRepository {
    * Find with pagination
    */
   async findWithPagination(
-    where: any = {},
+    where: Prisma.AuditLogWhereInput = {},
     options: PaginationOptions
   ): Promise<PaginatedResult<AuditLog>> {
     const { page, pageSize, orderBy = { timestamp: 'desc' } } = options;

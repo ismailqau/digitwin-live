@@ -89,18 +89,21 @@ export class AnalyticsService {
         });
 
         if (document) {
-          const metadata = (document.metadata as any) || {};
-          const analytics = metadata.analytics || {
-            referenceCount: 0,
-            totalRelevanceScore: 0,
-            lastReferenced: null,
-          };
+          const metadata = (document.metadata as Record<string, unknown>) || {};
+          const analytics = (metadata.analytics as Record<string, unknown>) || {};
 
-          analytics.referenceCount = (analytics.referenceCount || 0) + 1;
-          analytics.totalRelevanceScore = (analytics.totalRelevanceScore || 0) + relevanceScore;
+          const referenceCount =
+            typeof analytics.referenceCount === 'number' ? analytics.referenceCount : 0;
+          const totalRelevanceScore =
+            typeof analytics.totalRelevanceScore === 'number' ? analytics.totalRelevanceScore : 0;
+
+          const newReferenceCount = referenceCount + 1;
+          const newTotalRelevanceScore = totalRelevanceScore + relevanceScore;
+
+          analytics.referenceCount = newReferenceCount;
+          analytics.totalRelevanceScore = newTotalRelevanceScore;
           analytics.lastReferenced = new Date();
-          analytics.averageRelevanceScore =
-            analytics.totalRelevanceScore / analytics.referenceCount;
+          analytics.averageRelevanceScore = newTotalRelevanceScore / newReferenceCount;
 
           await prisma.knowledgeDocument.update({
             where: { id: documentId },
@@ -108,7 +111,7 @@ export class AnalyticsService {
               metadata: {
                 ...metadata,
                 analytics,
-              },
+              } as unknown as Record<string, never>,
             },
           });
         }
@@ -169,15 +172,37 @@ export class AnalyticsService {
 
       const mostReferencedDocuments: DocumentAnalytics[] = documents
         .map((doc) => {
-          const analytics = (doc.metadata as any)?.analytics || {};
+          const analytics =
+            ((doc.metadata as Record<string, unknown>)?.analytics as Record<string, unknown>) || {};
+          const referenceCount =
+            typeof analytics.referenceCount === 'number' ? analytics.referenceCount : 0;
+          const averageRelevanceScore =
+            typeof analytics.averageRelevanceScore === 'number'
+              ? analytics.averageRelevanceScore
+              : 0;
+          const uniqueQueries =
+            typeof analytics.uniqueQueries === 'number' ? analytics.uniqueQueries : 0;
+
+          let lastReferenced: Date | null = null;
+          if (analytics.lastReferenced) {
+            if (analytics.lastReferenced instanceof Date) {
+              lastReferenced = analytics.lastReferenced;
+            } else if (
+              typeof analytics.lastReferenced === 'string' ||
+              typeof analytics.lastReferenced === 'number'
+            ) {
+              lastReferenced = new Date(analytics.lastReferenced);
+            }
+          }
+
           return {
             documentId: doc.id,
             documentTitle: doc.title || doc.filename,
             filename: doc.filename,
-            referenceCount: analytics.referenceCount || 0,
-            lastReferenced: analytics.lastReferenced ? new Date(analytics.lastReferenced) : null,
-            averageRelevanceScore: analytics.averageRelevanceScore || 0,
-            uniqueQueries: analytics.uniqueQueries || 0,
+            referenceCount,
+            lastReferenced,
+            averageRelevanceScore,
+            uniqueQueries,
           };
         })
         .filter((doc) => doc.referenceCount > 0)

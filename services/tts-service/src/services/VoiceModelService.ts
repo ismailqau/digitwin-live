@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient, VoiceModel } from '@clone/database';
 import { logger } from '@clone/logger';
 import { TTSProvider } from '@clone/shared-types';

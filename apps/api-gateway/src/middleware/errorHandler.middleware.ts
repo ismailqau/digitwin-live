@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 export interface ApiError extends Error {
   statusCode?: number;
   code?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details?: any;
 }
 

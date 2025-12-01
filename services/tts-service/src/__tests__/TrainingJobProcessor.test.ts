@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TTSProvider } from '@clone/shared-types';
 
 import { TrainingJobProcessor } from '../services/TrainingJobProcessor';

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Groq Provider Implementation
  * Integrates with Groq Llama models for fast inference

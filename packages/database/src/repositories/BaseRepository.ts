@@ -1,8 +1,9 @@
 /**
  * Base Repository Interface
  * Provides common CRUD operations with soft delete support
+ * Note: create/update methods use 'unknown' to avoid conflicts with Prisma's complex types
  */
-export interface BaseRepository<T> {
+export interface BaseRepository<T, WhereInput = Record<string, unknown>> {
   /**
    * Find a record by ID
    * @param id - Record ID
@@ -15,27 +16,27 @@ export interface BaseRepository<T> {
    * @param where - Filter criteria
    * @param includeDeleted - Include soft-deleted records
    */
-  findMany(where?: any, includeDeleted?: boolean): Promise<T[]>;
+  findMany(where?: WhereInput, includeDeleted?: boolean): Promise<T[]>;
 
   /**
    * Find one record matching criteria
    * @param where - Filter criteria
    * @param includeDeleted - Include soft-deleted records
    */
-  findOne(where: any, includeDeleted?: boolean): Promise<T | null>;
+  findOne(where: WhereInput, includeDeleted?: boolean): Promise<T | null>;
 
   /**
    * Create a new record
    * @param data - Record data
    */
-  create(data: any): Promise<T>;
+  create(data: unknown): Promise<T>;
 
   /**
    * Update a record by ID
    * @param id - Record ID
    * @param data - Updated data
    */
-  update(id: string, data: any): Promise<T>;
+  update(id: string, data: unknown): Promise<T>;
 
   /**
    * Delete a record by ID (soft delete)
@@ -60,14 +61,14 @@ export interface BaseRepository<T> {
    * @param where - Filter criteria
    * @param includeDeleted - Include soft-deleted records
    */
-  count(where?: any, includeDeleted?: boolean): Promise<number>;
+  count(where?: WhereInput, includeDeleted?: boolean): Promise<number>;
 
   /**
    * Check if a record exists
    * @param where - Filter criteria
    * @param includeDeleted - Include soft-deleted records
    */
-  exists(where: any, includeDeleted?: boolean): Promise<boolean>;
+  exists(where: WhereInput, includeDeleted?: boolean): Promise<boolean>;
 }
 
 /**
@@ -76,7 +77,7 @@ export interface BaseRepository<T> {
 export interface PaginationOptions {
   page: number;
   pageSize: number;
-  orderBy?: any;
+  orderBy?: Record<string, 'asc' | 'desc'>;
 }
 
 /**

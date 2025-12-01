@@ -12,7 +12,10 @@ export class UserRepository implements BaseRepository<User> {
   /**
    * Build where clause with soft delete filter
    */
-  private buildWhereClause(where: any = {}, includeDeleted = false): any {
+  private buildWhereClause(
+    where: Prisma.UserWhereInput = {},
+    includeDeleted = false
+  ): Prisma.UserWhereInput {
     if (includeDeleted) {
       return where;
     }
@@ -34,21 +37,21 @@ export class UserRepository implements BaseRepository<User> {
     });
   }
 
-  async findMany(where: any = {}, includeDeleted = false): Promise<User[]> {
+  async findMany(where: Prisma.UserWhereInput = {}, includeDeleted = false): Promise<User[]> {
     return this.prisma.user.findMany({
       where: this.buildWhereClause(where, includeDeleted),
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(where: any, includeDeleted = false): Promise<User | null> {
+  async findOne(where: Prisma.UserWhereInput, includeDeleted = false): Promise<User | null> {
     return this.prisma.user.findFirst({
       where: this.buildWhereClause(where, includeDeleted),
     });
   }
 
   async findWithPagination(
-    where: any = {},
+    where: Prisma.UserWhereInput = {},
     options: PaginationOptions,
     includeDeleted = false
   ): Promise<PaginatedResult<User>> {
@@ -122,13 +125,13 @@ export class UserRepository implements BaseRepository<User> {
     });
   }
 
-  async count(where: any = {}, includeDeleted = false): Promise<number> {
+  async count(where: Prisma.UserWhereInput = {}, includeDeleted = false): Promise<number> {
     return this.prisma.user.count({
       where: this.buildWhereClause(where, includeDeleted),
     });
   }
 
-  async exists(where: any, includeDeleted = false): Promise<boolean> {
+  async exists(where: Prisma.UserWhereInput, includeDeleted = false): Promise<boolean> {
     const count = await this.prisma.user.count({
       where: this.buildWhereClause(where, includeDeleted),
     });
@@ -138,11 +141,11 @@ export class UserRepository implements BaseRepository<User> {
   /**
    * Update user settings
    */
-  async updateSettings(id: string, settings: any): Promise<User> {
+  async updateSettings(id: string, settings: Prisma.JsonValue): Promise<User> {
     return this.prisma.user.update({
       where: { id },
       data: {
-        settings,
+        settings: settings as Prisma.InputJsonValue,
         updatedAt: new Date(),
       },
     });

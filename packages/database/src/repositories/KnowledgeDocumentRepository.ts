@@ -9,7 +9,10 @@ import { BaseRepository, PaginatedResult, PaginationOptions } from './BaseReposi
 export class KnowledgeDocumentRepository implements BaseRepository<KnowledgeDocument> {
   constructor(private prisma: PrismaClient) {}
 
-  private buildWhereClause(where: any = {}, includeDeleted = false): any {
+  private buildWhereClause(
+    where: Prisma.KnowledgeDocumentWhereInput = {},
+    includeDeleted = false
+  ): Prisma.KnowledgeDocumentWhereInput {
     if (includeDeleted) {
       return where;
     }
@@ -25,14 +28,20 @@ export class KnowledgeDocumentRepository implements BaseRepository<KnowledgeDocu
     });
   }
 
-  async findMany(where: any = {}, includeDeleted = false): Promise<KnowledgeDocument[]> {
+  async findMany(
+    where: Prisma.KnowledgeDocumentWhereInput = {},
+    includeDeleted = false
+  ): Promise<KnowledgeDocument[]> {
     return this.prisma.knowledgeDocument.findMany({
       where: this.buildWhereClause(where, includeDeleted),
       orderBy: { uploadedAt: 'desc' },
     });
   }
 
-  async findOne(where: any, includeDeleted = false): Promise<KnowledgeDocument | null> {
+  async findOne(
+    where: Prisma.KnowledgeDocumentWhereInput,
+    includeDeleted = false
+  ): Promise<KnowledgeDocument | null> {
     return this.prisma.knowledgeDocument.findFirst({
       where: this.buildWhereClause(where, includeDeleted),
     });
@@ -51,7 +60,7 @@ export class KnowledgeDocumentRepository implements BaseRepository<KnowledgeDocu
   }
 
   async findWithPagination(
-    where: any = {},
+    where: Prisma.KnowledgeDocumentWhereInput = {},
     options: PaginationOptions,
     includeDeleted = false
   ): Promise<PaginatedResult<KnowledgeDocument>> {
@@ -120,13 +129,19 @@ export class KnowledgeDocumentRepository implements BaseRepository<KnowledgeDocu
     });
   }
 
-  async count(where: any = {}, includeDeleted = false): Promise<number> {
+  async count(
+    where: Prisma.KnowledgeDocumentWhereInput = {},
+    includeDeleted = false
+  ): Promise<number> {
     return this.prisma.knowledgeDocument.count({
       where: this.buildWhereClause(where, includeDeleted),
     });
   }
 
-  async exists(where: any, includeDeleted = false): Promise<boolean> {
+  async exists(
+    where: Prisma.KnowledgeDocumentWhereInput,
+    includeDeleted = false
+  ): Promise<boolean> {
     const count = await this.count(where, includeDeleted);
     return count > 0;
   }

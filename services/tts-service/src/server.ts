@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createLogger } from '@clone/logger';
 import { TTSProvider } from '@clone/shared-types';
 import express, { Express } from 'express';

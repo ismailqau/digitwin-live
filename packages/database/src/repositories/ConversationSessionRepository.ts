@@ -20,14 +20,14 @@ export class ConversationSessionRepository implements BaseRepository<Conversatio
     });
   }
 
-  async findMany(where: any = {}): Promise<ConversationSession[]> {
+  async findMany(where: Prisma.ConversationSessionWhereInput = {}): Promise<ConversationSession[]> {
     return this.prisma.conversationSession.findMany({
       where,
       orderBy: { startedAt: 'desc' },
     });
   }
 
-  async findOne(where: any): Promise<ConversationSession | null> {
+  async findOne(where: Prisma.ConversationSessionWhereInput): Promise<ConversationSession | null> {
     return this.prisma.conversationSession.findFirst({
       where,
     });
@@ -48,7 +48,7 @@ export class ConversationSessionRepository implements BaseRepository<Conversatio
   }
 
   async findWithPagination(
-    where: any = {},
+    where: Prisma.ConversationSessionWhereInput = {},
     options: PaginationOptions
   ): Promise<PaginatedResult<ConversationSession>> {
     const { page, pageSize, orderBy = { startedAt: 'desc' } } = options;
@@ -108,11 +108,11 @@ export class ConversationSessionRepository implements BaseRepository<Conversatio
     throw new Error('Restore not supported for ConversationSession');
   }
 
-  async count(where: any = {}): Promise<number> {
+  async count(where: Prisma.ConversationSessionWhereInput = {}): Promise<number> {
     return this.prisma.conversationSession.count({ where });
   }
 
-  async exists(where: any): Promise<boolean> {
+  async exists(where: Prisma.ConversationSessionWhereInput): Promise<boolean> {
     const count = await this.count(where);
     return count > 0;
   }

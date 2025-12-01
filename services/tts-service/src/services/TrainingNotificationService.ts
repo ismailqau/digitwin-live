@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from '@clone/database';
 import { createLogger } from '@clone/logger';
 import winston from 'winston';

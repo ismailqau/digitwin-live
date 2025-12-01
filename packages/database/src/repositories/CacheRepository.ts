@@ -1,4 +1,10 @@
-import { PrismaClient, EmbeddingCache, VectorSearchCache, LLMResponseCache } from '@prisma/client';
+import {
+  PrismaClient,
+  EmbeddingCache,
+  VectorSearchCache,
+  LLMResponseCache,
+  Prisma,
+} from '@prisma/client';
 
 /**
  * Cache Repository
@@ -73,7 +79,10 @@ export class CacheRepository {
   // Vector Search Cache
   // ============================================================================
 
-  async getVectorSearchResults(queryHash: string, userId: string): Promise<any | null> {
+  async getVectorSearchResults(
+    queryHash: string,
+    userId: string
+  ): Promise<Prisma.JsonValue | null> {
     const cached = await this.prisma.vectorSearchCache.findFirst({
       where: {
         queryHash,
@@ -99,7 +108,7 @@ export class CacheRepository {
   async setVectorSearchResults(
     queryHash: string,
     userId: string,
-    results: any,
+    results: Prisma.JsonValue,
     ttlSeconds = 1800
   ): Promise<VectorSearchCache> {
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
@@ -116,7 +125,7 @@ export class CacheRepository {
       data: {
         queryHash,
         userId,
-        results,
+        results: results as Prisma.InputJsonValue,
         expiresAt,
       },
     });
@@ -241,7 +250,7 @@ export class CacheRepository {
       }),
     ]);
 
-    const totalHits = llmResponses.reduce((sum, r) => sum + r.hitCount, 0);
+    const totalHits = llmResponses.reduce((sum: number, r) => sum + r.hitCount, 0);
     const llmCacheHitRate = llmResponses.length > 0 ? totalHits / llmResponses.length : 0;
 
     return {

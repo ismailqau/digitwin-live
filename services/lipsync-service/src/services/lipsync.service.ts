@@ -383,7 +383,7 @@ export class LipSyncService {
     gpuAvailable: boolean;
     modelStatus: Record<LipSyncModel, { available: boolean; latencyMs: number }>;
   } {
-    const modelStatus: Record<LipSyncModel, { available: boolean; latencyMs: number }> = {} as any;
+    const modelStatus = {} as Record<LipSyncModel, { available: boolean; latencyMs: number }>;
 
     for (const model of Object.values(LipSyncModel)) {
       const perf = this.modelPerformance.get(model);

@@ -13,7 +13,7 @@
 import { createHash } from 'crypto';
 
 import { Storage } from '@google-cloud/storage';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export interface AudioChunkData {
   audioData: Buffer;
@@ -22,7 +22,7 @@ export interface AudioChunkData {
   sampleRate?: number;
   channels?: number;
   compression?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AudioCacheKey {
@@ -30,7 +30,7 @@ export interface AudioCacheKey {
   voiceModelId?: string;
   sessionId?: string;
   sequenceNumber?: number;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 export interface AudioRetrievalOptions {
@@ -98,13 +98,13 @@ export class AudioStorageService {
 
     try {
       // Check if audio chunk already exists (deduplication)
-      const existing = await (this.prisma as any).audioChunkCache.findUnique({
+      const existing = await this.prisma.audioChunkCache.findUnique({
         where: { cacheKey },
       });
 
       if (existing) {
         // Update hit count and expiration
-        await (this.prisma as any).audioChunkCache.update({
+        await this.prisma.audioChunkCache.update({
           where: { cacheKey },
           data: {
             hitCount: { increment: 1 },
@@ -117,24 +117,26 @@ export class AudioStorageService {
       }
 
       // Create new cache entry
-      await (this.prisma as any).audioChunkCache.create({
+      await this.prisma.audioChunkCache.create({
         data: {
           cacheKey,
-          audioData: audioData.audioData,
+          audioData: Buffer.from(audioData.audioData),
           format: audioData.format || 'opus',
           durationMs: audioData.durationMs,
           sampleRate: audioData.sampleRate || 16000,
           channels: audioData.channels || 1,
           compression: audioData.compression || 'opus',
-          metadata: audioData.metadata || {},
+          metadata: (audioData.metadata || {}) as Prisma.InputJsonValue,
           expiresAt,
         },
       });
 
       return cacheKey;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error caching audio chunk:', error);
-      throw new Error(`Failed to cache audio chunk: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to cache audio chunk: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -144,7 +146,7 @@ export class AudioStorageService {
    */
   async getAudioChunk(cacheKey: string): Promise<AudioChunkData | null> {
     try {
-      const cached = await (this.prisma as any).audioChunkCache.findFirst({
+      const cached = await this.prisma.audioChunkCache.findFirst({
         where: {
           cacheKey,
           expiresAt: { gt: new Date() },
@@ -156,7 +158,7 @@ export class AudioStorageService {
       }
 
       // Update hit count and last accessed time
-      await (this.prisma as any).audioChunkCache.update({
+      await this.prisma.audioChunkCache.update({
         where: { id: cached.id },
         data: {
           hitCount: { increment: 1 },
@@ -171,7 +173,7 @@ export class AudioStorageService {
         sampleRate: cached.sampleRate,
         channels: cached.channels,
         compression: cached.compression,
-        metadata: cached.metadata as Record<string, any>,
+        metadata: cached.metadata as Record<string, unknown>,
       };
     } catch (error) {
       console.error('Error retrieving audio chunk:', error);
@@ -186,7 +188,7 @@ export class AudioStorageService {
   async storeAudioInGCS(
     keyParams: AudioCacheKey,
     audioData: Buffer,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<string> {
     const cacheKey = this.generateCacheKey(keyParams);
     const storagePath = this.generateStoragePath(cacheKey, keyParams.sessionId);
@@ -208,15 +210,17 @@ export class AudioStorageService {
       });
 
       // Update cache entry with storage path
-      await (this.prisma as any).audioChunkCache.updateMany({
+      await this.prisma.audioChunkCache.updateMany({
         where: { cacheKey },
         data: { storagePath },
       });
 
       return storagePath;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error storing audio in GCS:', error);
-      throw new Error(`Failed to store audio in GCS: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to store audio in GCS: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -245,9 +249,11 @@ export class AudioStorageService {
       });
 
       return signedUrl;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error retrieving audio from GCS:', error);
-      throw new Error(`Failed to retrieve audio from GCS: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to retrieve audio from GCS: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -258,7 +264,7 @@ export class AudioStorageService {
   async archiveConversationAudio(sessionId: string): Promise<number> {
     try {
       // Find all audio chunks for this session
-      const chunks = await (this.prisma as any).audioChunkCache.findMany({
+      const chunks = await this.prisma.audioChunkCache.findMany({
         where: {
           metadata: {
             path: ['sessionId'],
@@ -275,16 +281,18 @@ export class AudioStorageService {
           await this.storeAudioInGCS(
             { sessionId },
             Buffer.from(chunk.audioData),
-            chunk.metadata as Record<string, any>
+            chunk.metadata as Record<string, unknown>
           );
           archivedCount++;
         }
       }
 
       return archivedCount;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error archiving conversation audio:', error);
-      throw new Error(`Failed to archive conversation audio: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to archive conversation audio: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -294,16 +302,18 @@ export class AudioStorageService {
    */
   async cleanupExpiredCache(): Promise<number> {
     try {
-      const result = await (this.prisma as any).audioChunkCache.deleteMany({
+      const result = await this.prisma.audioChunkCache.deleteMany({
         where: {
           expiresAt: { lt: new Date() },
         },
       });
 
       return result.count;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error cleaning up expired cache:', error);
-      throw new Error(`Failed to cleanup expired cache: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to cleanup expired cache: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -314,29 +324,31 @@ export class AudioStorageService {
   async cleanupLRU(maxEntries: number = 10000): Promise<number> {
     try {
       // Get count of entries
-      const count = await (this.prisma as any).audioChunkCache.count();
+      const count = await this.prisma.audioChunkCache.count();
 
       if (count <= maxEntries) {
         return 0;
       }
 
       // Find entries to delete (oldest accessed)
-      const entriesToDelete = await (this.prisma as any).audioChunkCache.findMany({
+      const entriesToDelete = await this.prisma.audioChunkCache.findMany({
         select: { id: true },
         orderBy: { lastAccessedAt: 'asc' },
         take: count - maxEntries,
       });
 
-      const ids = entriesToDelete.map((e: any) => e.id);
+      const ids = entriesToDelete.map((e: { id: string }) => e.id);
 
-      const result = await (this.prisma as any).audioChunkCache.deleteMany({
+      const result = await this.prisma.audioChunkCache.deleteMany({
         where: { id: { in: ids } },
       });
 
       return result.count;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error cleaning up LRU cache:', error);
-      throw new Error(`Failed to cleanup LRU cache: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to cleanup LRU cache: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -352,17 +364,17 @@ export class AudioStorageService {
     totalSizeBytes: number;
   }> {
     try {
-      const stats = await (this.prisma as any).audioChunkCache.aggregate({
+      const stats = await this.prisma.audioChunkCache.aggregate({
         _count: { id: true },
         _sum: { hitCount: true },
         _avg: { hitCount: true },
       });
 
-      const validCount = await (this.prisma as any).audioChunkCache.count({
+      const validCount = await this.prisma.audioChunkCache.count({
         where: { expiresAt: { gt: new Date() } },
       });
 
-      const expiredCount = await (this.prisma as any).audioChunkCache.count({
+      const expiredCount = await this.prisma.audioChunkCache.count({
         where: { expiresAt: { lte: new Date() } },
       });
 
@@ -378,9 +390,11 @@ export class AudioStorageService {
         avgHitsPerEntry: stats._avg.hitCount || 0,
         totalSizeBytes,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting cache stats:', error);
-      throw new Error(`Failed to get cache stats: ${error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Failed to get cache stats: ${error instanceof Error ? error.message : String(error) || 'Unknown error'}`
+      );
     }
   }
 
@@ -393,7 +407,7 @@ export class AudioStorageService {
     voiceModelId?: string;
   }): Promise<number> {
     try {
-      const where: any = {};
+      const where: Record<string, unknown> = {};
 
       if (pattern.sessionId) {
         where.metadata = {
@@ -409,7 +423,7 @@ export class AudioStorageService {
         };
       }
 
-      const result = await (this.prisma as any).audioChunkCache.deleteMany({ where });
+      const result = await this.prisma.audioChunkCache.deleteMany({ where });
 
       return result.count;
     } catch (error: unknown) {

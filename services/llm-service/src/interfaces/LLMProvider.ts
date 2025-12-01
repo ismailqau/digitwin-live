@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * LLM Provider Interface
  * Abstract interface for all LLM providers

@@ -18,6 +18,7 @@ const storage = new Storage({
 
 interface UploadOptions {
   contentType?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
   resumable?: boolean;
   chunkSize?: number;
@@ -28,6 +29,7 @@ interface UploadResult {
   url: string;
   size: number;
   contentType: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -44,6 +46,7 @@ export async function uploadToGCS(
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(fileName);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const uploadOptions: any = {
       metadata: {
         contentType: options.contentType || 'application/octet-stream',
@@ -91,7 +94,12 @@ export async function generateSignedUrl(
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(fileName);
 
-    const signedUrlOptions: any = {
+    const signedUrlOptions: {
+      version: 'v4';
+      action: 'read' | 'write' | 'delete';
+      expires: Date;
+      contentType?: string;
+    } = {
       version: 'v4',
       action: options.action,
       expires: options.expires,
@@ -143,7 +151,10 @@ export async function fileExists(bucketName: string, fileName: string): Promise<
 /**
  * Get file metadata from GCS
  */
-export async function getFileMetadata(bucketName: string, fileName: string): Promise<any> {
+export async function getFileMetadata(
+  bucketName: string,
+  fileName: string
+): Promise<Record<string, unknown>> {
   try {
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(fileName);
@@ -175,7 +186,7 @@ export async function listFiles(
   try {
     const bucket = storage.bucket(bucketName);
 
-    const options: any = {};
+    const options: Record<string, unknown> = {};
     if (prefix) options.prefix = prefix;
     if (maxResults) options.maxResults = maxResults;
 

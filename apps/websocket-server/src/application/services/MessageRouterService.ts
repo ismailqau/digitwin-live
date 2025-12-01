@@ -26,7 +26,7 @@ export class MessageRouterService {
           await this.handleEndUtterance(sessionId, message);
           break;
         default:
-          throw new Error(`Unknown message type: ${(message as any).type}`);
+          throw new Error(`Unknown message type: ${(message as { type?: string }).type}`);
       }
     } catch (error) {
       await this.sendError(sessionId, error as Error);

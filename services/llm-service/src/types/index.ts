@@ -85,6 +85,7 @@ export interface LLMMetrics {
   errorCount: number;
   totalCost: number;
   tokensGenerated: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 

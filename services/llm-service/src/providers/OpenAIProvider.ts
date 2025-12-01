@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * OpenAI Provider Implementation
  * Integrates with OpenAI GPT models

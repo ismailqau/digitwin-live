@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TTSProvider } from '@clone/shared-types';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import winston from 'winston';

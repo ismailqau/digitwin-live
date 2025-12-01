@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Temporary type definitions for missing dependencies
  * These will be replaced when the actual packages are available
