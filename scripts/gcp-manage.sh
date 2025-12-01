@@ -2,7 +2,7 @@
 
 # GCP Management Script
 # Manage GCP resources: enable, disable, start, stop, delete
-# Uses PostgreSQL with pgvector (no GKE/Weaviate)
+# Uses PostgreSQL with pgvector (no separate vector database service)
 
 set -e
 
@@ -358,8 +358,8 @@ show_costs() {
     log_info "Estimated Total (minimal usage):"
     echo '  ~$8-15/month'
     echo ""
-    log_info "Cost Savings vs Weaviate/GKE:"
-    echo '  No GKE cluster needed: Saves ~$24/month'
+    log_info "Cost Savings:"
+    echo '  No separate vector database service needed'
     echo '  pgvector in PostgreSQL handles all vector operations'
     
     echo ""

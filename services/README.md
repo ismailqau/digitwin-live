@@ -91,8 +91,7 @@ GROQ_API_KEY=gsk_...
 XTTS_SERVICE_URL=http://localhost:8000
 ELEVENLABS_API_KEY=...
 
-# RAG Service
-WEAVIATE_URL=http://localhost:8080
+# RAG Service (uses PostgreSQL with pgvector)
 VECTOR_DIMENSIONS=768
 ```
 
@@ -118,7 +117,6 @@ graph TD
 
     L --> O[XTTS-v2 Model]
     J --> P[(PostgreSQL + pgvector)]
-    J --> Q[(Weaviate)]
 ```
 
 ## 🔍 Service Details
@@ -134,7 +132,7 @@ graph TD
 
 - **Purpose**: Retrieve relevant knowledge for LLM context
 - **Features**: Vector search, hybrid search, source tracking
-- **Database**: PostgreSQL with pgvector or Weaviate
+- **Database**: PostgreSQL with pgvector
 - **Documentation**: [RAG Service README](./rag-service/README.md)
 
 ### LLM Service

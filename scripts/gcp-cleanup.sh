@@ -106,7 +106,6 @@ confirm_full_deletion() {
     echo "  - All Cloud Storage buckets"
     echo "  - Cloud SQL instances"
     echo "  - GKE clusters"
-    echo "  - Weaviate deployments"
     echo "  - Service accounts"
     echo "  - Secrets"
     echo ""
@@ -129,11 +128,6 @@ selective_deletion() {
     echo ""
     log_info "Select resources to delete (y/n for each):"
     echo ""
-    
-    # Weaviate
-    read -p "Delete Weaviate deployment? (y/N) " -n 1 -r
-    echo
-    DELETE_WEAVIATE=$REPLY
     
     # GKE
     read -p "Delete GKE cluster? (y/N) " -n 1 -r
@@ -163,7 +157,6 @@ selective_deletion() {
     # Confirm selections
     echo ""
     log_warning "You selected to delete:"
-    [[ $DELETE_WEAVIATE =~ ^[Yy]$ ]] && echo "  ✓ Weaviate deployment"
     [[ $DELETE_GKE =~ ^[Yy]$ ]] && echo "  ✓ GKE cluster"
     [[ $DELETE_SQL =~ ^[Yy]$ ]] && echo "  ✓ Cloud SQL instances"
     [[ $DELETE_BUCKETS =~ ^[Yy]$ ]] && echo "  ✓ Storage buckets"
@@ -180,28 +173,7 @@ selective_deletion() {
     fi
 }
 
-# Delete Weaviate
-delete_weaviate() {
-    if [[ ! $DELETE_WEAVIATE =~ ^[Yy]$ ]] && [ "$1" != "force" ]; then
-        log_info "Skipping Weaviate deletion"
-        return 0
-    fi
-    
-    log_header "Deleting Weaviate"
-    
-    if command -v kubectl &> /dev/null; then
-        if kubectl get deployment weaviate &> /dev/null; then
-            log_info "Deleting Weaviate deployment..."
-            kubectl delete deployment weaviate --ignore-not-found=true
-            kubectl delete service weaviate --ignore-not-found=true
-            log_success "Weaviate deleted"
-        else
-            log_info "Weaviate not found, skipping"
-        fi
-    else
-        log_info "kubectl not available, skipping Weaviate deletion"
-    fi
-}
+# Weaviate is no longer used - using PostgreSQL pgvector instead
 
 # Delete GKE cluster
 delete_gke() {
@@ -559,7 +531,6 @@ print_summary() {
     echo "  ✅ Storage buckets"
     echo "  ✅ Cloud SQL instance (if existed)"
     echo "  ✅ GKE cluster (if existed)"
-    echo "  ✅ Weaviate deployment (if existed)"
     echo ""
     log_info "Remaining resources (if not deleted):"
     echo "  - Service accounts"
@@ -580,9 +551,8 @@ show_resource_menu() {
     echo ""
     log_info "Available resources:"
     echo ""
-    echo "  1) Weaviate deployment"
-    echo "  2) GKE cluster"
-    echo "  3) Cloud SQL instances"
+    echo "  1) GKE cluster"
+    echo "  2) Cloud SQL instances"
     echo "  4) Storage buckets"
     echo "  5) Service accounts"
     echo "  6) Secrets"
@@ -595,7 +565,6 @@ show_resource_menu() {
     SELECTED_RESOURCES=$REPLY
     
     # Parse selections
-    DELETE_WEAVIATE="n"
     DELETE_GKE="n"
     DELETE_SQL="n"
     DELETE_BUCKETS="n"
@@ -608,7 +577,6 @@ show_resource_menu() {
     fi
     
     if [[ $SELECTED_RESOURCES == "7" ]]; then
-        DELETE_WEAVIATE="y"
         DELETE_GKE="y"
         DELETE_SQL="y"
         DELETE_BUCKETS="y"
@@ -619,9 +587,8 @@ show_resource_menu() {
         for choice in "${CHOICES[@]}"; do
             choice=$(echo "$choice" | xargs)  # Trim whitespace
             case $choice in
-                1) DELETE_WEAVIATE="y" ;;
-                2) DELETE_GKE="y" ;;
-                3) DELETE_SQL="y" ;;
+                1) DELETE_GKE="y" ;;
+                2) DELETE_SQL="y" ;;
                 4) DELETE_BUCKETS="y" ;;
                 5) DELETE_SA="y" ;;
                 6) DELETE_SECRETS="y" ;;
@@ -665,7 +632,6 @@ main() {
     if [ "$FORCE_ALL" = "true" ]; then
         # Force full deletion
         confirm_full_deletion
-        delete_weaviate force
         delete_gke force
         delete_cloud_sql force
         delete_buckets force
@@ -675,7 +641,6 @@ main() {
     elif [ "$FORCE_SELECTIVE" = "true" ]; then
         # Force selective deletion (y/n for each)
         selective_deletion
-        delete_weaviate
         delete_gke
         delete_cloud_sql
         delete_buckets
@@ -691,7 +656,6 @@ main() {
     elif [ "$FORCE_MENU" = "true" ]; then
         # Force menu selection
         show_resource_menu
-        delete_weaviate
         delete_gke
         delete_cloud_sql
         delete_buckets
@@ -708,7 +672,6 @@ main() {
         # Interactive menu
         if show_cleanup_menu; then
             # Full deletion mode
-            delete_weaviate force
             delete_gke force
             delete_cloud_sql force
             delete_buckets force
@@ -743,7 +706,6 @@ main() {
                     ;;
             esac
             
-            delete_weaviate
             delete_gke
             delete_cloud_sql
             delete_buckets

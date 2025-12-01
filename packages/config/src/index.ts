@@ -31,9 +31,6 @@ export interface Config {
   vectorDb: {
     dimensions: number;
     indexLists: number;
-    weaviateUrl?: string;
-    weaviateApiKey?: string;
-    weaviateEnabled: boolean;
   };
   storage: {
     bucket: string;
@@ -70,9 +67,6 @@ export function loadConfig(): Config {
     vectorDb: {
       dimensions: parseInt(process.env.VECTOR_DIMENSIONS || '768'),
       indexLists: parseInt(process.env.VECTOR_INDEX_LISTS || '100'),
-      weaviateUrl: process.env.WEAVIATE_URL,
-      weaviateApiKey: process.env.WEAVIATE_API_KEY,
-      weaviateEnabled: process.env.WEAVIATE_ENABLED === 'true',
     },
     storage: {
       bucket: process.env.CLOUD_STORAGE_BUCKET || '',

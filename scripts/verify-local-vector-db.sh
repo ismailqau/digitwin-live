@@ -73,19 +73,11 @@ check_prerequisites() {
         log_info "Run: pnpm install"
     fi
     
-    # Check Docker (for Weaviate)
+    # Docker is optional - not required for pgvector
     if command -v docker &> /dev/null; then
         log_success "Docker is installed: $(docker --version | head -1)"
-        
-        # Check if Docker daemon is running
-        if docker info &> /dev/null; then
-            log_success "Docker daemon is running"
-        else
-            log_warning "Docker daemon is not running"
-            log_info "Start Docker Desktop or run: sudo systemctl start docker"
-        fi
     else
-        log_warning "Docker is not installed (needed for Weaviate)"
+        log_info "Docker is not installed (optional)"
     fi
 }
 
@@ -129,44 +121,31 @@ test_postgresql() {
     fi
 }
 
-# Test Weaviate connection
-test_weaviate() {
-    log_header "Testing Weaviate"
+# Test pgvector extension
+test_pgvector() {
+    log_header "Testing pgvector Extension"
     
-    WEAVIATE_URL=${WEAVIATE_URL:-"http://localhost:8080"}
-    
-    if [ "$WEAVIATE_ENABLED" = "true" ]; then
-        log_info "Weaviate is enabled"
-        log_info "Weaviate URL: $WEAVIATE_URL"
+    # Check if pgvector extension is installed
+    if command -v psql &> /dev/null && [ -n "$DATABASE_URL" ]; then
+        PGVECTOR_CHECK=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector');" 2>/dev/null | xargs)
         
-        # Test connection
-        if curl -s -f "$WEAVIATE_URL/v1/meta" &> /dev/null; then
-            log_success "Weaviate is accessible"
+        if [ "$PGVECTOR_CHECK" = "t" ]; then
+            log_success "pgvector extension is installed"
             
             # Get version
-            VERSION=$(curl -s "$WEAVIATE_URL/v1/meta" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
-            if [ -n "$VERSION" ]; then
-                log_info "Weaviate version: $VERSION"
+            PGVECTOR_VERSION=$(psql "$DATABASE_URL" -t -c "SELECT extversion FROM pg_extension WHERE extname = 'vector';" 2>/dev/null | xargs)
+            if [ -n "$PGVECTOR_VERSION" ]; then
+                log_info "pgvector version: $PGVECTOR_VERSION"
             fi
         else
-            log_error "Weaviate is not accessible"
-            
-            # Check if Docker container is running
-            if command -v docker &> /dev/null; then
-                if docker ps | grep -q weaviate; then
-                    log_info "Weaviate container is running"
-                    log_warning "But not accessible at $WEAVIATE_URL"
-                else
-                    log_warning "Weaviate container not found"
-                    log_info "Start with:"
-                    echo "  docker run -d --name weaviate -p 8080:8080 \\"
-                    echo "    -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \\"
-                    echo "    semitechnologies/weaviate:latest"
-                fi
-            fi
+            log_error "pgvector extension is not installed"
+            log_info "Install with:"
+            echo "  psql \$DATABASE_URL -c 'CREATE EXTENSION IF NOT EXISTS vector;'"
+            echo ""
+            log_info "Or see docs/VECTOR-DATABASE.md for installation instructions"
         fi
     else
-        log_info "Weaviate is disabled (using PostgreSQL)"
+        log_info "Skipping pgvector check (psql not available or DATABASE_URL not set)"
     fi
 }
 
@@ -197,12 +176,7 @@ print_summary() {
     
     echo ""
     log_info "Vector Database Configuration:"
-    
-    if [ "$WEAVIATE_ENABLED" = "true" ]; then
-        echo "  Type: Weaviate"
-        echo "  URL: ${WEAVIATE_URL:-http://localhost:8080}"
-    else
-        echo "  Type: PostgreSQL with pgvector"
+    echo "  Type: PostgreSQL with pgvector"
         echo "  Database: $(echo $DATABASE_URL | sed 's/:[^:@]*@/:***@/' | sed 's/postgresql:\/\///' | cut -d'/' -f2)"
     fi
     
@@ -226,7 +200,7 @@ main() {
     load_env
     check_prerequisites
     test_postgresql
-    test_weaviate
+    test_pgvector
     run_node_verification
     print_summary
     

@@ -18,11 +18,7 @@ export const RAG_SERVICE_VERSION = '1.0.0';
 
 // Export all services
 export { EmbeddingService } from './services/EmbeddingService';
-export {
-  VectorSearchService,
-  PostgreSQLVectorSearch,
-  WeaviateVectorSearch,
-} from './services/VectorSearchService';
+export { VectorSearchService, PostgreSQLVectorSearch } from './services/VectorSearchService';
 export { ContextAssembler } from './services/ContextAssembler';
 export { CacheService } from './services/CacheService';
 export { RAGOrchestrator } from './services/RAGOrchestrator';
@@ -47,9 +43,6 @@ export function initializeRAGService(config: {
   projectId: string;
   location: string;
   databaseUrl: string;
-  weaviateEnabled?: boolean;
-  weaviateUrl?: string;
-  weaviateApiKey?: string;
   cacheEnabled?: boolean;
   cacheTtlShort?: number;
   cacheTtlMedium?: number;
@@ -64,7 +57,6 @@ export function initializeRAGService(config: {
   logger.info('Initializing RAG service', {
     projectId: config.projectId,
     location: config.location,
-    weaviateEnabled: config.weaviateEnabled || false,
   });
 
   // Initialize Prisma client
@@ -83,20 +75,12 @@ export function initializeRAGService(config: {
     location: config.location,
   });
 
-  // Initialize vector search service
+  // Initialize vector search service (PostgreSQL with pgvector)
   const vectorSearchService = new VectorSearchService({
-    useWeaviate: config.weaviateEnabled || false,
     postgresql: {
       connectionString: config.databaseUrl,
       similarityThreshold: config.similarityThreshold || 0.7,
     },
-    weaviate: config.weaviateEnabled
-      ? {
-          url: config.weaviateUrl || '',
-          apiKey: config.weaviateApiKey,
-          similarityThreshold: config.similarityThreshold || 0.7,
-        }
-      : undefined,
   });
 
   // Initialize context assembler
@@ -140,9 +124,6 @@ if (require.main === module) {
     projectId: process.env.GCP_PROJECT_ID || '',
     location: process.env.GCP_LOCATION || 'us-central1',
     databaseUrl: process.env.DATABASE_URL || '',
-    weaviateEnabled: process.env.WEAVIATE_ENABLED === 'true',
-    weaviateUrl: process.env.WEAVIATE_URL,
-    weaviateApiKey: process.env.WEAVIATE_API_KEY,
     cacheEnabled: process.env.ENABLE_CACHING !== 'false',
     cacheTtlShort: parseInt(process.env.CACHE_TTL_SHORT || '300'),
     cacheTtlMedium: parseInt(process.env.CACHE_TTL_MEDIUM || '3600'),

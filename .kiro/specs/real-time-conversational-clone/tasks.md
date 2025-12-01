@@ -9,7 +9,7 @@
   - Scripts: `gcp-setup.sh`, `gcp-create-sql.sh`, `gcp-manage.sh`, `gcp-cleanup.sh`
   - Commands: `pnpm gcp:setup`, `pnpm gcp:status`, `pnpm gcp:cleanup-sql`, `pnpm gcp:stop-all`
 - **Database**: PostgreSQL 17 with pgvector extension on Cloud SQL
-- **Vector Database**: Dual setup (PostgreSQL + Weaviate), switchable via `WEAVIATE_ENABLED`
+- **Vector Database**: PostgreSQL with pgvector extension
 - **Caching**: PostgreSQL-based caching architecture (NOT Redis)
 - **Storage**: 4 GCS buckets configured (voice-models, face-models, documents, uploads)
 - **Authentication**: JWT-based auth with RBAC implemented
@@ -20,7 +20,7 @@
 - **[GCP Management](../docs/GCP-MANAGEMENT.md)** - Complete GCP resource management
 - **[GCP Quick Reference](../docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
 - **[GCP Cleanup Guide](../docs/GCP-CLEANUP-GUIDE.md)** - Resource cleanup and cost optimization
-- **[Vector Database](../docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector / Weaviate setup
+- **[Vector Database](../docs/VECTOR-DATABASE.md)** - PostgreSQL with pgvector setup
 - **[Caching Architecture](../docs/CACHING-ARCHITECTURE.md)** - PostgreSQL caching (NOT Redis)
 - **[Database Architecture](../docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Getting Started](../docs/GETTING-STARTED.md)** - Quick setup guide
@@ -29,7 +29,7 @@
 
 1. **Use PostgreSQL for caching** - NOT Redis or Memcached (see docs/CACHING-SUMMARY.md)
 2. **Use GCP scripts** - All GCP operations via bash scripts (Terraform optional)
-3. **Vector database** - Use `WEAVIATE_ENABLED` env var to switch between PostgreSQL and Weaviate
+3. **Vector database** - Use PostgreSQL with pgvector extension for all vector operations
 4. **Documentation** - Update docs/ with proper links, avoid redundancy
 5. **Cost optimization** - Use `pnpm gcp:stop-all` to save ~$74/month when not in use
 
@@ -302,8 +302,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 
 ### 📝 Implementation Notes
 
-- Vector database already configured (PostgreSQL + pgvector OR Weaviate)
-- Use `WEAVIATE_ENABLED=true/false` to switch between databases
+- Vector database: PostgreSQL with pgvector extension
 - Cache embeddings in PostgreSQL `EmbeddingCache` table (already in schema)
 - Cache vector search results in `VectorSearchCache` table (already in schema)
 - Store documents in GCS bucket: digitwin-live-documents
@@ -324,16 +323,14 @@ User Query → Embedding → Vector Search → Context Assembly → LLM
 
 - [x] 4. Implement RAG pipeline foundation in `services/rag-service`
   - ✅ PostgreSQL with pgvector extension already set up in Cloud SQL
-  - ✅ Weaviate as alternative vector database (self-hosted, free)
   - ✅ Prisma models: `KnowledgeDocument`, `DocumentChunk`, `EmbeddingCache`, `VectorSearchCache`
   - Integrate Google Vertex AI text-embedding-004 API for embeddings
   - Create `EmbeddingService` class for query and document embedding
-  - Implement `VectorSearchService` with PostgreSQL pgvector and Weaviate adapters
+  - Implement `VectorSearchService` with PostgreSQL pgvector
   - Create vector search with cosine similarity filtering (threshold > 0.7)
   - Implement `ContextAssembler` that combines search results with conversation history
   - Create cache service using existing `EmbeddingCache` and `VectorSearchCache` models
   - Implement cache TTL: CACHE_TTL_MEDIUM (3600s) for embeddings, CACHE_TTL_SHORT (300s) for searches
-  - Use environment variable `WEAVIATE_ENABLED` to switch between PostgreSQL and Weaviate
   - Create `RAGOrchestrator` to coordinate embedding, search, and context assembly
   - Implement user data isolation (filter by userId in all queries)
   - Create health check endpoint for RAG service
@@ -505,7 +502,7 @@ User Query → Embedding → Vector Search → Context Assembly → LLM
 
 - [x] 4.5 Write tests for RAG pipeline
   - Create unit tests for EmbeddingService (mock Vertex AI API)
-  - Write unit tests for VectorSearchService (both PostgreSQL and Weaviate)
+  - Write unit tests for VectorSearchService (PostgreSQL pgvector)
   - Create unit tests for TextChunker (various chunk sizes and overlaps)
   - Write unit tests for ContextAssembler
   - Create integration tests for document processing pipeline
@@ -1408,7 +1405,7 @@ This implementation plan covers the complete development of the Real-Time Conver
 
 - Use PostgreSQL for ALL caching (NOT Redis) - architecture already designed
 - GCP infrastructure scripts are complete and functional
-- Vector database supports both PostgreSQL (pgvector) and Weaviate
+- Vector database uses PostgreSQL with pgvector extension
 - GPU workloads can be stopped with `pnpm gcp:stop-all` to save costs
 - All services follow clean architecture with dependency injection
 - Comprehensive documentation exists in /docs directory

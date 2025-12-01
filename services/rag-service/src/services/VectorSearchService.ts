@@ -306,58 +306,14 @@ export class PostgreSQLVectorSearch {
 }
 
 /**
- * Weaviate adapter for vector search (alternative to PostgreSQL)
- */
-export class WeaviateVectorSearch {
-  // private client: any; // Weaviate client type - TODO: Initialize when implementing
-  // private similarityThreshold: number;
-
-  constructor(_config: { url: string; apiKey?: string; similarityThreshold: number }) {
-    // TODO: Initialize Weaviate client when WEAVIATE_ENABLED=true
-    // this.similarityThreshold = config.similarityThreshold;
-    logger.info('Weaviate adapter initialized (placeholder)');
-  }
-
-  async search(
-    _embedding: number[],
-    _topK: number,
-    _filter: SearchFilter
-  ): Promise<SearchResult[]> {
-    // TODO: Implement Weaviate search
-    throw new RAGError('Weaviate search not yet implemented');
-  }
-
-  async upsert(_vectors: VectorDocument[]): Promise<void> {
-    // TODO: Implement Weaviate upsert
-    throw new RAGError('Weaviate upsert not yet implemented');
-  }
-
-  async delete(_ids: string[]): Promise<void> {
-    // TODO: Implement Weaviate delete
-    throw new RAGError('Weaviate delete not yet implemented');
-  }
-}
-
-/**
- * Factory for creating vector search service based on configuration
+ * Vector search service using PostgreSQL with pgvector
  */
 export class VectorSearchService {
-  private adapter: PostgreSQLVectorSearch | WeaviateVectorSearch;
+  private adapter: PostgreSQLVectorSearch;
 
-  constructor(config: {
-    useWeaviate: boolean;
-    postgresql?: VectorSearchConfig;
-    weaviate?: { url: string; apiKey?: string; similarityThreshold: number };
-  }) {
-    if (config.useWeaviate && config.weaviate) {
-      this.adapter = new WeaviateVectorSearch(config.weaviate);
-      logger.info('Using Weaviate for vector search');
-    } else if (config.postgresql) {
-      this.adapter = new PostgreSQLVectorSearch(config.postgresql);
-      logger.info('Using PostgreSQL pgvector for vector search');
-    } else {
-      throw new RAGError('No valid vector search configuration provided');
-    }
+  constructor(config: { postgresql: VectorSearchConfig }) {
+    this.adapter = new PostgreSQLVectorSearch(config.postgresql);
+    logger.info('Using PostgreSQL pgvector for vector search');
   }
 
   async search(embedding: number[], topK: number, filter: SearchFilter): Promise<SearchResult[]> {

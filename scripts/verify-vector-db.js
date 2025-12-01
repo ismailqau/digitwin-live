@@ -4,7 +4,7 @@
  * Vector Database Verification Script
  *
  * This script verifies that the vector database is properly configured and working
- * in both local and GCP environments. It tests both PostgreSQL+pgvector and Weaviate.
+ * in both local and GCP environments. It tests PostgreSQL with pgvector extension.
  */
 
 const { execSync } = require('child_process');
@@ -54,7 +54,7 @@ class VectorDatabaseVerifier {
     this.results = {
       environment: {},
       postgresql: {},
-      weaviate: {},
+      pgvector: {},
       gcp: {},
       overall: { passed: 0, failed: 0, warnings: 0 },
     };
@@ -62,11 +62,11 @@ class VectorDatabaseVerifier {
 
   async verify() {
     logHeader('🔍 Vector Database Verification');
-    logInfo('Checking vector database configuration and connectivity...\n');
+    logInfo('Checking PostgreSQL with pgvector configuration and connectivity...\n');
 
     await this.checkEnvironmentVariables();
     await this.checkPostgreSQLSetup();
-    await this.checkWeaviateSetup();
+    await this.checkPgvectorExtension();
     await this.checkGCPConfiguration();
     await this.runVectorOperationTests();
 
@@ -81,12 +81,7 @@ class VectorDatabaseVerifier {
 
     const requiredVars = ['DATABASE_URL', 'NODE_ENV'];
 
-    const vectorVars = [
-      'VECTOR_DIMENSIONS',
-      'VECTOR_INDEX_LISTS',
-      'WEAVIATE_URL',
-      'WEAVIATE_ENABLED',
-    ];
+    const vectorVars = ['VECTOR_DIMENSIONS', 'VECTOR_INDEX_LISTS'];
 
     // Check required variables
     for (const varName of requiredVars) {
@@ -114,13 +109,8 @@ class VectorDatabaseVerifier {
       }
     }
 
-    // Check vector database choice
-    const weaviateEnabled = process.env.WEAVIATE_ENABLED === 'true';
-    if (weaviateEnabled) {
-      logInfo('Vector Database: Weaviate (enabled)');
-    } else {
-      logInfo('Vector Database: PostgreSQL with pgvector');
-    }
+    // Vector database is always PostgreSQL with pgvector
+    logInfo('Vector Database: PostgreSQL with pgvector');
   }
 
   async checkPostgreSQLSetup() {
@@ -240,66 +230,87 @@ class VectorDatabaseVerifier {
     }
   }
 
-  async checkWeaviateSetup() {
-    logHeader('🕸️  Weaviate Configuration');
+  async checkPgvectorExtension() {
+    logHeader('🔌 pgvector Extension');
 
-    const weaviateUrl = process.env.WEAVIATE_URL || 'http://localhost:8080';
-    const weaviateEnabled = process.env.WEAVIATE_ENABLED === 'true';
-
-    if (!weaviateEnabled) {
-      logInfo('Weaviate is disabled, skipping Weaviate checks');
-      this.results.weaviate.status = 'disabled';
+    if (!process.env.DATABASE_URL) {
+      logError('DATABASE_URL not set, skipping pgvector checks');
+      this.results.pgvector.status = 'skipped';
       return;
     }
 
     try {
-      // Test Weaviate connectivity
-      const response = await this.makeHttpRequest(`${weaviateUrl}/v1/meta`);
+      const client = new Client({ connectionString: process.env.DATABASE_URL });
+      await client.connect();
 
-      if (response.statusCode === 200) {
-        logSuccess('Weaviate is accessible');
-        this.results.weaviate.connection = 'success';
+      // Check if pgvector extension is installed
+      const extensionResult = await client.query(
+        "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
+      );
+
+      if (extensionResult.rows.length > 0) {
+        const version = extensionResult.rows[0].extversion;
+        logSuccess(`pgvector extension is installed (version ${version})`);
+        this.results.pgvector.installed = true;
+        this.results.pgvector.version = version;
         this.results.overall.passed++;
 
-        const data = JSON.parse(response.body);
-        logInfo(`Weaviate version: ${data.version}`);
-        this.results.weaviate.version = data.version;
-
-        // Check if we can create a test class
+        // Test vector operations
         try {
-          const testClassResponse = await this.makeHttpRequest(`${weaviateUrl}/v1/schema`, 'GET');
+          await client.query("SELECT '[1,2,3]'::vector");
+          logSuccess('Vector data type is working');
+          this.results.pgvector.vector_type = true;
+          this.results.overall.passed++;
 
-          if (testClassResponse.statusCode === 200) {
-            logSuccess('Weaviate schema endpoint accessible');
-            this.results.weaviate.schema_access = true;
+          // Test cosine similarity operator
+          await client.query("SELECT '[1,2,3]'::vector <=> '[4,5,6]'::vector");
+          logSuccess('Cosine similarity operator is working');
+          this.results.pgvector.cosine_similarity = true;
+          this.results.overall.passed++;
+        } catch (error) {
+          logError(`Vector operations failed: ${error.message}`);
+          this.results.pgvector.operations = 'failed';
+          this.results.overall.failed++;
+        }
+
+        // Check for vector indexes
+        try {
+          const indexResult = await client.query(`
+            SELECT indexname, indexdef 
+            FROM pg_indexes 
+            WHERE tablename = 'document_chunks' 
+            AND indexdef LIKE '%vector%'
+          `);
+
+          if (indexResult.rows.length > 0) {
+            logSuccess(`Found ${indexResult.rows.length} vector index(es)`);
+            this.results.pgvector.indexes = indexResult.rows.length;
             this.results.overall.passed++;
+          } else {
+            logWarning('No vector indexes found on document_chunks table');
+            logInfo(
+              'Create index with: CREATE INDEX ON document_chunks USING ivfflat (embedding vector_cosine_ops);'
+            );
+            this.results.pgvector.indexes = 0;
+            this.results.overall.warnings++;
           }
         } catch (error) {
-          logWarning(`Could not access Weaviate schema: ${error.message}`);
-          this.results.weaviate.schema_access = false;
+          logWarning(`Could not check vector indexes: ${error.message}`);
+          this.results.pgvector.index_check = 'failed';
           this.results.overall.warnings++;
         }
       } else {
-        logError(`Weaviate returned status ${response.statusCode}`);
-        this.results.weaviate.connection = 'failed';
+        logError('pgvector extension is not installed');
+        logInfo('Install with: CREATE EXTENSION IF NOT EXISTS vector;');
+        this.results.pgvector.installed = false;
         this.results.overall.failed++;
       }
-    } catch (error) {
-      logError(`Weaviate connection failed: ${error.message}`);
-      this.results.weaviate.connection = 'failed';
-      this.results.weaviate.error = error.message;
-      this.results.overall.failed++;
 
-      // Check if it's a Docker issue
-      try {
-        execSync('docker ps | grep weaviate', { stdio: 'pipe' });
-        logInfo('Weaviate Docker container is running');
-      } catch {
-        logWarning('Weaviate Docker container not found');
-        logInfo(
-          'Start with: docker run -d --name weaviate -p 8080:8080 -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true semitechnologies/weaviate:latest'
-        );
-      }
+      await client.end();
+    } catch (error) {
+      logError(`pgvector check failed: ${error.message}`);
+      this.results.pgvector.error = error.message;
+      this.results.overall.failed++;
     }
   }
 
@@ -382,63 +393,11 @@ class VectorDatabaseVerifier {
   async runVectorOperationTests() {
     logHeader('🧪 Vector Operation Tests');
 
-    const weaviateEnabled = process.env.WEAVIATE_ENABLED === 'true';
-
-    if (weaviateEnabled) {
-      await this.testWeaviateOperations();
-    } else {
-      await this.testPostgreSQLVectorOperations();
-    }
+    // Always use PostgreSQL with pgvector
+    await this.testPostgreSQLVectorOperations();
   }
 
-  async testWeaviateOperations() {
-    const weaviateUrl = process.env.WEAVIATE_URL || 'http://localhost:8080';
-
-    try {
-      // Test creating a simple class
-      const testClass = {
-        class: 'TestDocument',
-        description: 'Test class for verification',
-        properties: [
-          {
-            name: 'content',
-            dataType: ['text'],
-            description: 'Document content',
-          },
-        ],
-      };
-
-      // Create test class
-      const createResponse = await this.makeHttpRequest(
-        `${weaviateUrl}/v1/schema`,
-        'POST',
-        JSON.stringify(testClass),
-        { 'Content-Type': 'application/json' }
-      );
-
-      if (createResponse.statusCode === 200 || createResponse.statusCode === 422) {
-        logSuccess('Weaviate class creation test passed');
-        this.results.weaviate.class_creation = 'success';
-        this.results.overall.passed++;
-
-        // Clean up test class
-        try {
-          await this.makeHttpRequest(`${weaviateUrl}/v1/schema/TestDocument`, 'DELETE');
-          logInfo('Test class cleaned up');
-        } catch (error) {
-          // Ignore cleanup errors
-        }
-      } else {
-        logError(`Weaviate class creation failed: ${createResponse.statusCode}`);
-        this.results.weaviate.class_creation = 'failed';
-        this.results.overall.failed++;
-      }
-    } catch (error) {
-      logError(`Weaviate operation test failed: ${error.message}`);
-      this.results.weaviate.operation_test = 'failed';
-      this.results.overall.failed++;
-    }
-  }
+  // Weaviate is no longer used - using PostgreSQL pgvector instead
 
   async testPostgreSQLVectorOperations() {
     if (!process.env.DATABASE_URL) {
@@ -537,13 +496,7 @@ class VectorDatabaseVerifier {
 
     if (failed === 0) {
       logSuccess('🎉 Vector database verification completed successfully!');
-
-      const weaviateEnabled = process.env.WEAVIATE_ENABLED === 'true';
-      if (weaviateEnabled) {
-        logInfo('✨ Your Weaviate vector database is ready to use');
-      } else {
-        logInfo('✨ Your PostgreSQL vector database is ready to use');
-      }
+      logInfo('✨ Your PostgreSQL with pgvector is ready to use');
     } else {
       logError('❌ Vector database verification failed');
       logInfo('Please check the errors above and refer to the documentation:');

@@ -56,7 +56,7 @@ cd digitwinlive
 
 - **Node.js** 20+ ([Download](https://nodejs.org/))
 - **pnpm** 8+ ([Install](https://pnpm.io/installation))
-- **PostgreSQL** 15+ OR **Docker** (for Weaviate)
+- **PostgreSQL** 15+ with pgvector extension
 - **Windows users**: WSL or Git Bash recommended for shell scripts ([Setup Guide](./docs/CROSS-PLATFORM.md))
 
 **Installation:**
@@ -81,14 +81,9 @@ createdb digitwinline_dev
 pnpm db:migrate
 pnpm db:generate
 
-# 5. Set up vector database (choose one)
-# Option A: PostgreSQL with pgvector (recommended)
+# 5. Set up vector database
+# PostgreSQL with pgvector extension
 # See docs/VECTOR-DATABASE.md for pgvector installation
-
-# Option B: Weaviate (free alternative, currently configured)
-docker run -d --name weaviate -p 8080:8080 \
-  -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
-  semitechnologies/weaviate:latest
 
 # 6. Set up XTTS service (for voice cloning)
 cd services/xtts-service
@@ -197,8 +192,8 @@ The system follows a microservices architecture with the following key component
 - **Frontend**: React Native, TypeScript
 - **Backend**: Node.js, TypeScript, Express, Socket.io
 - **AI Services**: Google Chirp, Gemini, OpenAI, Groq, XTTS-v2
-- **Infrastructure**: Google Cloud Platform (Cloud Run, GKE, Cloud SQL)
-- **Vector Database**: PostgreSQL with pgvector extension OR Weaviate (self-hosted)
+- **Infrastructure**: Google Cloud Platform (Cloud Run, Cloud SQL)
+- **Vector Database**: PostgreSQL with pgvector extension
 - **Caching**: PostgreSQL (indexed cache tables)
 - **Build Tool**: Turborepo
 - **Package Manager**: pnpm
@@ -221,7 +216,7 @@ The system follows a microservices architecture with the following key component
 
 ### 🗄️ Database & Storage
 
-- **[Vector Database](./docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector / Weaviate setup
+- **[Vector Database](./docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector setup
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
 - **[Document Processing](./docs/DOCUMENT-PROCESSING.md)** - Document upload, extraction, and embedding
@@ -342,11 +337,6 @@ DATABASE_URL=postgresql://user:pass@host:5432/dbname
 # Option A: PostgreSQL with pgvector (uses DATABASE_URL above)
 VECTOR_DIMENSIONS=768
 VECTOR_INDEX_LISTS=100
-WEAVIATE_ENABLED=false
-
-# Option B: Weaviate (self-hosted)
-WEAVIATE_URL=http://localhost:8080
-WEAVIATE_ENABLED=true
 
 # Application
 NODE_ENV=development

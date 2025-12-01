@@ -1,129 +1,87 @@
 # RAG Service
 
-Retrieval-Augmented Generation (RAG) service for the Real-Time Conversational Clone System.
+Retrieval-Augmented Generation (RAG) service using PostgreSQL with pgvector extension for vector similarity search.
 
 ## Overview
 
-The RAG service provides intelligent knowledge retrieval and context assembly for the conversational AI. It combines vector search, embedding generation, and context management to deliver personalized, accurate responses based on user-specific knowledge bases.
+The RAG service provides document indexing and semantic search capabilities using:
 
-## Features
-
-- **Embedding Generation**: Google Vertex AI text-embedding-004 (768 dimensions)
-- **Vector Search**: Dual database support (PostgreSQL pgvector / Weaviate)
-- **Context Assembly**: Intelligent context building with conversation history
-- **Caching**: PostgreSQL-based caching for embeddings and search results
-- **User Isolation**: Complete data isolation per user
-- **Health Monitoring**: Built-in health checks for all components
+- **PostgreSQL with pgvector**: Vector database for embeddings storage and similarity search
+- **OpenAI Embeddings**: text-embedding-ada-002 model for generating embeddings
+- **Intelligent Chunking**: Document chunking with sentence/paragraph preservation
+- **Caching**: PostgreSQL-based caching for search results and embeddings
 
 ## Architecture
 
 ```
-Query → Embedding → Vector Search → Context Assembly → LLM Prompt
-  ↓         ↓            ↓                ↓
-Cache   Cache      PostgreSQL        Conversation
-                   or Weaviate         History
+┌─────────────────────────────────────────────────────────────┐
+│                        RAG Service                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Chunking   │  │  Embedding   │  │   Vector DB  │    │
+│  │   Service    │  │   Service    │  │   Service    │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+│         │                  │                  │            │
+│         └──────────────────┴──────────────────┘            │
+│                           │                                │
+│                    ┌──────▼──────┐                        │
+│                    │ RAG Service │                        │
+│                    └─────────────┘                        │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+                ┌───────────────────────┐
+                │  PostgreSQL + pgvector│
+                │  - document_chunks    │
+                │  - vector_searches    │
+                │  - embeddings (1536D) │
+                └───────────────────────┘
 ```
 
-## Components
+## Features
 
-### EmbeddingService
+### Vector Database (PostgreSQL + pgvector)
 
-Generates embeddings using Google Vertex AI text-embedding-004 model.
+- **Native PostgreSQL Integration**: Uses pgvector extension for vector operations
+- **Cosine Similarity Search**: Fast similarity search using IVFFlat indexing
+- **ACID Compliance**: Full transactional support
+- **Scalable**: Handles millions of vectors efficiently
+- **No Additional Infrastructure**: Uses existing PostgreSQL database
 
-```typescript
-const embeddingService = new EmbeddingService({
-  model: 'text-embedding-004',
-  projectId: 'your-project-id',
-  location: 'us-central1',
-});
+### Document Processing
 
-const embedding = await embeddingService.embedQuery('What is AI?');
-```
+- **Intelligent Chunking**: Preserves sentence and paragraph boundaries
+- **Configurable Chunk Size**: Default 1000 characters with 200 character overlap
+- **Metadata Preservation**: Maintains document metadata throughout pipeline
+- **Multiple Document Types**: Supports text, PDF, URLs, and files
 
-### VectorSearchService
+### Embedding Generation
 
-Performs similarity search using PostgreSQL pgvector or Weaviate.
+- **OpenAI text-embedding-ada-002**: 1536-dimensional embeddings
+- **Batch Processing**: Efficient batch embedding generation
+- **Validation**: Automatic embedding validation and error handling
+- **Caching**: PostgreSQL-based caching for generated embeddings
 
-```typescript
-const vectorSearchService = new VectorSearchService({
-  useWeaviate: false, // Use PostgreSQL by default
-  postgresql: {
-    connectionString: process.env.DATABASE_URL,
-    similarityThreshold: 0.7,
-  },
-});
+### Search & Retrieval
 
-const results = await vectorSearchService.search(
-  embedding,
-  5, // topK
-  { userId: 'user-123' }
-);
-```
+- **Semantic Search**: Find relevant documents using natural language queries
+- **Similarity Threshold**: Configurable similarity threshold (default 0.7)
+- **Knowledge Base Filtering**: Filter results by knowledge base
+- **Result Ranking**: Results sorted by similarity score
+- **Search Analytics**: Track queries and results for optimization
 
-### ContextAssembler
+## Installation
 
-Assembles context from search results, conversation history, and user profile.
+```bash
+# Install dependencies
+pnpm install
 
-```typescript
-const contextAssembler = new ContextAssembler({
-  maxConversationTurns: 5,
-  maxKnowledgeChunks: 5,
-});
+# Build the service
+pnpm build
 
-const context = contextAssembler.assembleContext(
-  query,
-  searchResults,
-  conversationHistory,
-  userProfile
-);
-```
-
-### CacheService
-
-Manages PostgreSQL-based caching for embeddings and search results.
-
-```typescript
-const cacheService = new CacheService(prisma, {
-  enabled: true,
-  ttlShort: 300, // 5 minutes
-  ttlMedium: 3600, // 1 hour
-  ttlLong: 86400, // 24 hours
-});
-
-// Cache embedding
-await cacheService.cacheEmbedding(query, embedding);
-
-// Get cached embedding
-const cached = await cacheService.getCachedEmbedding(query);
-```
-
-### RAGOrchestrator
-
-Coordinates all RAG components for end-to-end query processing.
-
-```typescript
-const ragOrchestrator = new RAGOrchestrator(
-  embeddingService,
-  vectorSearchService,
-  contextAssembler,
-  cacheService,
-  {
-    topK: 5,
-    similarityThreshold: 0.7,
-    maxConversationTurns: 5,
-  }
-);
-
-const response = await ragOrchestrator.processQuery({
-  query: 'What is my favorite color?',
-  userId: 'user-123',
-  userProfile: {
-    name: 'John',
-    personalityTraits: ['friendly', 'helpful'],
-    speakingStyle: 'casual',
-  },
-  conversationHistory: [],
-});
+# Run tests
+pnpm test
 ```
 
 ## Configuration
@@ -131,28 +89,46 @@ const response = await ragOrchestrator.processQuery({
 ### Environment Variables
 
 ```bash
-# GCP Configuration
-GCP_PROJECT_ID=your-project-id
-GCP_LOCATION=us-central1
+# Database (includes vector storage)
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
 
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/database
+# Vector Configuration
+VECTOR_DIMENSIONS=1536  # OpenAI text-embedding-ada-002
+VECTOR_INDEX_LISTS=100  # IVFFlat index parameter
 
-# Vector Database Selection
-WEAVIATE_ENABLED=false  # Use PostgreSQL by default
-WEAVIATE_URL=http://localhost:8080
-WEAVIATE_API_KEY=your-api-key
+# OpenAI API
+OPENAI_API_KEY=your-openai-api-key
+
+# RAG Configuration
+RAG_CHUNK_SIZE=1000
+RAG_CHUNK_OVERLAP=200
+RAG_MAX_RESULTS=10
 
 # Caching (PostgreSQL-based)
 ENABLE_CACHING=true
-CACHE_TTL_SHORT=300      # 5 minutes
-CACHE_TTL_MEDIUM=3600    # 1 hour
-CACHE_TTL_LONG=86400     # 24 hours
+CACHE_TTL_SHORT=300
+CACHE_TTL_MEDIUM=3600
+CACHE_TTL_LONG=86400
+```
 
-# RAG Configuration
-SIMILARITY_THRESHOLD=0.7
-RAG_TOP_K=5
-MAX_CONVERSATION_TURNS=5
+### Database Setup
+
+1. **Install pgvector extension**:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+2. **Run migrations**:
+
+```bash
+pnpm db:migrate
+```
+
+3. **Verify setup**:
+
+```bash
+./scripts/verify-local-vector-db.sh
 ```
 
 ## Usage
@@ -160,192 +136,252 @@ MAX_CONVERSATION_TURNS=5
 ### Initialize Service
 
 ```typescript
-import { initializeRAGService } from '@clone/rag-service';
+import { RAGService } from '@clone/rag-service';
 
-const ragService = initializeRAGService({
-  projectId: process.env.GCP_PROJECT_ID,
-  location: process.env.GCP_LOCATION,
-  databaseUrl: process.env.DATABASE_URL,
-  weaviateEnabled: process.env.WEAVIATE_ENABLED === 'true',
-  cacheEnabled: true,
-  similarityThreshold: 0.7,
-  topK: 5,
-  maxConversationTurns: 5,
+const ragService = new RAGService();
+await ragService.initialize();
+```
+
+### Index Documents
+
+```typescript
+await ragService.indexDocument({
+  id: 'doc-123',
+  title: 'Product Documentation',
+  content: 'Your document content here...',
+  sourceUrl: 'https://example.com/docs',
+  documentType: 'text',
+  metadata: {
+    category: 'documentation',
+    tags: ['product', 'guide'],
+  },
+  knowledgeBaseId: 'kb-456',
 });
 ```
 
-### Process Query
+### Search Documents
 
 ```typescript
-const response = await ragService.processQuery({
-  query: 'What are my hobbies?',
-  userId: 'user-123',
-  userProfile: {
-    name: 'Alice',
-    personalityTraits: ['creative', 'analytical'],
-    speakingStyle: 'professional',
-  },
-  conversationHistory: [
-    {
-      userTranscript: 'Hello',
-      llmResponse: 'Hi! How can I help you today?',
-      timestamp: new Date(),
-    },
-  ],
-  filters: {
-    sourceType: 'document',
-  },
+const results = await ragService.search({
+  query: 'How do I configure the service?',
+  knowledgeBaseId: 'kb-456',
+  maxResults: 10,
+  similarityThreshold: 0.7,
 });
 
-console.log('Prompt:', response.prompt);
-console.log('Search Results:', response.searchResults);
-console.log('Metrics:', response.metrics);
+console.log(`Found ${results.totalResults} results`);
+results.results.forEach((result) => {
+  console.log(`- ${result.source.title} (${result.similarity})`);
+  console.log(`  ${result.content}`);
+});
+```
+
+### Delete Documents
+
+```typescript
+// Delete a single document
+await ragService.deleteDocument('doc-123');
+
+// Delete entire knowledge base
+await ragService.deleteKnowledgeBase('kb-456');
 ```
 
 ### Health Check
 
 ```typescript
 const health = await ragService.healthCheck();
-console.log('Status:', health.status);
-console.log('Components:', health.components);
+console.log('RAG Service Health:', health);
 ```
 
-## Database Schema
+## API Reference
 
-### PostgreSQL pgvector
+### RAGService
 
-The service uses PostgreSQL with the pgvector extension for vector storage and search.
+#### `initialize(): Promise<void>`
 
-```sql
--- Enable pgvector extension
-CREATE EXTENSION IF NOT EXISTS vector;
+Initialize the RAG service and vector database.
 
--- Document chunks with embeddings
-CREATE TABLE document_chunks (
-  id UUID PRIMARY KEY,
-  document_id UUID NOT NULL,
-  user_id UUID NOT NULL,
-  chunk_index INTEGER NOT NULL,
-  content TEXT NOT NULL,
-  embedding vector(768), -- 768-dimensional vectors
-  metadata JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(document_id, chunk_index)
-);
+#### `indexDocument(document: DocumentInput): Promise<void>`
 
--- Indexes for efficient search
-CREATE INDEX idx_document_chunks_user_id ON document_chunks(user_id);
-CREATE INDEX idx_document_chunks_vector ON document_chunks
-  USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-```
+Index a document for retrieval.
+
+**Parameters:**
+
+- `document.id`: Unique document identifier
+- `document.title`: Document title
+- `document.content`: Document content
+- `document.sourceUrl`: Optional source URL
+- `document.documentType`: Document type (text, pdf, url, file)
+- `document.metadata`: Optional metadata
+- `document.knowledgeBaseId`: Knowledge base identifier
+
+#### `search(query: RAGQuery): Promise<RAGResponse>`
+
+Search for relevant documents.
+
+**Parameters:**
+
+- `query.query`: Search query text
+- `query.knowledgeBaseId`: Optional knowledge base filter
+- `query.maxResults`: Maximum results to return (default: 10)
+- `query.similarityThreshold`: Minimum similarity score (default: 0.7)
+
+**Returns:**
+
+- `results`: Array of search results with content and similarity scores
+- `query`: Original query text
+- `totalResults`: Number of results found
+- `processingTimeMs`: Query processing time
+
+#### `deleteDocument(documentId: string): Promise<void>`
+
+Delete a document and its chunks from the index.
+
+#### `deleteKnowledgeBase(knowledgeBaseId: string): Promise<void>`
+
+Delete all documents for a knowledge base.
+
+#### `getStats(): Promise<Stats>`
+
+Get RAG service statistics.
+
+#### `healthCheck(): Promise<HealthCheck>`
+
+Check service health status.
+
+## Performance
+
+### Indexing Performance
+
+- **Chunking**: ~1000 chunks/second
+- **Embedding Generation**: ~100 chunks/second (OpenAI API limit)
+- **Storage**: ~500 chunks/second (PostgreSQL)
+
+### Search Performance
+
+- **Query Embedding**: ~50ms (OpenAI API)
+- **Vector Search**: <5ms (PostgreSQL with IVFFlat index)
+- **Total Query Time**: ~100-200ms
+
+### Optimization Tips
+
+1. **Use IVFFlat Indexing**: Significantly improves search performance
+2. **Batch Embedding Generation**: Process multiple chunks together
+3. **Enable Caching**: Cache frequently accessed embeddings and search results
+4. **Tune Chunk Size**: Balance between context and performance
+5. **Adjust Index Lists**: Higher values improve accuracy, lower values improve speed
+
+## Caching Strategy
+
+The RAG service uses PostgreSQL-based caching (following the caching-guidelines):
+
+### Cached Data
+
+1. **Embeddings**: Cache generated embeddings to avoid re-computation
+2. **Search Results**: Cache frequent queries and their results
+3. **Document Chunks**: Cache processed chunks for faster re-indexing
 
 ### Cache Tables
 
 ```sql
 -- Embedding cache
-CREATE TABLE embedding_cache (
-  id UUID PRIMARY KEY,
-  query_hash VARCHAR(64) UNIQUE NOT NULL,
-  embedding FLOAT8[] NOT NULL,
+CREATE TABLE cache_embeddings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cache_key VARCHAR(255) NOT NULL,
+  cache_value JSONB NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   expires_at TIMESTAMP NOT NULL
 );
 
--- Vector search cache
-CREATE TABLE vector_search_cache (
-  id UUID PRIMARY KEY,
-  query_hash VARCHAR(64) NOT NULL,
-  user_id UUID NOT NULL,
-  results JSONB NOT NULL,
+-- Search results cache
+CREATE TABLE cache_vector_searches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cache_key VARCHAR(255) NOT NULL,
+  cache_value JSONB NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
-  expires_at TIMESTAMP NOT NULL,
-  UNIQUE(query_hash, user_id)
+  expires_at TIMESTAMP NOT NULL
 );
 ```
 
-## Performance
+### Cache Cleanup
 
-### Latency Targets
-
-- **Embedding Generation**: < 200ms
-- **Vector Search**: < 100ms (with proper indexing)
-- **Context Assembly**: < 50ms
-- **Total RAG Pipeline**: < 200ms
-
-### Caching Strategy
-
-- **Embeddings**: Cached for 1 hour (CACHE_TTL_MEDIUM)
-- **Search Results**: Cached for 5 minutes (CACHE_TTL_SHORT)
-- **Cache Hit Rate**: Target > 60% for common queries
-
-### Optimization Tips
-
-1. **Use PostgreSQL caching** (NOT Redis) - already configured
-2. **Enable pgvector IVFFlat index** for faster searches
-3. **Batch embedding generation** for document processing
-4. **Limit topK** to 3-5 for optimal context size
-5. **Periodic cache cleanup** to prevent bloat
-
-## Testing
-
-```bash
-# Run tests
-pnpm test
-
-# Run with coverage
-pnpm test --coverage
-
-# Type check
-pnpm type-check
+```typescript
+// Automatic cleanup runs periodically
+await db.$executeRaw`
+  DELETE FROM cache_embeddings WHERE expires_at < NOW();
+  DELETE FROM cache_vector_searches WHERE expires_at < NOW();
+`;
 ```
 
 ## Monitoring
 
-### Health Check Endpoint
+### Metrics
 
-```typescript
-const health = await ragService.healthCheck();
-// Returns: { status: 'healthy' | 'unhealthy', components: {...} }
-```
-
-### Metrics to Monitor
-
-- Query latency (embedding, search, total)
+- Document count per knowledge base
+- Average chunk count per document
+- Search query latency
+- Embedding generation latency
 - Cache hit rate
-- Search result count
-- Similarity scores
-- Error rates
+
+### Health Checks
+
+```bash
+# Check service health
+curl http://localhost:3000/api/v1/rag/health
+
+# Check vector database
+./scripts/verify-local-vector-db.sh
+```
 
 ## Troubleshooting
 
-### No Search Results
+### pgvector Extension Not Found
 
-- Check similarity threshold (default: 0.7)
-- Verify user has uploaded documents
-- Check vector database connection
-- Verify embeddings are generated correctly
+```bash
+# Install pgvector
+psql $DATABASE_URL -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
 
-### High Latency
+### Slow Search Performance
 
-- Enable caching (ENABLE_CACHING=true)
-- Check database indexes
-- Reduce topK value
-- Monitor GCP Vertex AI quotas
+1. Create IVFFlat index:
 
-### Cache Not Working
+```sql
+CREATE INDEX CONCURRENTLY document_chunks_embedding_idx
+ON document_chunks USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
+```
 
-- Verify PostgreSQL connection
-- Check cache TTL settings
-- Run cache cleanup: `await cacheService.cleanup()`
-- Check cache table indexes
+2. Increase `VECTOR_INDEX_LISTS` for better accuracy
+3. Enable caching for frequent queries
 
-## References
+### OpenAI API Rate Limits
+
+1. Reduce batch size for embedding generation
+2. Add delays between API calls
+3. Enable embedding caching
+4. Consider using a different embedding model
+
+## Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Run specific test file
+pnpm test vector-database.service.test.ts
+
+# Run with coverage
+pnpm test --coverage
+```
+
+## Documentation
 
 - [Vector Database Setup](../../docs/VECTOR-DATABASE.md)
 - [Caching Architecture](../../docs/CACHING-ARCHITECTURE.md)
 - [Database Architecture](../../docs/DATABASE-ARCHITECTURE.md)
-- [GCP Management](../../docs/GCP-MANAGEMENT.md)
+- [RAG Query Optimization](../../docs/RAG-QUERY-OPTIMIZATION.md)
 
 ## License
 
-Private - Real-Time Conversational Clone System
+[License information]
