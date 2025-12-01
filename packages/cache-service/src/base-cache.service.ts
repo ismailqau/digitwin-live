@@ -9,7 +9,7 @@ import { logger } from '@clone/logger';
 
 import { CacheOptions } from './types';
 
-export abstract class BaseCacheService<T = any, K = any> {
+export abstract class BaseCacheService<T = unknown, K = unknown> {
   protected prisma: PrismaClient;
   protected defaultTTL: number;
   protected cacheEnabled: boolean;

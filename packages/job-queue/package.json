@@ -1,7 +1,7 @@
 {
-  "name": "@clone/cache-service",
+  "name": "@clone/job-queue",
   "version": "1.0.0",
-  "description": "PostgreSQL-based caching service for Real-Time Conversational Clone System",
+  "description": "Background job processing with BullMQ for Real-Time Conversational Clone System",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -13,8 +13,9 @@
   },
   "dependencies": {
     "@clone/config": "workspace:*",
-    "@clone/database": "workspace:*",
-    "@clone/logger": "workspace:*"
+    "@clone/logger": "workspace:*",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.9.2",

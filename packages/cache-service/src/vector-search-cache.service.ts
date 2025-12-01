@@ -15,7 +15,7 @@ export interface VectorSearchResult {
   id: string;
   score: number;
   content: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface VectorSearchCacheEntry {
@@ -26,7 +26,7 @@ export interface VectorSearchQuery {
   embedding: number[];
   topK: number;
   userId: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
 export class VectorSearchCacheService extends BaseCacheService<
@@ -113,6 +113,7 @@ export class VectorSearchCacheService extends BaseCacheService<
         data: {
           queryHash,
           userId: query.userId,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           results: value.results as any,
           expiresAt,
         },

@@ -99,7 +99,10 @@ export class CacheManager {
   async getStats(): Promise<{
     embedding: { totalEntries: number };
     vectorSearch: { totalEntries: number };
-    llmResponse: { totalEntries: number; topCached: any[] };
+    llmResponse: {
+      totalEntries: number;
+      topCached: Array<{ promptHash: string; hitCount: number; provider: string }>;
+    };
     audioChunk: { totalEntries: number; totalSizeBytes: number; avgHitCount: number };
   }> {
     try {

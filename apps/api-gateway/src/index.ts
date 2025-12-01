@@ -4,7 +4,11 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 
 import { swaggerSpec } from './config/swagger';
+// import { compressionMiddleware } from './middleware/compression.middleware'; // TODO: Fix Express v5 type conflicts
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.middleware';
+import { etagMiddleware } from './middleware/etag.middleware';
+import { fieldFilteringMiddleware } from './middleware/fieldFiltering.middleware';
+import { paginationMiddleware } from './middleware/pagination.middleware';
 import { apiLimiter } from './middleware/rateLimit.middleware';
 import { correlationIdMiddleware, requestLogger } from './middleware/requestLogger.middleware';
 import v1Routes from './routes/v1';
@@ -27,9 +31,18 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Response compression (gzip/brotli)
+// TODO: Enable compression middleware after fixing Express v5 type conflicts
+// app.use(compressionMiddleware);
+
 // Request logging and correlation
 app.use(correlationIdMiddleware);
 app.use(requestLogger);
+
+// Response optimization
+app.use(etagMiddleware); // ETag for conditional requests
+app.use(paginationMiddleware); // Pagination helpers
+app.use(fieldFilteringMiddleware); // Field filtering for partial responses
 
 // Rate limiting
 app.use('/api', apiLimiter);

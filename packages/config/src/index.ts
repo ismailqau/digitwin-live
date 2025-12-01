@@ -35,6 +35,11 @@ export interface Config {
   storage: {
     bucket: string;
   };
+  redis?: {
+    host: string;
+    port: number;
+    password?: string;
+  };
 }
 
 export function loadConfig(): Config {
@@ -71,6 +76,13 @@ export function loadConfig(): Config {
     storage: {
       bucket: process.env.CLOUD_STORAGE_BUCKET || '',
     },
+    redis: process.env.REDIS_HOST
+      ? {
+          host: process.env.REDIS_HOST,
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+          password: process.env.REDIS_PASSWORD,
+        }
+      : undefined,
   };
 }
 

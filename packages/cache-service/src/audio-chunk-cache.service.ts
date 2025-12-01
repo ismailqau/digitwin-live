@@ -19,14 +19,14 @@ export interface AudioChunkCacheEntry {
   channels: number;
   compression: string;
   storagePath?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AudioChunkKey {
   text: string;
   voiceModelId: string;
   provider: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 export class AudioChunkCacheService extends BaseCacheService<AudioChunkCacheEntry, AudioChunkKey> {
@@ -95,7 +95,7 @@ export class AudioChunkCacheService extends BaseCacheService<AudioChunkCacheEntr
         channels: cached.channels,
         compression: cached.compression,
         storagePath: cached.storagePath || undefined,
-        metadata: cached.metadata as Record<string, any>,
+        metadata: cached.metadata as Record<string, unknown>,
       };
     } catch (error) {
       this.handleCacheError(error as Error, 'get');
@@ -123,26 +123,28 @@ export class AudioChunkCacheService extends BaseCacheService<AudioChunkCacheEntr
         where: { cacheKey },
         create: {
           cacheKey,
-          audioData: Buffer.from(value.audioData) as any,
+          audioData: Buffer.from(value.audioData),
           format: value.format,
           durationMs: value.durationMs,
           sampleRate: value.sampleRate,
           channels: value.channels,
           compression: value.compression,
           storagePath: value.storagePath,
-          metadata: value.metadata || {},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          metadata: (value.metadata || {}) as any,
           expiresAt,
           hitCount: 0,
         },
         update: {
-          audioData: Buffer.from(value.audioData) as any,
+          audioData: Buffer.from(value.audioData),
           format: value.format,
           durationMs: value.durationMs,
           sampleRate: value.sampleRate,
           channels: value.channels,
           compression: value.compression,
           storagePath: value.storagePath,
-          metadata: value.metadata || {},
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          metadata: (value.metadata || {}) as any,
           expiresAt,
         },
       });

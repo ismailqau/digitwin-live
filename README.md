@@ -220,6 +220,7 @@ The system follows a microservices architecture with the following key component
 - **[Vector Database](./docs/VECTOR-DATABASE.md)** - PostgreSQL + pgvector setup
 - **[Database Architecture](./docs/DATABASE-ARCHITECTURE.md)** - Schema and repository pattern
 - **[Caching Architecture](./docs/CACHING-ARCHITECTURE.md)** - PostgreSQL-based caching
+- **[Performance Optimization](./docs/PERFORMANCE-OPTIMIZATION.md)** - Caching, API optimization, background jobs, and network optimization
 - **[Document Processing](./docs/DOCUMENT-PROCESSING.md)** - Document upload, extraction, and embedding
 - **[Knowledge Base API](./docs/KNOWLEDGE-BASE-API.md)** - REST API for documents, FAQs, and knowledge sources
 - **[RAG Query Optimization](./docs/RAG-QUERY-OPTIMIZATION.md)** - Query preprocessing, hybrid search, and analytics

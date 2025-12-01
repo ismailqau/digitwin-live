@@ -14,7 +14,7 @@ export interface CacheOptions {
   userId?: string; // For user-specific caching
 }
 
-export interface CacheEntry<T = any> {
+export interface CacheEntry<T = unknown> {
   key: string;
   value: T;
   expiresAt: Date;
