@@ -1,5 +1,51 @@
 # Implementation Plan
 
+## � CRITeICAL STATUS UPDATE
+
+**Last Updated:** December 1, 2024
+
+### Current Implementation Status
+
+**✅ COMPLETED (Phases 1-7):**
+
+- Monorepo infrastructure and tooling
+- GCP infrastructure with management scripts
+- Database schema (PostgreSQL with pgvector)
+- All backend services implemented:
+  - ASR Service (Google Chirp integration)
+  - RAG Service (vector search, document processing)
+  - LLM Service (multi-provider support)
+  - TTS Service (multi-provider voice cloning)
+  - Face Processing Service (face detection, embeddings)
+  - Lip-sync Service (video generation)
+- WebSocket Server foundation
+- API Gateway foundation
+- Authentication and authorization
+- Event-driven architecture (CQRS, Saga)
+- Face model creation pipeline
+
+**🚧 IN PROGRESS (Phase 9):**
+
+- Conversation flow orchestration (partially implemented)
+- End-to-end integration testing needed
+
+**❌ NOT STARTED (Critical for MVP):**
+
+- **Phase 3: Mobile App** - EMPTY, needs full implementation
+  - Audio capture and streaming
+  - Audio/video playback
+  - WebSocket client
+  - All UI screens
+- **Phase 10-12:** Performance optimization, caching integration, monitoring
+
+### Next Steps (Priority Order)
+
+1. **CRITICAL:** Implement mobile app (Phase 13) - Without this, users cannot interact with the system
+2. **HIGH:** Complete conversation flow orchestration (Phase 9.2)
+3. **MEDIUM:** Integrate caching into services (Phase 10)
+4. **MEDIUM:** Implement error handling and security (Phase 11)
+5. **LOW:** Add monitoring and observability (Phase 12)
+
 ## 📋 Current Setup Status
 
 ### ✅ Completed Infrastructure
@@ -1139,25 +1185,25 @@ idle → listening → processing → speaking → idle
 ### 📝 Implementation Notes
 
 - **IMPORTANT**: Use PostgreSQL for ALL caching, NOT Redis or Memcached
-- Cache tables already designed (see docs/CACHING-ARCHITECTURE.md)
+- Cache tables already implemented in Prisma schema: EmbeddingCache, VectorSearchCache, LLMResponseCache, AudioChunkCache
 - Environment variables: ENABLE_CACHING, CACHE_TTL_SHORT, CACHE_TTL_MEDIUM, CACHE_TTL_LONG
 - Implement automatic cleanup: `DELETE FROM cache_* WHERE expires_at < NOW()`
 - Use JSONB for cache_value to store complex objects
 - Create indexes on cache_key and expires_at for performance
 
 - [ ] 10. Implement caching and performance optimization
-  - ✅ PostgreSQL cache tables architecture already designed (see docs/CACHING-ARCHITECTURE.md)
+  - ✅ PostgreSQL cache tables already implemented in Prisma schema (EmbeddingCache, VectorSearchCache, LLMResponseCache, AudioChunkCache)
   - ✅ Cache table pattern: cache\_<type> with cache_key, cache_value (JSONB), expires_at
   - ✅ Environment variables: ENABLE_CACHING, CACHE_TTL_SHORT, CACHE_TTL_MEDIUM, CACHE_TTL_LONG
-  - Implement cache tables: cache_vector_searches, cache_llm_responses, cache_audio_chunks, cache_embeddings
-  - Create cache service with get/set/delete/cleanup methods
-  - Implement multi-level caching strategy (L1: memory, L2: PostgreSQL cache tables, L3: storage)
+  - Implement cache service with get/set/delete/cleanup methods in shared package
+  - Integrate caching into RAG service (vector search results, embeddings)
+  - Integrate caching into LLM service (response caching for FAQs)
+  - Integrate caching into TTS service (audio chunk caching)
+  - Implement multi-level caching strategy (L1: memory, L2: PostgreSQL cache tables, L3: GCS)
   - Create cache invalidation strategies (TTL with timestamp columns, event-based triggers)
-  - Implement LLM response caching for FAQs in PostgreSQL
   - Create voice model preloading for active users
   - Implement face model caching in GPU workers
   - Create connection pooling for databases and APIs
-  - Implement query result caching with cache-aside pattern using PostgreSQL
   - Create cache warming strategies for frequently accessed data
   - Implement automatic cache cleanup job (DELETE FROM cache\_\* WHERE expires_at < NOW())
   - _Requirements: 11_
@@ -1165,22 +1211,24 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 10.1 Implement API response optimization
-  - Create response compression (gzip, brotli)
-  - Implement pagination for list endpoints
-  - Create field filtering for partial responses
+  - Create response compression (gzip, brotli) middleware in API Gateway
+  - Implement pagination for list endpoints (documents, conversations, FAQs)
+  - Create field filtering for partial responses (GraphQL-style field selection)
   - Implement ETags for conditional requests
   - Create response streaming for large payloads
   - _Requirements: 11_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 10.2 Implement background job processing
-  - Set up job queue with Bull/BullMQ
-  - Create job processors for document processing
-  - Implement job processors for voice model training
-  - Create job processors for face model creation
+  - ✅ TrainingJob model already exists in Prisma schema
+  - Set up job queue with Bull/BullMQ in shared package
+  - Create job processors for document processing (RAG service)
+  - Implement job processors for voice model training (TTS service)
+  - Create job processors for face model creation (Face Processing service)
   - Implement job retry logic with exponential backoff
   - Create job monitoring and failure handling
   - Implement job priority and scheduling
+  - Create job status API endpoints
   - _Requirements: 9, 16, 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
@@ -1196,9 +1244,9 @@ idle → listening → processing → speaking → idle
 ## Phase 11: Error Handling and Security
 
 - [ ] 11. Implement error handling and recovery
-  - Create centralized error handler middleware
+  - Create centralized error handler middleware in API Gateway and WebSocket Server
   - Implement error categorization (client, server, external)
-  - Create custom error classes with error codes
+  - Create custom error classes with error codes in @clone/errors package
   - Implement retry logic with exponential backoff
   - Create fallback strategies for each service failure
   - Implement circuit breaker pattern for external APIs
@@ -1209,7 +1257,7 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 11.1 Implement API validation and sanitization
-  - Create request validation using Zod schemas
+  - Create request validation using Zod schemas in @clone/validation package
   - Implement input sanitization to prevent injection attacks
   - Create DTO validation with class-validator
   - Implement file upload validation (size, type, content)
@@ -1220,18 +1268,19 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 11.2 Implement health checks and monitoring
-  - Create health check endpoints for all services
+  - Create health check endpoints for all services (/health, /health/live, /health/ready)
   - Implement component health status tracking
   - Create liveness and readiness probes for Kubernetes
-  - Implement deep health checks for dependencies
+  - Implement deep health checks for dependencies (database, external APIs)
   - _Requirements: 11_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 11.3 Implement security and privacy features
-  - Implement data encryption at rest (Cloud Storage, Cloud SQL)
-  - Create TLS configuration for all connections
-  - Implement user data isolation and access controls
+  - ✅ Data encryption at rest already configured (Cloud Storage, Cloud SQL)
+  - ✅ TLS configuration already in place for all connections
+  - Implement user data isolation and access controls (row-level security)
   - Create data retention policies and cleanup jobs
+  - ✅ Audit logging model already exists in Prisma schema
   - Implement audit logging for sensitive operations
   - _Requirements: 10, 12_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
@@ -1245,13 +1294,12 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 11.5 Implement rate limiting
+  - ✅ RateLimit model already exists in Prisma schema
   - Create rate limiting service with PostgreSQL indexed rate_limits table
-  - Table structure: user_id, endpoint, request_count, window_start, window_end, tier
   - Implement per-user rate limits based on subscription tier
   - Create rate limit enforcement middleware
   - Implement graceful degradation on rate limit exceeded
   - Use PostgreSQL for rate limiting storage (NOT Redis)
-  - Create indexes on (user_id, endpoint, window_start) for fast lookups
   - Implement sliding window algorithm using PostgreSQL
   - _Requirements: 12_
   - _Note: Use PostgreSQL for rate limiting, consistent with caching architecture_
@@ -1285,7 +1333,27 @@ idle → listening → processing → speaking → idle
   - _Requirements: 11, 17_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-## Phase 13: React Native Mobile App - Complete UI/UX Implementation
+- [ ] 12.3 Implement latency and quality alerting
+  - Create alerting rules for 95th percentile latency > 2500ms (Requirement 11.3)
+  - Implement voice similarity score monitoring and alerts for scores < 80% (Requirement 11.4)
+  - Create ASR accuracy monitoring and alerts for accuracy < 95% (Requirement 2.4)
+  - Implement RAG relevance score monitoring
+  - Create GPU utilization alerts for resource exhaustion
+  - Implement cost threshold alerts per conversation
+  - Create error rate alerts (> 5% error rate)
+  - Implement WebSocket connection health alerts
+  - _Requirements: 11.3, 11.4, 2.4, 11_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+## Phase 13: React Native Mobile App - Complete UI/UX Implementation (CRITICAL - NOT STARTED)
+
+### 📝 Implementation Notes
+
+- **CRITICAL**: Mobile app is currently empty and needs full implementation
+- This is the user-facing component that ties everything together
+- Without this, users cannot interact with the system
+- Priority: HIGH - Required for MVP
+- Integrates audio capture, playback, WebSocket communication, and all UI screens
 
 - [ ] 13. Set up React Native project structure and navigation
   - Initialize React Native project with TypeScript in `apps/mobile-app`
@@ -1363,30 +1431,88 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.6 Implement main conversation screen
-  - Create conversation UI with video display area
-  - Implement audio waveform visualization during recording
+  - Create full-screen video player for clone's face
+  - Implement video player controls (quality, fullscreen)
+  - Create floating audio waveform visualization during user speech
+  - Implement real-time transcript display with auto-scroll
   - Create conversation state indicators (idle, listening, processing, speaking)
-  - Implement push-to-talk and continuous listening modes
-  - Create conversation history display with scrollable transcript
-  - Implement source attribution display (show which documents were used)
+  - Implement microphone button with press-to-talk and continuous listening modes
   - Create interruption button for stopping clone response
   - Implement audio/video quality indicators
   - Create network status indicator
-  - Implement conversation controls (mute, speaker, video on/off)
-  - _Requirements: 1, 7, 8, 14_
+  - Implement conversation controls (mute, speaker, video on/off, end, settings)
+  - Add haptic feedback for state transitions
+  - Create knowledge source indicator:
+    - Show badge when response uses knowledge base
+    - Display "Using 2 documents" or "Using FAQ" indicator
+    - Tap to see which documents/FAQs were referenced
+  - Implement knowledge source drawer:
+    - Slide-up drawer showing referenced documents
+    - Document titles with relevance scores
+    - Tap document to view full content
+    - Quick link to knowledge base management
+  - _Requirements: 1, 6, 7, 8, 9, 14_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 13.6.1 Implement conversation history UI
+  - Create conversation history list screen with card/list view toggle
+  - Implement conversation card with:
+    - Date and time
+    - Duration
+    - Auto-generated summary (first user query or AI-generated)
+    - Turn count
+    - Knowledge sources used badge (if any)
+    - Cost indicator (optional)
+  - Create conversation detail view with full transcript:
+    - User messages (left-aligned)
+    - AI responses (right-aligned)
+    - Timestamps for each turn
+    - Knowledge source indicators on AI responses
+    - Tap to expand and see source documents
+  - Implement knowledge source expansion:
+    - Show list of documents/FAQs used in that turn
+    - Display relevance scores
+    - Link to document detail view
+    - Highlight relevant text snippets
+  - Implement search functionality in conversation history:
+    - Search by content (user queries or AI responses)
+    - Filter by date range
+    - Filter by conversations that used knowledge base
+    - Filter by specific documents referenced
+  - Create conversation export functionality:
+    - Export as PDF with formatting
+    - Export as plain text
+    - Include source citations in export
+    - Option to include/exclude source metadata
+  - Implement conversation delete with confirmation
+  - Add pull-to-refresh for history updates
+  - Create conversation statistics:
+    - Total conversations count
+    - Total duration
+    - Average conversation length
+    - Knowledge base usage rate
+  - Implement empty state with helpful CTA
+  - Add loading skeletons for better UX
+  - _Requirements: 9, 14_
+  - _Note: Integrates with RAG source tracking from Phase 4.4_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.7 Implement settings and profile screens
-  - Create user profile screen with account information
+  - Create user profile screen with avatar and account information
+  - Implement profile editing functionality
   - Implement personality configuration UI (traits, speaking style)
   - Create AI provider selection (LLM, TTS, ASR)
-  - Implement voice model management (list, activate, delete, compare)
-  - Create face model management (list, activate, delete, preview)
-  - Implement subscription and usage tracking display
-  - Create privacy settings (data retention, consent management)
+  - Create voice model management screen with model list
+  - Implement voice model switching, deletion, and comparison
+  - Create face model management screen with preview
+  - Implement face model switching and deletion
+  - Implement conversation settings (interruption sensitivity, auto-save)
+  - Create privacy settings (data retention, consent management, history)
   - Implement notification preferences
   - Create app settings (theme, language, quality preferences)
-  - _Requirements: 10, 16, 17, 18_
+  - Create subscription and usage screen with analytics
+  - Implement about screen with version and legal info
+  - _Requirements: 9, 10, 16, 17, 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.8 Implement error handling and offline support
@@ -1406,6 +1532,98 @@ idle → listening → processing → speaking → idle
   - Implement feature request submission
   - Create in-app help and tutorials
   - _Requirements: 11_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 13.10 Implement core mobile services (audio, video, WebSocket, network)
+  - **Audio Services:**
+    - Create audio recording service using react-native-audio-recorder-player
+    - Implement audio playback service with queue management
+    - Create audio buffer management for streaming
+    - Implement Voice Activity Detection (VAD) using react-native-voice
+    - Create audio visualization component with real-time waveform
+    - Implement audio quality monitoring and feedback
+    - Create audio session management for iOS (AVAudioSession)
+    - Implement audio focus handling for Android (AudioManager)
+  - **Video Services:**
+    - Create video player component using react-native-video
+    - Implement video frame rendering and buffering
+    - Create audio-video synchronization logic
+    - Implement adaptive video quality based on network
+    - Create video loading and error states
+    - Implement fullscreen video mode
+    - Create video performance optimization (frame dropping)
+  - **WebSocket Services:**
+    - Create WebSocket connection manager with Socket.io
+    - Implement connection state management (connecting, connected, disconnected)
+    - Create message queue for offline scenarios
+    - Implement automatic reconnection with exponential backoff
+    - Create message handlers for all server message types
+    - Implement heartbeat/ping-pong for connection health
+    - Create WebSocket error handling and recovery
+  - **Network Services:**
+    - Create network status monitoring using @react-native-community/netinfo
+    - Implement offline mode detection and UI
+    - Create network quality detection (bandwidth, latency)
+    - Implement adaptive quality settings based on network
+    - Create connection quality indicator in UI
+    - Implement graceful degradation (audio-only mode)
+  - _Requirements: 1, 6, 7, 10, 15_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 13.11 Implement UI components and platform features
+  - **Component Library:**
+    - Create reusable button components (primary, secondary, icon)
+    - Implement input components (text, password, search)
+    - Create card components for lists and content
+    - Implement modal and bottom sheet components
+    - Create loading indicators (spinner, skeleton, progress)
+    - Implement toast/snackbar for notifications
+    - Create animated components (fade, slide, scale)
+    - Implement theme system (colors, typography, spacing)
+    - Create dark mode support
+  - **Platform-Specific Features:**
+    - Configure iOS-specific settings (Info.plist permissions)
+    - Implement iOS-specific UI adaptations (safe area, notch)
+    - Configure Android-specific settings (AndroidManifest.xml permissions)
+    - Implement Android-specific UI adaptations (navigation bar, status bar)
+    - Create platform-specific audio/video handling
+    - Implement iOS background audio support
+    - Create Android foreground service for conversations
+  - **Accessibility:**
+    - Add accessibility labels to all interactive elements
+    - Implement screen reader support (VoiceOver, TalkBack)
+    - Create high contrast mode support
+    - Implement font scaling support
+    - Add keyboard navigation support
+    - Create focus management for navigation
+    - Implement haptic feedback for important actions
+  - _Requirements: 1, 6, 7, 13_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 13.12 Implement app performance and monitoring
+  - **Performance Optimization:**
+    - Optimize React Native bundle size
+    - Implement code splitting and lazy loading
+    - Create image optimization and caching
+    - Implement list virtualization for long lists
+    - Optimize re-renders with React.memo and useMemo
+    - Create memory leak detection and prevention
+    - Implement app startup time optimization
+  - **Analytics and Monitoring:**
+    - Integrate Firebase Analytics or similar
+    - Implement event tracking for user actions
+    - Create screen view tracking
+    - Integrate crash reporting (Sentry, Crashlytics)
+    - Implement performance monitoring
+    - Create user feedback collection mechanism
+  - **Notifications and Deep Linking:**
+    - Configure deep linking for app navigation
+    - Implement push notification setup (FCM for Android, APNs for iOS)
+    - Create notification handlers for conversation updates
+    - Implement notification permissions request
+    - Create notification action handlers
+    - Implement badge count management
+  - _Requirements: 10, 11_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 14: Testing and Quality Assurance
@@ -1520,6 +1738,20 @@ idle → listening → processing → speaking → idle
   - _Requirements: All_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
+- [ ] 15.3.1 Prepare mobile app store submissions
+  - Create iOS App Store listing (screenshots, description, keywords, app preview video)
+  - Create Google Play Store listing (screenshots, description, keywords, feature graphic)
+  - Prepare app store assets (app icon in all required sizes, feature graphics, promo video)
+  - Set up TestFlight for iOS beta testing distribution
+  - Set up Google Play Beta for Android beta testing distribution
+  - Implement app store optimization (ASO) strategy (keyword research, competitive analysis)
+  - Create app store review guidelines compliance checklist (iOS App Review Guidelines, Google Play Policies)
+  - Prepare app store submission documentation (privacy policy URL, support URL, marketing URL)
+  - Configure in-app purchase products (if applicable)
+  - Set up app store analytics and tracking
+  - _Requirements: All mobile requirements (1, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18)_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
 - [ ] 15.4 Launch and monitor
   - Deploy to production with phased rollout
   - Monitor system health and performance
@@ -1529,360 +1761,6 @@ idle → listening → processing → speaking → idle
   - Create post-launch report and retrospective
   - _Requirements: All_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 13.6 Implement main conversation screen
-  - Create full-screen video player for clone's face
-  - Implement video player controls (quality, fullscreen)
-  - Create floating audio waveform visualization during user speech
-  - Implement real-time transcript display with auto-scroll
-  - Create conversation state indicators (listening, thinking, speaking)
-  - Implement microphone button with press-to-talk and continuous modes
-  - Create conversation controls (mute, end, settings)
-  - Implement connection status indicator
-  - Add haptic feedback for state transitions
-  - Create knowledge source indicator:
-    - Show badge when response uses knowledge base
-    - Display "Using 2 documents" or "Using FAQ" indicator
-    - Tap to see which documents/FAQs were referenced
-  - Implement knowledge source drawer:
-    - Slide-up drawer showing referenced documents
-    - Document titles with relevance scores
-    - Tap document to view full content
-    - Quick link to knowledge base management
-  - _Requirements: 1, 6, 7, 8, 9_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 13.7 Implement conversation history UI
-  - Create conversation history list screen
-  - Implement conversation card with:
-    - Date and time
-    - Duration
-    - Auto-generated summary (first user query or AI-generated)
-    - Turn count
-    - Knowledge sources used badge (if any)
-    - Cost indicator (optional)
-  - Create conversation detail view with full transcript:
-    - User messages (left-aligned)
-    - AI responses (right-aligned)
-    - Timestamps for each turn
-    - Knowledge source indicators on AI responses
-    - Tap to expand and see source documents
-  - Implement knowledge source expansion:
-    - Show list of documents/FAQs used in that turn
-    - Display relevance scores
-    - Link to document detail view
-    - Highlight relevant text snippets
-  - Implement search functionality in conversation history:
-    - Search by content (user queries or AI responses)
-    - Filter by date range
-    - Filter by conversations that used knowledge base
-    - Filter by specific documents referenced
-  - Create conversation export functionality:
-    - Export as PDF with formatting
-    - Export as plain text
-    - Include source citations in export
-    - Option to include/exclude source metadata
-  - Implement conversation delete with confirmation
-  - Add pull-to-refresh for history updates
-  - Create conversation statistics:
-    - Total conversations count
-    - Total duration
-    - Average conversation length
-    - Knowledge base usage rate
-  - Implement empty state with helpful CTA
-  - Add loading skeletons for better UX
-  - _Requirements: 9, 14_
-  - _Note: Integrates with RAG source tracking from Phase 4.4_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 13.8 Implement settings and profile screens
-  - Create user profile screen with avatar and info
-  - Implement profile editing functionality
-  - Create voice model management screen with model list
-  - Implement voice model switching and deletion
-  - Create face model management screen with preview
-  - Implement face model switching and deletion
-  - Create AI provider preferences screen (LLM, TTS selection)
-  - Implement conversation settings (interruption sensitivity, auto-save)
-  - Create privacy settings (data retention, history)
-  - Implement notification settings
-  - Create subscription and usage screen with analytics
-  - Implement about screen with version and legal info
-  - _Requirements: 9, 16, 17, 18_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 13.9 Implement audio components and services
-  - Create audio recording service using react-native-audio-recorder-player
-  - Implement audio playback service with queue management
-  - Create audio buffer management for streaming
-  - Implement Voice Activity Detection (VAD) using react-native-voice
-  - Create audio visualization component with real-time waveform
-  - Implement audio quality monitoring and feedback
-  - Create audio session management for iOS
-  - Implement audio focus handling for Android
-  - _Requirements: 1, 7_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
-
-- [ ] 13.10 Implement video components and services
-  - Create video player component using react-native-video
-  - Implement video frame rendering and buffering
-  - Create audio-video synchronization logic
-  - Implement adaptive video quality based on network
-  - Create video loading and error states
-  - Implement fullscreen video mode
-  - Create video performance optimization (frame dropping)
-  - _Requirements: 6, 7_
-
-- [ ] 13.11 Implement WebSocket client service
-  - Create WebSocket connection manager with Socket.io
-  - Implement connection state management (connecting, connected, disconnected)
-  - Create message queue for offline scenarios
-  - Implement automatic reconnection with exponential backoff
-  - Create message handlers for all server message types
-  - Implement heartbeat/ping-pong for connection health
-  - Create WebSocket error handling and recovery
-  - _Requirements: 10_
-
-- [ ] 13.12 Implement network and connectivity handling
-  - Create network status monitoring using @react-native-community/netinfo
-  - Implement offline mode detection and UI
-  - Create network quality detection (bandwidth, latency)
-  - Implement adaptive quality settings based on network
-  - Create connection quality indicator in UI
-  - Implement graceful degradation (audio-only mode)
-  - _Requirements: 10, 15_
-
-- [ ] 13.13 Implement UI components library
-  - Create reusable button components (primary, secondary, icon)
-  - Implement input components (text, password, search)
-  - Create card components for lists and content
-  - Implement modal and bottom sheet components
-  - Create loading indicators (spinner, skeleton, progress)
-  - Implement toast/snackbar for notifications
-  - Create animated components (fade, slide, scale)
-  - Implement theme system (colors, typography, spacing)
-  - Create dark mode support
-  - _Requirements: All UI tasks_
-
-- [ ] 13.14 Implement error handling and user feedback
-  - Create error boundary component for crash handling
-  - Implement error message display system
-  - Create retry mechanisms for failed operations
-  - Implement user-friendly error messages
-  - Create help tooltips and contextual guidance
-  - Implement loading states for all async operations
-  - Create success feedback animations
-  - _Requirements: 13_
-
-- [ ] 13.15 Implement platform-specific features
-  - Configure iOS-specific settings (Info.plist permissions)
-  - Implement iOS-specific UI adaptations (safe area, notch)
-  - Configure Android-specific settings (AndroidManifest.xml permissions)
-  - Implement Android-specific UI adaptations (navigation bar, status bar)
-  - Create platform-specific audio/video handling
-  - Implement iOS background audio support
-  - Create Android foreground service for conversations
-  - _Requirements: 1, 6, 7_
-
-- [ ] 13.16 Implement accessibility features
-  - Add accessibility labels to all interactive elements
-  - Implement screen reader support (VoiceOver, TalkBack)
-  - Create high contrast mode support
-  - Implement font scaling support
-  - Add keyboard navigation support
-  - Create focus management for navigation
-  - Implement haptic feedback for important actions
-  - _Requirements: All UI tasks_
-
-- [ ] 13.17 Implement analytics and crash reporting
-  - Integrate Firebase Analytics or similar
-  - Implement event tracking for user actions
-  - Create screen view tracking
-  - Integrate crash reporting (Sentry, Crashlytics)
-  - Implement performance monitoring
-  - Create user feedback collection mechanism
-  - _Requirements: 11_
-
-- [ ] 13.18 Implement app performance optimization
-  - Optimize React Native bundle size
-  - Implement code splitting and lazy loading
-  - Create image optimization and caching
-  - Implement list virtualization for long lists
-  - Optimize re-renders with React.memo and useMemo
-  - Create memory leak detection and prevention
-  - Implement app startup time optimization
-  - _Requirements: 11_
-
-- [ ] 13.19 Implement deep linking and notifications
-  - Configure deep linking for app navigation
-  - Implement push notification setup (FCM for Android, APNs for iOS)
-  - Create notification handlers for conversation updates
-  - Implement notification permissions request
-  - Create notification action handlers
-  - Implement badge count management
-  - _Requirements: 10_
-
-## Phase 14: Deployment and Infrastructure Automation
-
-- [ ] 14. Implement deployment automation and infrastructure
-  - ✅ GCP infrastructure scripts already implemented (see Phase 2.8)
-  - ✅ Cloud SQL (PostgreSQL 17), Storage Buckets, Service Accounts configured
-  - ✅ Management scripts: setup, status, cleanup, stop-all, start-all
-  - Create Terraform modules for all GCP resources (migrate from bash scripts)
-  - Implement Terraform workspaces for dev/staging/prod
-  - Create Terraform state management with remote backend
-  - Implement infrastructure validation with terraform validate
-  - Create infrastructure testing with Terratest
-  - Implement infrastructure documentation generation
-  - _Requirements: 11_
-  - _Note: Current bash scripts work well, Terraform migration is optional optimization_
-
-- [ ] 14.1 Set up CI/CD pipeline
-  - Create GitHub Actions workflow for backend services
-  - Implement automated testing in CI pipeline
-  - Create Docker image building and scanning
-  - Implement automated deployment to staging
-  - Create manual approval gate for production
-  - Implement deployment notifications (Slack, email)
-  - Create rollback automation
-  - _Requirements: 11_
-
-- [ ] 14.2 Implement container orchestration
-  - Create Dockerfile for each service with multi-stage builds
-  - Implement Docker Compose for local development
-  - Create Kubernetes manifests for all services
-  - Implement Helm charts for service deployment
-  - Create Kubernetes secrets management
-  - Implement pod auto-scaling (HPA)
-  - Create service mesh configuration (Istio optional)
-  - _Requirements: 11_
-
-- [ ] 14.3 Configure auto-scaling policies
-  - Configure Cloud Run auto-scaling for WebSocket server
-  - Set up GKE Autopilot auto-scaling for GPU workloads
-  - Create scaling triggers based on conversation count
-  - Implement GPU utilization-based scaling
-  - Create custom metrics for scaling decisions
-  - Implement scale-down policies to reduce costs
-  - Create scaling alerts and monitoring
-  - _Requirements: 11_
-
-- [ ] 14.4 Implement deployment strategies
-  - Implement blue-green deployment for zero-downtime
-  - Create canary deployment configuration
-  - Implement rolling updates for Kubernetes
-  - Create deployment health checks
-  - Implement automated rollback on failure
-  - Create deployment smoke tests
-  - Implement feature flags for gradual rollout
-  - _Requirements: 11_
-
-- [ ] 14.5 Create deployment scripts and tools
-  - Create deployment CLI tool for operations
-  - Implement pre-deployment validation scripts
-  - Create database migration runner
-  - Implement post-deployment verification scripts
-  - Create environment configuration validator
-  - Implement secrets rotation scripts
-  - Create backup scripts before deployment
-  - _Requirements: 11_
-
-## Phase 15: Testing and Quality Assurance
-
-- [ ]\* 15. Write unit tests for backend services
-  - Create unit tests for authentication service
-  - Write unit tests for RAG pipeline components
-  - Create unit tests for LLM service adapters
-  - Write unit tests for TTS service
-  - Create unit tests for face model processing
-  - Write unit tests for error handlers
-  - Create unit tests for validation logic
-  - Achieve 80%+ code coverage
-  - _Requirements: All backend tasks_
-
-- [ ]\* 15.1 Write integration tests
-  - Create end-to-end conversation flow tests
-  - Write WebSocket communication tests
-  - Create RAG pipeline integration tests
-  - Write multi-provider LLM tests
-  - Create voice and face model creation tests
-  - Write database integration tests
-  - Create external API integration tests
-  - Implement test data cleanup
-  - _Requirements: 1, 2, 3, 4, 5, 6, 16, 18_
-
-- [ ]\* 15.2 Write API contract tests
-  - Create OpenAPI schema validation tests
-  - Write contract tests for REST endpoints
-  - Create WebSocket message schema tests
-  - Implement API versioning tests
-  - Write backward compatibility tests
-  - Create API response format tests
-  - _Requirements: All API tasks_
-
-- [ ]\* 15.3 Write performance and load tests
-  - Set up k6 for load testing
-  - Create load tests for concurrent conversations (10, 100, 1000 users)
-  - Write latency benchmark tests for each pipeline stage
-  - Create GPU utilization tests
-  - Write network bandwidth tests
-  - Create spike tests (0 → 500 → 0 users)
-  - Implement soak tests (sustained load for 2+ hours)
-  - Create stress tests to find breaking points
-  - Write performance regression tests
-  - _Requirements: 11_
-
-- [ ]\* 15.4 Write security tests
-  - Create authentication bypass tests
-  - Write authorization and data isolation tests
-  - Create rate limiting tests
-  - Write content safety tests
-  - Create SQL injection tests
-  - Implement XSS vulnerability tests
-  - Write CSRF protection tests
-  - Create API key security tests
-  - Implement penetration testing scenarios
-  - Write security header validation tests
-  - _Requirements: 10, 12_
-
-- [ ]\* 15.5 Write end-to-end tests
-  - Set up Playwright or Cypress for E2E testing
-  - Create user registration and login E2E tests
-  - Write voice model creation E2E tests
-  - Create face model creation E2E tests
-  - Write conversation flow E2E tests
-  - Create document upload E2E tests
-  - Implement cross-platform E2E tests (iOS, Android)
-  - _Requirements: All_
-
-- [ ]\* 15.6 Create test automation infrastructure
-  - Set up test database with seeding
-  - Create test data factories and builders
-  - Implement test fixtures for common scenarios
-  - Create mock services for external dependencies
-  - Set up test environment configuration
-  - Implement parallel test execution
-  - Create test reporting and dashboards
-  - Implement flaky test detection and retry
-  - _Requirements: All_
-
-- [ ]\* 15.7 Write chaos engineering tests
-  - Create network failure simulation tests
-  - Write service failure recovery tests
-  - Create database connection failure tests
-  - Implement GPU unavailability tests
-  - Write cascading failure tests
-  - Create resource exhaustion tests
-  - _Requirements: 11, 13_
-
-- [ ]\* 15.8 Write React Native component tests
-  - Write unit tests for custom hooks
-  - Create component tests using React Native Testing Library
-  - Write integration tests for screens
-  - Create snapshot tests for UI components
-  - Write tests for navigation flows
-  - Create tests for WebSocket communication
-  - _Requirements: All UI tasks_
 
 ## Phase 16: Documentation and Launch Preparation
 
