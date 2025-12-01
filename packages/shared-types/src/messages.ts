@@ -85,6 +85,33 @@ export interface ErrorMessage {
   recoverable: boolean;
 }
 
+// State Management Messages
+export interface StateChangedMessage {
+  type: 'state:changed';
+  sessionId: string;
+  previousState: string;
+  currentState: string;
+  timestamp: number;
+}
+
+export interface StateErrorMessage {
+  type: 'state:error';
+  sessionId: string;
+  attemptedTransition: {
+    from: string;
+    to: string;
+  };
+  errorMessage: string;
+  timestamp: number;
+}
+
+export interface SessionExpiredMessage {
+  type: 'session:expired';
+  sessionId: string;
+  reason: string;
+  timestamp: number;
+}
+
 export type ClientMessage = AudioChunkMessage | InterruptionMessage | EndUtteranceMessage;
 
 export type ServerMessage =
@@ -93,4 +120,7 @@ export type ServerMessage =
   | ResponseAudioMessage
   | ResponseVideoMessage
   | ResponseEndMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | StateChangedMessage
+  | StateErrorMessage
+  | SessionExpiredMessage;

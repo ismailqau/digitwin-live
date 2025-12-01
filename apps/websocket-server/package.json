@@ -15,10 +15,12 @@
   },
   "dependencies": {
     "@clone/config": "workspace:*",
+    "@clone/database": "workspace:*",
     "@clone/errors": "workspace:*",
     "@clone/logger": "workspace:*",
     "@clone/shared-types": "workspace:*",
     "@clone/validation": "workspace:*",
+    "@prisma/client": "^6.18.0",
     "@types/pg": "^8.15.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",

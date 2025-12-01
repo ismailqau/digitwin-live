@@ -7,4 +7,5 @@ export interface ISessionRepository {
   delete(sessionId: string): Promise<void>;
   findByUserId(userId: string): Promise<Session[]>;
   findByConnectionId(connectionId: string): Promise<Session | null>;
+  cleanupExpiredSessions(): Promise<number>;
 }

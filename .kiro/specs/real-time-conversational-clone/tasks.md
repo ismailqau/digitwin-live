@@ -952,30 +952,186 @@ Audio Chunks → Feature Extraction → Model Selection → Frame Generation →
 
 ## Phase 9: Conversation Flow and State Management
 
-- [ ] 9. Implement conversation state management
-  - Create conversation state machine (idle, listening, processing, speaking, interrupted)
-  - Implement state transition logic and validation
-  - Create conversation session tracking and persistence
-  - Implement conversation history storage and retrieval
-  - Create conversation metrics tracking (latency, cost, quality)
+### 📝 Implementation Notes
+
+- Use WebSocket for bidirectional real-time communication (already configured)
+- Store conversation sessions in PostgreSQL `ConversationSession` table (already in schema)
+- Store conversation turns in `ConversationTurn` table with full context (already in schema)
+- Track state transitions in session metadata for debugging
+- Maintain conversation history: last 5 turns for context (as per Requirement 14)
+- Session timeout: 2 hours of inactivity (as per Requirement 14)
+
+### 🎯 State Machine Overview
+
+```
+idle → listening → processing → speaking → idle
+  ↓        ↓           ↓           ↓
+  └────────┴───────────┴───────────┴──→ interrupted → listening
+```
+
+- [x] 9. Implement conversation state management
+  - Create conversation state machine with states: `idle`, `listening`, `processing`, `speaking`, `interrupted`
+  - Implement state transition logic in WebSocket server:
+    - `idle` → `listening`: User starts speaking (VAD detects speech)
+    - `listening` → `processing`: User stops speaking (VAD silence detected)
+    - `processing` → `speaking`: First audio chunk ready from TTS
+    - `speaking` → `idle`: Response playback complete
+    - `any state` → `interrupted`: User speaks during clone response
+    - `interrupted` → `listening`: Interruption acknowledged, ready for new input
+  - Create state validation to prevent invalid transitions
+  - Implement state persistence in `ConversationSession.metadata` JSONB field
+  - Create WebSocket message types for state management:
+    - `state:changed` - Notify client of state transitions
+    - `state:error` - Invalid state transition attempted
+  - Implement conversation session tracking:
+    - Create session on first WebSocket connection with JWT userId
+    - Store session in PostgreSQL with `sessionId`, `userId`, `status`, `startedAt`, `lastActivityAt`
+    - Update `lastActivityAt` on each user interaction
+    - Set session status: `active`, `paused`, `completed`, `expired`
+  - Implement session timeout handling:
+    - Check `lastActivityAt` every 5 minutes
+    - Mark sessions as `expired` after 2 hours of inactivity
+    - Send `session:expired` WebSocket message to client
+    - Clean up expired sessions after 24 hours
+  - Create conversation history storage:
+    - Store each turn in `ConversationTurn` table with `sessionId`, `turnIndex`, `userMessage`, `assistantMessage`, `retrievedChunks`, `metadata`
+    - Include timestamps: `userMessageAt`, `assistantMessageAt`
+    - Store latency metrics in `metadata`: `asrLatency`, `ragLatency`, `llmLatency`, `ttsLatency`, `totalLatency`
+    - Store cost metrics in `metadata`: `asrCost`, `llmCost`, `ttsCost`, `totalCost`
+  - Implement conversation history retrieval:
+    - Fetch last 5 turns for context window (as per Requirement 14)
+    - Order by `turnIndex DESC`
+    - Include in RAG context assembly
+  - Create conversation metrics tracking:
+    - Track per-turn latency: ASR (< 300ms), RAG (< 200ms), LLM (< 1000ms), TTS (< 500ms)
+    - Track end-to-end latency (target: < 2000ms)
+    - Track cost per turn and cumulative session cost
+    - Track quality metrics: ASR confidence, RAG relevance scores, voice similarity
+    - Store metrics in `ConversationTurn.metadata` for analytics
+  - Implement conversation session API endpoints:
+    - GET /api/v1/conversations - List user's conversation sessions (paginated)
+    - GET /api/v1/conversations/:sessionId - Get session details with turns
+    - GET /api/v1/conversations/:sessionId/turns - Get conversation turns (paginated)
+    - DELETE /api/v1/conversations/:sessionId - Delete conversation session
+    - GET /api/v1/conversations/stats - Get conversation statistics (total sessions, avg duration, avg cost)
+  - Create state management UI in mobile app:
+    - Display current state with visual indicators (listening, thinking, speaking)
+    - Show conversation history in scrollable list
+    - Display latency and quality metrics (optional, debug mode)
   - _Requirements: 8, 14_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 9.1 Implement interruption handling
-  - Create VAD-based interruption detection during playback
-  - Implement immediate playback stop on interruption
-  - Create response queue clearing logic
-  - Implement graceful transition to new query processing
+  - Create VAD-based interruption detection in mobile app:
+    - Continue monitoring microphone during clone response playback
+    - Detect speech onset using VAD (same as initial speech detection)
+    - Set interruption threshold: 200ms of continuous speech
+  - Implement immediate response cancellation:
+    - Send `conversation:interrupt` WebSocket message to backend
+    - Include current `sessionId` and `turnIndex` in message
+    - Stop audio playback immediately (< 50ms)
+    - Stop video playback and clear video buffer
+    - Clear audio/video response queues
+  - Create backend interruption handling:
+    - Cancel ongoing LLM streaming request
+    - Cancel ongoing TTS generation jobs
+    - Cancel ongoing lip-sync generation jobs
+    - Clear response buffers and queues
+    - Transition state: `speaking` → `interrupted` → `listening`
+    - Log interruption event in `ConversationTurn.metadata`: `interrupted: true`, `interruptedAt: timestamp`
+  - Implement graceful transition to new query:
+    - Acknowledge interruption with `conversation:interrupted` WebSocket message
+    - Transition to `listening` state within 200ms (as per Requirement 8)
+    - Begin processing new user utterance as fresh query
+    - Increment `turnIndex` for new conversation turn
+  - Create interruption analytics:
+    - Track interruption frequency per session
+    - Track interruption timing (early, mid, late in response)
+    - Store in session metadata for quality analysis
+  - Implement interruption recovery:
+    - Handle partial responses gracefully (don't store incomplete turns)
+    - Ensure clean state for next turn
+    - Prevent resource leaks from cancelled operations
   - _Requirements: 8_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 9.2 Implement end-to-end conversation flow
-  - Wire audio capture → ASR → RAG → LLM → TTS → Lip-sync → playback
-  - Implement message routing between all services
-  - Create latency tracking for each pipeline stage
-  - Implement error propagation and recovery
-  - Create end-to-end integration tests
-  - _Requirements: 1, 2, 3, 4, 5, 6, 7_
+- [ ] 9.2 Implement end-to-end conversation flow orchestration
+  - Create conversation orchestrator service in WebSocket server:
+    - Coordinate all pipeline stages: Audio → ASR → RAG → LLM → TTS → Lip-sync → Playback
+    - Implement async message routing between services
+    - Track conversation turn lifecycle from start to completion
+  - Wire audio capture to ASR service:
+    - Receive `audio:chunk` WebSocket messages from mobile app
+    - Forward audio chunks to ASR service with `sessionId` and `sequenceNumber`
+    - Handle `audio:end` message to signal utterance completion
+    - Receive `asr:interim` and `asr:final` results from ASR service
+    - Send `transcript:interim` and `transcript:final` to mobile app
+  - Wire ASR to RAG pipeline:
+    - Trigger RAG query on `asr:final` transcript
+    - Pass `sessionId` to retrieve conversation history (last 5 turns)
+    - Receive top 3-5 relevant chunks with similarity scores
+    - Assemble context: retrieved chunks + conversation history
+  - Wire RAG to LLM service:
+    - Send assembled context + user query to LLM service
+    - Include user personality traits and system prompt
+    - Receive streaming tokens from LLM
+    - Buffer tokens into complete sentences for TTS
+  - Wire LLM to TTS service:
+    - Send complete sentences to TTS service as they're buffered
+    - Include `userId` to load correct voice model
+    - Receive streaming audio chunks from TTS
+    - Forward audio chunks to lip-sync service
+  - Wire TTS to Lip-sync service:
+    - Send audio chunks + face model reference to lip-sync service
+    - Receive synchronized video frames
+    - Maintain audio-video sync (< 50ms offset as per Requirement 6)
+  - Wire Lip-sync to mobile app:
+    - Stream audio chunks via WebSocket: `audio:chunk` messages
+    - Stream video frames via WebSocket: `video:frame` messages
+    - Include sequence numbers for proper ordering
+    - Send `response:complete` when all chunks delivered
+  - Implement latency tracking for each stage:
+    - Record timestamps at each pipeline transition
+    - Calculate stage latencies: `asrLatency`, `ragLatency`, `llmLatency`, `ttsLatency`, `lipsyncLatency`
+    - Calculate total latency: `userSpeechEnd` → `firstAudioChunk`
+    - Store in `ConversationTurn.metadata`
+    - Send `metrics:latency` WebSocket message to client (optional, debug mode)
+  - Implement error propagation and recovery:
+    - Catch errors at each pipeline stage
+    - Propagate errors to orchestrator with context
+    - Send `error:asr`, `error:rag`, `error:llm`, `error:tts`, `error:lipsync` to mobile app
+    - Implement retry logic with exponential backoff (max 3 retries)
+    - Fallback strategies:
+      - ASR failure: Prompt user to repeat
+      - RAG failure: Proceed without context (general knowledge)
+      - LLM failure: Try fallback provider (Gemini → OpenAI → Groq)
+      - TTS failure: Use fallback voice or text-only response
+      - Lip-sync failure: Audio-only mode
+    - Log all errors with full context for debugging
+  - Create end-to-end integration tests:
+    - Test happy path: complete conversation turn with all services
+    - Test ASR service failure and recovery
+    - Test RAG service failure and fallback
+    - Test LLM service failure and provider fallback
+    - Test TTS service failure and fallback
+    - Test lip-sync service failure and audio-only mode
+    - Test interruption during each pipeline stage
+    - Test concurrent conversation turns (race conditions)
+    - Test WebSocket disconnection and reconnection
+    - Test session timeout and cleanup
+  - Implement conversation flow monitoring:
+    - Track success rate per pipeline stage
+    - Track average latency per stage
+    - Track error rates and types
+    - Alert when latency exceeds thresholds (as per Requirement 11)
+    - Alert when error rate exceeds 5%
+  - Create conversation flow visualization (optional, debug mode):
+    - Display pipeline stages in mobile app
+    - Show current stage and progress
+    - Display latency for each completed stage
+    - Highlight errors and retries
+  - _Requirements: 1, 2, 3, 4, 5, 6, 7, 8, 14_
+  - _Note: This task integrates all previous phases into a cohesive conversation experience_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 10: Performance Optimization and Caching
