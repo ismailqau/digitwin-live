@@ -2,6 +2,36 @@
 
 Retrieval-Augmented Generation (RAG) service using PostgreSQL with pgvector extension for vector similarity search.
 
+## 🎯 Usage
+
+**This service is designed to be used as a library/package, not as a standalone microservice.**
+
+✅ **Recommended:** Import and use within API Gateway  
+❌ **Not Recommended:** Deploy as separate Cloud Run service
+
+See [INTEGRATION.md](./INTEGRATION.md) for integration guide.
+
+## Architecture Decision
+
+### Why Library Instead of Microservice?
+
+The RAG service is implemented as a **library/package** rather than a standalone microservice because:
+
+1. **Performance:** Direct function calls (50-100ms) vs HTTP calls (100-200ms)
+2. **Cost:** One Cloud Run instance (~$8-15/month) vs two (~$16-30/month)
+3. **Simplicity:** One deployment, one database connection pool, shared caching
+4. **Development:** Easier to debug and test as a single service
+
+### When to Deploy Standalone?
+
+Only deploy RAG as a separate service if you need:
+
+- Independent scaling (different CPU/memory requirements)
+- Separate deployment cycles
+- Team separation
+
+For most use cases, **integrate into API Gateway** (see [INTEGRATION.md](./INTEGRATION.md)).
+
 ## Overview
 
 The RAG service provides document indexing and semantic search capabilities using:

@@ -118,56 +118,5 @@ export function initializeRAGService(config: {
   return ragOrchestrator;
 }
 
-// Main entry point for standalone service
-if (require.main === module) {
-  const config = {
-    projectId: process.env.GCP_PROJECT_ID || '',
-    location: process.env.GCP_LOCATION || 'us-central1',
-    databaseUrl: process.env.DATABASE_URL || '',
-    cacheEnabled: process.env.ENABLE_CACHING !== 'false',
-    cacheTtlShort: parseInt(process.env.CACHE_TTL_SHORT || '300'),
-    cacheTtlMedium: parseInt(process.env.CACHE_TTL_MEDIUM || '3600'),
-    cacheTtlLong: parseInt(process.env.CACHE_TTL_LONG || '86400'),
-    similarityThreshold: parseFloat(process.env.SIMILARITY_THRESHOLD || '0.7'),
-    topK: parseInt(process.env.RAG_TOP_K || '5'),
-    maxConversationTurns: parseInt(process.env.MAX_CONVERSATION_TURNS || '5'),
-  };
-
-  const ragService = initializeRAGService(config);
-
-  // Perform health check
-  ragService.healthCheck().then((health) => {
-    logger.info('RAG service health check', health);
-    if (health.status === 'unhealthy') {
-      logger.error('RAG service is unhealthy');
-      process.exit(1);
-    }
-  });
-
-  // Set up periodic cache cleanup (every hour)
-  setInterval(async () => {
-    try {
-      const prisma = new PrismaClient();
-      const cacheService = new CacheService(prisma, {
-        enabled: true,
-        ttlShort: 300,
-        ttlMedium: 3600,
-        ttlLong: 86400,
-      });
-      await cacheService.cleanup();
-    } catch (error) {
-      logger.error('Periodic cache cleanup failed', { error });
-    }
-  }, 3600000); // 1 hour
-
-  logger.info('RAG service started', { version: RAG_SERVICE_VERSION });
-
-  // Graceful shutdown
-  const shutdown = (signal: string) => {
-    logger.info(`[rag-service] ${signal} received, shutting down...`);
-    process.exit(0);
-  };
-
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-}
+// RAG Service is a library - use initializeRAGService() in your application
+// Example: const ragService = initializeRAGService({ projectId, location, databaseUrl });
