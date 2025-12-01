@@ -12,6 +12,7 @@ export interface AudioChunkMessage extends BaseMessage {
 
 export interface InterruptionMessage extends BaseMessage {
   type: 'interruption';
+  turnIndex?: number;
 }
 
 export interface EndUtteranceMessage extends BaseMessage {
@@ -58,6 +59,11 @@ export interface ErrorMessage extends BaseMessage {
   recoverable: boolean;
 }
 
+export interface ConversationInterruptedMessage extends BaseMessage {
+  type: 'conversation:interrupted';
+  turnIndex: number;
+}
+
 export interface TurnMetrics {
   totalLatencyMs: number;
   asrLatencyMs: number;
@@ -73,4 +79,5 @@ export type ServerMessage =
   | ResponseAudioMessage
   | ResponseVideoMessage
   | ResponseEndMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | ConversationInterruptedMessage;

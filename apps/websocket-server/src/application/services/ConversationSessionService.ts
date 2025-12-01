@@ -106,7 +106,7 @@ export class ConversationSessionService {
       take: limit,
     });
 
-    return turns.map((turn: any) => ({
+    return turns.map((turn) => ({
       id: turn.id,
       sessionId: turn.sessionId,
       timestamp: turn.timestamp,
@@ -248,7 +248,7 @@ export class ConversationSessionService {
         averageLatencyMs: session.averageLatencyMs,
         totalCost: session.totalCost,
       },
-      turns: session.turns.map((turn: any) => ({
+      turns: session.turns.map((turn) => ({
         id: turn.id,
         sessionId: turn.sessionId,
         timestamp: turn.timestamp,
@@ -296,13 +296,11 @@ export class ConversationSessionService {
     const totalSessions = sessions.length;
     const avgDuration =
       totalSessions > 0
-        ? sessions.reduce((sum: number, s: any) => sum + s.durationSeconds, 0) / totalSessions
+        ? sessions.reduce((sum, s) => sum + s.durationSeconds, 0) / totalSessions
         : 0;
     const avgCost =
-      totalSessions > 0
-        ? sessions.reduce((sum: number, s: any) => sum + s.totalCost, 0) / totalSessions
-        : 0;
-    const totalTurns = sessions.reduce((sum: number, s: any) => sum + s.totalTurns, 0);
+      totalSessions > 0 ? sessions.reduce((sum, s) => sum + s.totalCost, 0) / totalSessions : 0;
+    const totalTurns = sessions.reduce((sum, s) => sum + s.totalTurns, 0);
 
     return {
       totalSessions,
@@ -321,9 +319,9 @@ export class ConversationSessionService {
     });
 
     const totalTurns = turns.length;
-    const totalLatency = turns.reduce((sum: number, turn: any) => sum + turn.totalLatencyMs, 0);
+    const totalLatency = turns.reduce((sum, turn) => sum + turn.totalLatencyMs, 0);
     const averageLatencyMs = totalTurns > 0 ? totalLatency / totalTurns : 0;
-    const totalCost = turns.reduce((sum: number, turn: any) => sum + turn.totalCost, 0);
+    const totalCost = turns.reduce((sum, turn) => sum + turn.totalCost, 0);
 
     await this.prisma.conversationSession.update({
       where: { id: sessionId },

@@ -233,6 +233,7 @@ The system follows a microservices architecture with the following key component
 
 - **[Design Document](./.kiro/specs/real-time-conversational-clone/design.md)** - System design
 - **[Conversation State Management](./docs/CONVERSATION-STATE-MANAGEMENT.md)** - State machine, session management, and WebSocket events
+- **[Interruption Handling](./docs/INTERRUPTION-HANDLING.md)** - Natural conversation interruptions with VAD-based detection
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus
 - **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query separation
 - **[Microservices Communication](./docs/microservices-communication.md)** - gRPC & service discovery

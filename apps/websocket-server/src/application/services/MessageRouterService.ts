@@ -1,4 +1,8 @@
-import { ConversationState } from '@clone/shared-types';
+import {
+  ConversationState,
+  ConversationInterruptedMessage,
+  InterruptionMessage,
+} from '@clone/shared-types';
 import { injectable, inject } from 'tsyringe';
 
 import { ClientMessage, ServerMessage, ErrorMessage } from '../../domain/models/Message';
@@ -44,11 +48,47 @@ export class MessageRouterService {
     console.log(`Received audio chunk for session ${sessionId}`);
   }
 
-  private async handleInterruption(sessionId: string, _message: ClientMessage): Promise<void> {
+  private async handleInterruption(sessionId: string, message: ClientMessage): Promise<void> {
+    const interruptionMsg = message as InterruptionMessage;
+
+    // Transition state: speaking → interrupted → listening
+    const session = await this.sessionService.getSession(sessionId);
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+
+    // Update session state to interrupted
     await this.sessionService.updateSessionState(sessionId, ConversationState.INTERRUPTED);
 
-    // TODO: Cancel ongoing response generation
-    console.log(`Interruption received for session ${sessionId}`);
+    // Log interruption event in session metadata
+    await this.sessionService.logInterruption(sessionId, {
+      interrupted: true,
+      interruptedAt: interruptionMsg.timestamp,
+      turnIndex: interruptionMsg.turnIndex,
+    });
+
+    // TODO: Cancel ongoing LLM streaming request
+    // TODO: Cancel ongoing TTS generation jobs
+    // TODO: Cancel ongoing lip-sync generation jobs
+    // TODO: Clear response buffers and queues
+
+    console.log(
+      `Interruption received for session ${sessionId}, turn ${interruptionMsg.turnIndex}`
+    );
+
+    // Acknowledge interruption with conversation:interrupted message
+    const acknowledgeMessage: ConversationInterruptedMessage = {
+      type: 'conversation:interrupted',
+      sessionId,
+      turnIndex: interruptionMsg.turnIndex || 0,
+      timestamp: Date.now(),
+    };
+    this.sendToClient(sessionId, acknowledgeMessage);
+
+    // Transition to listening state within 200ms (as per Requirement 8)
+    setTimeout(async () => {
+      await this.sessionService.updateSessionState(sessionId, ConversationState.LISTENING);
+    }, 50); // Transition quickly, well under 200ms target
   }
 
   private async handleEndUtterance(sessionId: string, _message: ClientMessage): Promise<void> {

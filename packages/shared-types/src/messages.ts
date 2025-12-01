@@ -11,6 +11,7 @@ export interface InterruptionMessage {
   type: 'interruption';
   sessionId: string;
   timestamp: number;
+  turnIndex?: number; // Current turn index being interrupted
 }
 
 export interface EndUtteranceMessage {
@@ -112,6 +113,13 @@ export interface SessionExpiredMessage {
   timestamp: number;
 }
 
+export interface ConversationInterruptedMessage {
+  type: 'conversation:interrupted';
+  sessionId: string;
+  turnIndex: number;
+  timestamp: number;
+}
+
 export type ClientMessage = AudioChunkMessage | InterruptionMessage | EndUtteranceMessage;
 
 export type ServerMessage =
@@ -123,4 +131,5 @@ export type ServerMessage =
   | ErrorMessage
   | StateChangedMessage
   | StateErrorMessage
-  | SessionExpiredMessage;
+  | SessionExpiredMessage
+  | ConversationInterruptedMessage;

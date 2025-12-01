@@ -125,4 +125,53 @@ export class SessionService {
     session.lastActivityAt = new Date();
     await this.sessionRepository.update(session);
   }
+
+  /**
+   * Log interruption event in session metadata
+   */
+  async logInterruption(
+    sessionId: string,
+    interruptionData: {
+      interrupted: boolean;
+      interruptedAt: number;
+      turnIndex?: number;
+    }
+  ): Promise<void> {
+    const session = await this.sessionRepository.findById(sessionId);
+    if (!session) {
+      throw new Error(`Session ${sessionId} not found`);
+    }
+
+    // Initialize metadata if not exists
+    if (!session.metadata) {
+      session.metadata = {};
+    }
+
+    // Initialize interruptions array if not exists
+    if (!session.metadata.interruptions) {
+      session.metadata.interruptions = [];
+    }
+
+    // Add interruption event
+    session.metadata.interruptions.push({
+      ...interruptionData,
+      timestamp: Date.now(),
+    });
+
+    // Update interruption statistics
+    if (!session.metadata.interruptionStats) {
+      session.metadata.interruptionStats = {
+        totalInterruptions: 0,
+        earlyInterruptions: 0, // Interrupted in first 25% of response
+        midInterruptions: 0, // Interrupted in middle 50% of response
+        lateInterruptions: 0, // Interrupted in last 25% of response
+      };
+    }
+
+    session.metadata.interruptionStats.totalInterruptions++;
+
+    // Update activity timestamp
+    session.lastActivityAt = new Date();
+    await this.sessionRepository.update(session);
+  }
 }

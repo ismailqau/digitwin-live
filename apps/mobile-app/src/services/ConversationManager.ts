@@ -76,6 +76,10 @@ export class ConversationManager {
   private sessionId: string = '';
   private silenceTimer: NodeJS.Timeout | null = null;
   private readonly SILENCE_THRESHOLD_MS = 500;
+  private turnIndex: number = 0;
+  private isMonitoringForInterruption: boolean = false;
+  private interruptionDetectionTimer: NodeJS.Timeout | null = null;
+  private readonly INTERRUPTION_THRESHOLD_MS = 200; // 200ms of continuous speech to trigger interruption
 
   constructor(config: ConversationManagerConfig, callbacks: ConversationCallbacks = {}) {
     this.callbacks = callbacks;
@@ -124,6 +128,9 @@ export class ConversationManager {
       const msg = message as ResponseStartMessage;
       this.setState(ConversationState.SPEAKING);
       this.callbacks.onResponseStart?.(msg.turnId);
+
+      // Start monitoring for interruption during clone response
+      this.startInterruptionMonitoring();
     });
 
     this.wsClient.on('response_audio', (message: unknown) => {
@@ -149,6 +156,9 @@ export class ConversationManager {
       const msg = message as ResponseEndMessage;
       this.setState(ConversationState.IDLE);
       this.callbacks.onResponseEnd?.(msg.metrics);
+
+      // Stop monitoring for interruption when response ends
+      this.stopInterruptionMonitoring();
     });
 
     this.wsClient.on('error', (message: unknown) => {
@@ -238,23 +248,61 @@ export class ConversationManager {
    */
   async interrupt(): Promise<void> {
     try {
-      // Send interruption message
+      // Send interruption message with current turnIndex
       const message: InterruptionMessage = {
         type: 'interruption',
         sessionId: this.sessionId,
         timestamp: Date.now(),
+        turnIndex: this.turnIndex,
       };
       this.wsClient.send(message);
 
-      // Stop any ongoing playback
+      // Stop audio playback immediately (< 50ms target)
       await this.playbackManager.stop();
+
+      // Clear audio/video response queues
+      this.playbackManager.clearQueue();
+
+      // Stop monitoring for interruption
+      this.stopInterruptionMonitoring();
+
       this.setState(ConversationState.INTERRUPTED);
 
-      // Start listening again
+      // Increment turn index for new conversation turn
+      this.turnIndex++;
+
+      // Start listening again for new query
       await this.startListening();
     } catch (error) {
       this.handleError(`Failed to interrupt: ${error}`, true);
       throw error;
+    }
+  }
+
+  /**
+   * Start monitoring for interruption during clone response playback
+   */
+  private startInterruptionMonitoring(): void {
+    if (this.isMonitoringForInterruption) {
+      return;
+    }
+
+    this.isMonitoringForInterruption = true;
+
+    // Continue monitoring microphone during playback
+    // The AudioManager's VAD will detect speech onset
+    // We just need to track if speech continues for INTERRUPTION_THRESHOLD_MS
+  }
+
+  /**
+   * Stop monitoring for interruption
+   */
+  private stopInterruptionMonitoring(): void {
+    this.isMonitoringForInterruption = false;
+
+    if (this.interruptionDetectionTimer) {
+      clearTimeout(this.interruptionDetectionTimer);
+      this.interruptionDetectionTimer = null;
     }
   }
 
@@ -313,20 +361,47 @@ export class ConversationManager {
   private handleVoiceActivity(isActive: boolean): void {
     this.callbacks.onVoiceActivity?.(isActive);
 
-    // Reset silence timer when voice is detected
-    if (isActive) {
-      if (this.silenceTimer) {
-        clearTimeout(this.silenceTimer);
-        this.silenceTimer = null;
+    // Handle interruption detection during clone response
+    if (this.isMonitoringForInterruption && this.state === ConversationState.SPEAKING) {
+      if (isActive) {
+        // User started speaking during clone response
+        // Start interruption detection timer
+        if (!this.interruptionDetectionTimer) {
+          this.interruptionDetectionTimer = setTimeout(() => {
+            // User has been speaking for INTERRUPTION_THRESHOLD_MS
+            // Trigger interruption
+            this.interrupt().catch((error) => {
+              console.error('Failed to trigger interruption:', error);
+            });
+          }, this.INTERRUPTION_THRESHOLD_MS);
+        }
+      } else {
+        // User stopped speaking, cancel interruption detection
+        if (this.interruptionDetectionTimer) {
+          clearTimeout(this.interruptionDetectionTimer);
+          this.interruptionDetectionTimer = null;
+        }
       }
-    } else {
-      // Start silence timer when voice stops
-      if (!this.silenceTimer && this.state === ConversationState.LISTENING) {
-        this.silenceTimer = setTimeout(() => {
-          this.stopListening().catch((error) => {
-            console.error('Failed to stop listening after silence:', error);
-          });
-        }, this.SILENCE_THRESHOLD_MS);
+      return;
+    }
+
+    // Normal voice activity handling during listening state
+    if (this.state === ConversationState.LISTENING) {
+      // Reset silence timer when voice is detected
+      if (isActive) {
+        if (this.silenceTimer) {
+          clearTimeout(this.silenceTimer);
+          this.silenceTimer = null;
+        }
+      } else {
+        // Start silence timer when voice stops
+        if (!this.silenceTimer) {
+          this.silenceTimer = setTimeout(() => {
+            this.stopListening().catch((error) => {
+              console.error('Failed to stop listening after silence:', error);
+            });
+          }, this.SILENCE_THRESHOLD_MS);
+        }
       }
     }
   }
@@ -492,6 +567,14 @@ export class ConversationManager {
         clearTimeout(this.silenceTimer);
         this.silenceTimer = null;
       }
+
+      if (this.interruptionDetectionTimer) {
+        clearTimeout(this.interruptionDetectionTimer);
+        this.interruptionDetectionTimer = null;
+      }
+
+      this.stopInterruptionMonitoring();
+
       await this.audioManager.cleanup();
       await this.playbackManager.cleanup();
       this.wsClient.disconnect();
