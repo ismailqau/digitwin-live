@@ -9,6 +9,7 @@ import documentsRoutes from './documents.routes';
 import faqsRoutes from './faqs.routes';
 import knowledgeRoutes from './knowledge.routes';
 import { createRAGRoutes } from './rag.routes';
+import usageRoutes from './usage.routes';
 import voiceRoutes from './voice.routes';
 
 const router: RouterType = Router();
@@ -34,6 +35,7 @@ router.use('/conversations', conversationsRoutes);
 router.use('/documents', documentsRoutes);
 router.use('/faqs', faqsRoutes);
 router.use('/knowledge', knowledgeRoutes);
+router.use('/usage', usageRoutes);
 router.use('/voice', voiceRoutes);
 router.use('/rag', createRAGRoutes(ragController));
 

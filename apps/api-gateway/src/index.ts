@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
@@ -9,15 +10,25 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.middlew
 import { etagMiddleware } from './middleware/etag.middleware';
 import { fieldFilteringMiddleware } from './middleware/fieldFiltering.middleware';
 import { paginationMiddleware } from './middleware/pagination.middleware';
-import { apiLimiter } from './middleware/rateLimit.middleware';
+import {
+  apiLimiter,
+  userRateLimitMiddleware,
+  conversationTimeLimitMiddleware,
+} from './middleware/rateLimit.middleware';
 import { correlationIdMiddleware, requestLogger } from './middleware/requestLogger.middleware';
 import v1Routes from './routes/v1';
 import { getHealthService } from './services/health.service';
+import { getRateLimitCleanupService } from './services/rateLimitCleanup.service';
 
 const PORT = process.env.PORT || 3000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 const app: Express = express();
+
+// Initialize rate limit cleanup service
+const prisma = new PrismaClient();
+const cleanupService = getRateLimitCleanupService(prisma);
+cleanupService.start();
 
 // Security middleware
 app.use(helmet());
@@ -47,6 +58,8 @@ app.use(fieldFilteringMiddleware); // Field filtering for partial responses
 
 // Rate limiting
 app.use('/api', apiLimiter);
+app.use('/api', userRateLimitMiddleware);
+app.use('/api', conversationTimeLimitMiddleware);
 
 // Health check endpoints
 const healthService = getHealthService();
@@ -132,9 +145,13 @@ const server = app.listen(PORT, () => {
 // Graceful shutdown
 const shutdown = (signal: string) => {
   console.log(`[api-gateway] ${signal} received, shutting down...`);
+  cleanupService.stop();
   server.close(() => {
     console.log('[api-gateway] Server closed');
-    process.exit(0);
+    prisma.$disconnect().then(() => {
+      console.log('[api-gateway] Database connection closed');
+      process.exit(0);
+    });
   });
   // Force exit after 3 seconds
   setTimeout(() => process.exit(0), 3000);
