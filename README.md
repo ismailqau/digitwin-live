@@ -237,6 +237,7 @@ The system follows a microservices architecture with the following key component
 - **[Conversation Flow Orchestration](./docs/CONVERSATION-FLOW-ORCHESTRATION.md)** - End-to-end pipeline coordination (Audio → ASR → RAG → LLM → TTS → Lip-sync)
 - **[Conversation State Management](./docs/CONVERSATION-STATE-MANAGEMENT.md)** - State machine, session management, and WebSocket events
 - **[Interruption Handling](./docs/INTERRUPTION-HANDLING.md)** - Natural conversation interruptions with VAD-based detection
+- **[Error Handling](./docs/ERROR-HANDLING.md)** - Centralized error handling, error codes, and user-friendly messages
 - **[Event-Driven Architecture](./docs/EVENT-DRIVEN-ARCHITECTURE.md)** - Event bus
 - **[CQRS Architecture](./docs/CQRS-ARCHITECTURE.md)** - Command Query separation
 - **[Microservices Communication](./docs/microservices-communication.md)** - gRPC & service discovery

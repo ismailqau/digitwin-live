@@ -6,6 +6,7 @@ import { ConnectionService } from '../../application/services/ConnectionService'
 import { MessageRouterService } from '../../application/services/MessageRouterService';
 import { SessionService } from '../../application/services/SessionService';
 import { ClientMessage } from '../../domain/models/Message';
+import { WebSocketErrorHandler } from '../../utils/errorHandler';
 
 @injectable()
 export class WebSocketController {
@@ -51,23 +52,32 @@ export class WebSocketController {
       socket.on('disconnect', () => this.handleDisconnection(session.id, socket.id));
     } catch (error) {
       console.error('Connection error:', error);
-      socket.emit('error', { message: 'Authentication failed' });
+      WebSocketErrorHandler.sendError(
+        socket,
+        error instanceof Error ? error : new Error('Authentication failed')
+      );
       socket.disconnect();
     }
   }
 
   private setupMessageHandlers(socket: Socket, sessionId: string): void {
     socket.on('message', async (message: ClientMessage) => {
-      try {
+      await WebSocketErrorHandler.wrapHandler(socket, sessionId, async () => {
         await this.messageRouter.routeClientMessage(sessionId, message);
-      } catch (error) {
-        console.error(`Error handling message for session ${sessionId}:`, error);
-        socket.emit('error', { message: 'Failed to process message' });
-      }
+      });
     });
 
     socket.on('ping', () => {
       socket.emit('pong', { timestamp: Date.now() });
+    });
+
+    // Handle retry requests from mobile app
+    socket.on('retry_asr', async () => {
+      socket.emit('asr_retry_acknowledged', {
+        sessionId,
+        timestamp: Date.now(),
+        message: 'Ready to receive audio. Please speak again.',
+      });
     });
   }
 
