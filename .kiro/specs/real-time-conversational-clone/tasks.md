@@ -33,11 +33,22 @@
 
 **❌ NOT STARTED (Critical for MVP):**
 
-- **Phase 13: Mobile App** - EMPTY, needs full implementation
-  - Audio capture and streaming
-  - Audio/video playback
-  - WebSocket client
-  - All UI screens
+- **Phase 13: Mobile App** - Partially implemented, needs full UI implementation
+  - ✅ Basic audio services (AudioManager, AudioPlaybackManager, VoiceSampleManager)
+  - ✅ Basic hooks (useAudioRecording, useConversation, useVoiceSampleUpload)
+  - ✅ Basic components (ConversationScreen, VoiceModelPreview, VoiceSampleRecording)
+  - ❌ Navigation structure (React Navigation)
+  - ❌ State management (Redux/Zustand)
+  - ❌ Authentication screens (login, register, forgot password)
+  - ❌ Onboarding flow (7 screens)
+  - ❌ Face model creation UI (8 sub-tasks)
+  - ❌ Knowledge base management UI
+  - ❌ Settings and profile screens
+  - ❌ WebSocket client integration
+  - ❌ Video player for lip-sync
+  - ❌ Error handling and offline support
+  - ❌ Push notifications and deep linking
+  - ❌ Platform-specific configurations
 - **Phase 10:** Performance optimization, caching integration
 
 ### Next Steps (Priority Order)
@@ -1462,65 +1473,338 @@ idle → listening → processing → speaking → idle
 
 ### 📝 Implementation Notes
 
-- **CRITICAL**: Mobile app is currently empty and needs full implementation
+- **CRITICAL**: Mobile app has basic services but needs full UI implementation
 - This is the user-facing component that ties everything together
 - Without this, users cannot interact with the system
 - Priority: HIGH - Required for MVP
 - Integrates audio capture, playback, WebSocket communication, and all UI screens
 
+### 🎯 Current Mobile App Status
+
+**✅ Already Implemented (in `apps/mobile-app/src/`):**
+
+- `services/AudioManager.ts` - Audio recording service
+- `services/AudioPlaybackManager.ts` - Audio playback service
+- `services/ConversationManager.ts` - Conversation state management
+- `services/VoiceSampleManager.ts` - Voice sample recording/upload
+- `hooks/useAudioRecording.ts` - Audio recording hook
+- `hooks/useConversation.ts` - Conversation hook
+- `hooks/useVoiceSampleUpload.ts` - Voice sample upload hook
+- `components/ConversationScreen.tsx` - Basic conversation screen
+- `components/VoiceModelPreview.tsx` - Voice model preview
+- `components/VoiceSampleRecording.tsx` - Voice sample recording UI
+- Basic tests for audio services
+
+**❌ NOT Implemented (Required for MVP):**
+
+- Navigation structure (React Navigation)
+- State management (Redux/Zustand)
+- Authentication screens (login, register, forgot password)
+- Onboarding flow
+- Face model creation UI
+- Knowledge base management UI
+- Settings and profile screens
+- WebSocket client integration
+- Video player for lip-sync
+- Error handling and offline support
+- Platform-specific configurations
+- Push notifications
+- Deep linking
+
+### 📱 App Architecture Overview
+
+```
+apps/mobile-app/
+├── src/
+│   ├── navigation/           # React Navigation setup
+│   │   ├── RootNavigator.tsx
+│   │   ├── AuthNavigator.tsx
+│   │   ├── MainNavigator.tsx
+│   │   └── OnboardingNavigator.tsx
+│   ├── screens/              # Screen components
+│   │   ├── auth/             # Login, Register, ForgotPassword
+│   │   ├── onboarding/       # Welcome, Permissions, Setup
+│   │   ├── conversation/     # Main conversation, History
+│   │   ├── voice/            # Voice recording, Preview
+│   │   ├── face/             # Face capture, Preview
+│   │   ├── knowledge/        # Documents, FAQs
+│   │   └── settings/         # Profile, Settings, About
+│   ├── components/           # Reusable UI components (existing + new)
+│   ├── services/             # Business logic services (existing + new)
+│   ├── hooks/                # Custom React hooks (existing + new)
+│   ├── store/                # State management (Redux/Zustand)
+│   ├── api/                  # API client integration
+│   ├── utils/                # Utility functions
+│   ├── constants/            # App constants
+│   ├── theme/                # Theme configuration
+│   └── types/                # TypeScript types (existing + new)
+├── ios/                      # iOS native code
+├── android/                  # Android native code
+└── __tests__/                # Test files
+```
+
 - [ ] 13. Set up React Native project structure and navigation
-  - Initialize React Native project with TypeScript in `apps/mobile-app`
-  - Configure React Navigation with stack and tab navigators
-  - Set up navigation structure (Auth, Main, Onboarding stacks)
-  - Configure platform-specific settings for iOS and Android
-  - Set up state management (Redux Toolkit or Zustand)
-  - Configure environment variables for dev/staging/prod
+  - **13.0.1 Install and configure React Navigation:**
+    - Install @react-navigation/native, @react-navigation/stack, @react-navigation/bottom-tabs
+    - Install required dependencies: react-native-screens, react-native-safe-area-context, react-native-gesture-handler
+    - Create `src/navigation/` directory structure
+  - **13.0.2 Create navigation structure:**
+    - Create `RootNavigator.tsx` with conditional auth/main rendering
+    - Create `AuthNavigator.tsx` (Stack: Splash → Login → Register → ForgotPassword → EmailVerification)
+    - Create `OnboardingNavigator.tsx` (Stack: Welcome → Permissions → PersonalitySetup → VoiceSetup → FaceSetup → Complete)
+    - Create `MainNavigator.tsx` (Tab: Conversation, History, Knowledge, Settings)
+    - Create navigation types in `src/types/navigation.ts`
+  - **13.0.3 Set up state management:**
+    - Install Zustand (lightweight) or Redux Toolkit
+    - Create store structure: `src/store/index.ts`
+    - Create slices: auth, user, conversation, settings, ui
+    - Implement persistence with AsyncStorage
+  - **13.0.4 Configure environment variables:**
+    - Install react-native-config
+    - Create `.env.development`, `.env.staging`, `.env.production`
+    - Configure API_URL, WS_URL, environment-specific settings
+  - **13.0.5 Configure platform-specific settings:**
+    - Update `ios/Info.plist` with required permissions (microphone, camera, photo library)
+    - Update `android/app/src/main/AndroidManifest.xml` with permissions
+    - Configure app icons and splash screen
   - _Requirements: 1, 7_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.1 Implement authentication screens
-  - Create splash screen with app branding
-  - Implement login screen with email/password and social auth
-  - Create registration screen with form validation
-  - Implement forgot password screen
-  - Create email verification screen
-  - Add biometric authentication (Face ID/Touch ID) support
-  - Implement secure token storage using react-native-keychain
+  - **13.1.1 Create splash screen:**
+    - Create `src/screens/auth/SplashScreen.tsx`
+    - Implement app logo animation (fade in, scale)
+    - Add loading indicator while checking auth state
+    - Auto-navigate to Login or Main based on stored token
+    - Handle token refresh on app launch
+  - **13.1.2 Create login screen:**
+    - Create `src/screens/auth/LoginScreen.tsx`
+    - Implement email/password form with validation (Zod schemas from @clone/validation)
+    - Add "Remember me" checkbox with secure storage
+    - Implement social auth buttons (Google, Apple Sign-In)
+    - Add "Forgot Password" link navigation
+    - Add "Create Account" link navigation
+    - Show loading state during authentication
+    - Handle and display authentication errors
+    - Implement keyboard-aware scroll view
+  - **13.1.3 Create registration screen:**
+    - Create `src/screens/auth/RegisterScreen.tsx`
+    - Implement multi-step registration form (email → password → name → confirm)
+    - Add form validation with real-time feedback
+    - Implement password strength indicator
+    - Add terms of service and privacy policy checkboxes
+    - Show loading state during registration
+    - Handle and display registration errors
+    - Navigate to email verification on success
+  - **13.1.4 Create forgot password screen:**
+    - Create `src/screens/auth/ForgotPasswordScreen.tsx`
+    - Implement email input with validation
+    - Add "Send Reset Link" button
+    - Show success message with instructions
+    - Add "Back to Login" navigation
+    - Handle rate limiting errors
+  - **13.1.5 Create email verification screen:**
+    - Create `src/screens/auth/EmailVerificationScreen.tsx`
+    - Display verification instructions
+    - Add "Resend Email" button with cooldown timer
+    - Implement deep link handling for verification callback
+    - Auto-navigate to onboarding on verification success
+  - **13.1.6 Implement biometric authentication:**
+    - Install react-native-biometrics
+    - Create biometric prompt for Face ID/Touch ID
+    - Store biometric preference in settings
+    - Add biometric login option on login screen
+    - Handle biometric fallback to password
+  - **13.1.7 Implement secure token storage:**
+    - Install react-native-keychain
+    - Create `src/services/SecureStorage.ts` for token management
+    - Store JWT access token and refresh token securely
+    - Implement token refresh logic in API client
+    - Clear tokens on logout
   - _Requirements: 10_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.2 Implement onboarding flow screens
-  - Create welcome screen with feature highlights
-  - Implement permissions request screens (microphone, camera, storage)
-  - Create personality setup screen for clone configuration
-  - Implement onboarding progress indicator
-  - Create skip/complete onboarding logic
-  - Add animated transitions between onboarding steps
+  - **13.2.1 Create welcome screen:**
+    - Create `src/screens/onboarding/WelcomeScreen.tsx`
+    - Implement animated feature carousel (3-4 slides)
+    - Add app logo and branding
+    - Create "Get Started" button
+    - Add "Skip" option for returning users
+    - Implement page indicator dots
+  - **13.2.2 Create permissions request screen:**
+    - Create `src/screens/onboarding/PermissionsScreen.tsx`
+    - Request microphone permission with explanation
+    - Request camera permission with explanation
+    - Request photo library permission with explanation
+    - Request notification permission with explanation
+    - Show permission status indicators (granted/denied)
+    - Handle "Don't Allow" with alternative instructions
+    - Add "Continue" button (enabled when required permissions granted)
+  - **13.2.3 Create personality setup screen:**
+    - Create `src/screens/onboarding/PersonalitySetupScreen.tsx`
+    - Implement personality trait selection (multi-select chips)
+    - Add speaking style selection (formal, casual, friendly, professional)
+    - Create text input for custom personality description
+    - Add preview of how clone will respond
+    - Implement "Skip for now" option
+    - Save personality to user profile via API
+  - **13.2.4 Create voice setup prompt screen:**
+    - Create `src/screens/onboarding/VoiceSetupPromptScreen.tsx`
+    - Explain voice cloning feature and benefits
+    - Show estimated time (5-10 minutes recording)
+    - Add "Set Up Voice Now" button → navigate to voice recording
+    - Add "Set Up Later" button → skip to face setup
+    - Display voice quality tips
+  - **13.2.5 Create face setup prompt screen:**
+    - Create `src/screens/onboarding/FaceSetupPromptScreen.tsx`
+    - Explain face cloning feature and benefits
+    - Show photo/video requirements
+    - Add "Set Up Face Now" button → navigate to face capture
+    - Add "Set Up Later" button → complete onboarding
+    - Display face capture tips
+  - **13.2.6 Create onboarding complete screen:**
+    - Create `src/screens/onboarding/OnboardingCompleteScreen.tsx`
+    - Show success animation/confetti
+    - Display setup summary (what was configured)
+    - Add "Start Conversation" button → navigate to main app
+    - Show tips for first conversation
+  - **13.2.7 Implement onboarding progress and navigation:**
+    - Create progress indicator component showing current step
+    - Implement animated transitions between screens (slide, fade)
+    - Store onboarding progress in AsyncStorage
+    - Handle back navigation with confirmation
+    - Mark onboarding complete in user profile
   - _Requirements: 16, 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.3 Implement voice model creation UI
-  - Create voice recording screen with waveform visualization
-  - Implement recording controls (start, stop, pause, replay)
-  - Create recording timer and progress indicator
-  - Implement audio quality indicator (volume, clarity)
-  - Create voice sample review and re-record functionality
-  - Implement upload progress screen with cancellation
-  - Create voice model training status screen
-  - Implement voice preview and comparison screen
+  - **13.3.1 Enhance voice recording screen:**
+    - Enhance existing `src/components/VoiceSampleRecording.tsx`
+    - Create `src/screens/voice/VoiceRecordingScreen.tsx` wrapper
+    - Add guided recording prompts (sentences to read aloud)
+    - Implement real-time waveform visualization using react-native-audio-api
+    - Add recording timer with target duration (5 minutes minimum)
+    - Show recording progress bar (current/target duration)
+    - Implement pause/resume functionality
+    - Add volume level indicator (too quiet/good/too loud)
+    - Show audio quality feedback in real-time (SNR, clarity)
+  - **13.3.2 Implement recording controls:**
+    - Create large, accessible record button with animation
+    - Add pause button (appears during recording)
+    - Add stop button with confirmation dialog
+    - Implement replay functionality for recorded audio
+    - Add "Start Over" button to discard and re-record
+    - Show recording tips and best practices
+  - **13.3.3 Create voice sample review screen:**
+    - Create `src/screens/voice/VoiceSampleReviewScreen.tsx`
+    - Display list of recorded samples with duration
+    - Add playback controls for each sample
+    - Show quality score for each sample
+    - Implement delete individual sample functionality
+    - Add "Record More" button if below minimum
+    - Show total recording duration and quality summary
+    - Add "Continue to Upload" button when ready
+  - **13.3.4 Implement upload progress screen:**
+    - Create `src/screens/voice/VoiceUploadScreen.tsx`
+    - Show upload progress bar with percentage
+    - Display estimated time remaining
+    - Add cancel upload button with confirmation
+    - Handle upload errors with retry option
+    - Show upload success animation
+    - Auto-navigate to training status on success
+  - **13.3.5 Create voice model training status screen:**
+    - Create `src/screens/voice/VoiceTrainingStatusScreen.tsx`
+    - Show training progress (queued → processing → training → complete)
+    - Display estimated completion time
+    - Implement real-time status updates via WebSocket
+    - Add push notification when training completes
+    - Handle training failures with error message and retry option
+    - Show training tips while waiting
+  - **13.3.6 Implement voice preview and comparison screen:**
+    - Enhance existing `src/components/VoiceModelPreview.tsx`
+    - Create `src/screens/voice/VoicePreviewScreen.tsx` wrapper
+    - Add text input for custom preview text
+    - Implement "Generate Preview" button
+    - Show side-by-side comparison: original vs cloned voice
+    - Add quality rating input (1-5 stars)
+    - Implement "Activate Model" button
+    - Add "Re-train" option if quality is poor
+    - Show voice similarity score
   - _Requirements: 16_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.4 Implement face model creation UI
-  - Create photo capture screen with camera preview
-  - Implement face detection overlay with alignment guides
-  - Create multi-photo capture flow (3-10 photos)
-  - Implement video recording mode for face capture
-  - Create photo/video review gallery with delete option
-  - Implement face quality validation feedback
-  - Create upload progress screen with preview thumbnails
-  - Implement face model processing status screen
-  - Create face model preview with test video generation
+  - **13.4.1 Create photo capture screen:**
+    - Create `src/screens/face/FaceCaptureScreen.tsx`
+    - Install react-native-camera or expo-camera
+    - Implement camera preview with front camera default
+    - Add face detection overlay using react-native-vision-camera
+    - Create alignment guide (oval outline for face positioning)
+    - Show real-time face detection feedback (face detected/not detected)
+    - Add capture button with animation
+    - Implement flash toggle for low-light conditions
+    - Add camera flip button (front/back)
+  - **13.4.2 Implement guided photo capture flow:**
+    - Create multi-step capture flow (3-10 photos required)
+    - Guide user through different angles: frontal, slight left, slight right
+    - Show progress indicator (3/10 photos captured)
+    - Validate each photo for face quality before accepting
+    - Display quality feedback: lighting, angle, clarity, face size
+    - Auto-capture when face is properly aligned (optional)
+    - Add manual capture button as fallback
+  - **13.4.3 Implement video recording mode:**
+    - Create `src/screens/face/FaceVideoRecordScreen.tsx`
+    - Add video recording option (30-60 seconds)
+    - Guide user to slowly turn head left and right
+    - Show recording progress with timer
+    - Implement pause/resume for video recording
+    - Validate video for face visibility throughout
+    - Extract key frames from video for processing
+  - **13.4.4 Create photo/video review gallery:**
+    - Create `src/screens/face/FaceReviewScreen.tsx`
+    - Display captured photos in grid layout
+    - Show quality score badge on each photo
+    - Implement tap to view full-size photo
+    - Add delete button for individual photos
+    - Show video thumbnail with play button
+    - Display total capture summary
+    - Add "Capture More" button if below minimum
+    - Add "Continue to Upload" button when ready
+  - **13.4.5 Implement face quality validation:**
+    - Create `src/services/FaceQualityValidator.ts`
+    - Validate face detection confidence (> 80%)
+    - Check lighting quality (not too dark/bright)
+    - Validate face angle (frontal ± 30°)
+    - Check image resolution (minimum 256x256)
+    - Detect blur and reject blurry images
+    - Show specific feedback for each quality issue
+    - Provide tips for improving capture quality
+  - **13.4.6 Create upload progress screen:**
+    - Create `src/screens/face/FaceUploadScreen.tsx`
+    - Show upload progress with thumbnail previews
+    - Display individual photo upload status
+    - Show overall progress percentage
+    - Add cancel upload button with confirmation
+    - Handle upload errors with retry option
+    - Auto-navigate to processing status on success
+  - **13.4.7 Implement face model processing status screen:**
+    - Create `src/screens/face/FaceProcessingStatusScreen.tsx`
+    - Show processing stages: uploading → detecting → embedding → training → complete
+    - Display estimated completion time (< 30 minutes)
+    - Implement real-time status updates via WebSocket
+    - Add push notification when processing completes
+    - Handle processing failures with specific error messages
+    - Show processing tips while waiting
+  - **13.4.8 Create face model preview screen:**
+    - Create `src/screens/face/FacePreviewScreen.tsx`
+    - Generate test video with sample audio
+    - Show video player with face model animation
+    - Display quality score (0-100)
+    - Add "Activate Model" button
+    - Implement "Re-capture" option if quality is poor
+    - Show comparison: original photo vs animated face
+    - Add quality rating input (1-5 stars)
   - _Requirements: 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
@@ -1544,26 +1828,89 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.6 Implement main conversation screen
-  - Create full-screen video player for clone's face
-  - Implement video player controls (quality, fullscreen)
-  - Create floating audio waveform visualization during user speech
-  - Implement real-time transcript display with auto-scroll
-  - Create conversation state indicators (idle, listening, processing, speaking)
-  - Implement microphone button with press-to-talk and continuous listening modes
-  - Create interruption button for stopping clone response
-  - Implement audio/video quality indicators
-  - Create network status indicator
-  - Implement conversation controls (mute, speaker, video on/off, end, settings)
-  - Add haptic feedback for state transitions
-  - Create knowledge source indicator:
+  - **13.6.1 Create conversation screen layout:**
+    - Enhance existing `src/components/ConversationScreen.tsx`
+    - Create `src/screens/conversation/ConversationScreen.tsx` wrapper
+    - Implement full-screen layout with video area (top 60%)
+    - Add transcript area (bottom 30%)
+    - Create floating controls overlay
+    - Implement safe area handling for notch/home indicator
+  - **13.6.2 Implement video player for clone's face:**
+    - Install react-native-video
+    - Create `src/components/CloneVideoPlayer.tsx`
+    - Implement video frame rendering from WebSocket stream
+    - Add video buffering with loading indicator
+    - Create placeholder image when video not available
+    - Implement video quality selection (auto, low, medium, high)
+    - Add fullscreen toggle button
+    - Handle video errors gracefully
+  - **13.6.3 Create audio waveform visualization:**
+    - Create `src/components/AudioWaveform.tsx`
+    - Implement real-time waveform during user speech
+    - Add animated bars visualization
+    - Show volume level indicator
+    - Position as floating overlay on video
+    - Animate appearance/disappearance with state changes
+  - **13.6.4 Implement real-time transcript display:**
+    - Create `src/components/TranscriptDisplay.tsx`
+    - Show user speech transcript (interim and final)
+    - Display clone response text as it streams
+    - Implement auto-scroll to latest message
+    - Add message timestamps
+    - Differentiate user vs clone messages (colors, alignment)
+    - Show typing indicator during processing
+  - **13.6.5 Create conversation state indicators:**
+    - Create `src/components/ConversationStateIndicator.tsx`
+    - Implement visual states: idle (gray), listening (green pulse), processing (yellow spin), speaking (blue wave)
+    - Add text label for current state
+    - Position at top of screen
+    - Animate transitions between states
+    - Add haptic feedback on state changes
+  - **13.6.6 Implement microphone controls:**
+    - Create `src/components/MicrophoneButton.tsx`
+    - Implement large, accessible mic button
+    - Add press-to-talk mode (hold to speak)
+    - Add continuous listening mode (tap to toggle)
+    - Show recording indicator animation
+    - Implement mute/unmute toggle
+    - Add visual feedback for audio level
+  - **13.6.7 Create interruption handling:**
+    - Create `src/components/InterruptButton.tsx`
+    - Show interrupt button during clone speaking
+    - Implement tap to interrupt with confirmation
+    - Send interruption signal via WebSocket
+    - Stop audio/video playback immediately
+    - Transition to listening state
+    - Add haptic feedback on interrupt
+  - **13.6.8 Implement conversation controls:**
+    - Create `src/components/ConversationControls.tsx`
+    - Add mute/unmute microphone button
+    - Add speaker on/off button
+    - Add video on/off toggle
+    - Add end conversation button with confirmation
+    - Add settings gear button → open settings modal
+    - Position as floating bar at bottom
+  - **13.6.9 Create network and quality indicators:**
+    - Create `src/components/ConnectionIndicator.tsx`
+    - Show connection status (connected, connecting, disconnected)
+    - Display network quality (excellent, good, poor)
+    - Show audio/video quality metrics
+    - Add latency indicator
+    - Position at top-right corner
+  - **13.6.10 Implement knowledge source indicator:**
+    - Create `src/components/KnowledgeSourceBadge.tsx`
     - Show badge when response uses knowledge base
-    - Display "Using 2 documents" or "Using FAQ" indicator
-    - Tap to see which documents/FAQs were referenced
-  - Implement knowledge source drawer:
-    - Slide-up drawer showing referenced documents
-    - Document titles with relevance scores
-    - Tap document to view full content
-    - Quick link to knowledge base management
+    - Display count: "Using 2 documents" or "Using FAQ"
+    - Make badge tappable to show details
+    - Position near transcript area
+  - **13.6.11 Create knowledge source drawer:**
+    - Create `src/components/KnowledgeSourceDrawer.tsx`
+    - Implement slide-up bottom sheet
+    - List referenced documents with titles
+    - Show relevance scores for each source
+    - Add tap to view document content
+    - Include quick link to knowledge base management
+    - Add close button and swipe-to-dismiss
   - _Requirements: 1, 6, 7, 8, 9, 14_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
@@ -1648,95 +1995,267 @@ idle → listening → processing → speaking → idle
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.10 Implement core mobile services (audio, video, WebSocket, network)
-  - **Audio Services:**
-    - Create audio recording service using react-native-audio-recorder-player
-    - Implement audio playback service with queue management
-    - Create audio buffer management for streaming
-    - Implement Voice Activity Detection (VAD) using react-native-voice
-    - Create audio visualization component with real-time waveform
-    - Implement audio quality monitoring and feedback
-    - Create audio session management for iOS (AVAudioSession)
-    - Implement audio focus handling for Android (AudioManager)
-  - **Video Services:**
-    - Create video player component using react-native-video
-    - Implement video frame rendering and buffering
-    - Create audio-video synchronization logic
-    - Implement adaptive video quality based on network
-    - Create video loading and error states
-    - Implement fullscreen video mode
-    - Create video performance optimization (frame dropping)
-  - **WebSocket Services:**
-    - Create WebSocket connection manager with Socket.io
-    - Implement connection state management (connecting, connected, disconnected)
+  - **13.10.1 Enhance audio recording service:**
+    - Enhance existing `src/services/AudioManager.ts`
+    - Ensure 16 kHz, mono, 16-bit PCM format
+    - Implement 100ms chunk streaming
+    - Add audio quality monitoring (SNR, clipping detection)
+    - Create audio normalization
+    - Implement noise reduction (device-dependent)
+    - Add audio format validation
+    - Handle microphone permission errors gracefully
+  - **13.10.2 Enhance audio playback service:**
+    - Enhance existing `src/services/AudioPlaybackManager.ts`
+    - Implement audio chunk queue management
+    - Create 200-500ms buffer for smooth playback
+    - Add audio ducking for interruptions
+    - Implement playback speed control (0.5x - 2x)
+    - Create crossfade for smooth transitions
+    - Handle audio focus (phone calls, notifications)
+    - Implement iOS AVAudioSession configuration
+    - Implement Android AudioManager focus handling
+  - **13.10.3 Implement Voice Activity Detection (VAD):**
+    - Create `src/services/VADService.ts`
+    - Implement speech onset detection
+    - Create silence detection (500ms threshold)
+    - Add configurable sensitivity
+    - Implement interruption detection during playback
+    - Create VAD state callbacks (speaking, silence)
+  - **13.10.4 Create video player service:**
+    - Create `src/services/VideoPlayerService.ts`
+    - Implement video frame buffering
+    - Create audio-video synchronization (< 50ms offset)
+    - Implement adaptive quality based on network
+    - Add frame dropping for performance
+    - Create video error handling and recovery
+    - Implement fullscreen mode handling
+  - **13.10.5 Implement WebSocket client service:**
+    - Create `src/services/WebSocketService.ts`
+    - Install socket.io-client
+    - Implement connection with JWT authentication
+    - Create connection state management (connecting, connected, disconnected, error)
+    - Implement automatic reconnection with exponential backoff (1s, 2s, 4s, 8s, 16s, 30s max)
     - Create message queue for offline scenarios
-    - Implement automatic reconnection with exponential backoff
-    - Create message handlers for all server message types
     - Implement heartbeat/ping-pong for connection health
-    - Create WebSocket error handling and recovery
-  - **Network Services:**
-    - Create network status monitoring using @react-native-community/netinfo
-    - Implement offline mode detection and UI
+    - Create message handlers for all server message types:
+      - `transcript` (interim and final)
+      - `response_start`, `response_audio`, `response_video`, `response_end`
+      - `state:changed`, `error`
+      - `conversation:interrupted`
+    - Implement message sending: `audio_chunk`, `interruption`, `end_utterance`
+    - Add WebSocket error handling and recovery
+    - Create connection quality monitoring
+  - **13.10.6 Implement network monitoring service:**
+    - Create `src/services/NetworkService.ts`
+    - Install @react-native-community/netinfo
+    - Implement network status monitoring (online/offline)
     - Create network quality detection (bandwidth, latency)
-    - Implement adaptive quality settings based on network
-    - Create connection quality indicator in UI
-    - Implement graceful degradation (audio-only mode)
+    - Implement adaptive quality settings
+    - Create offline mode detection and UI notification
+    - Implement graceful degradation (audio-only mode when bandwidth < 500 kbps)
+    - Add network quality indicator updates
+  - **13.10.7 Create audio-video synchronization service:**
+    - Create `src/services/AVSyncService.ts`
+    - Implement timestamp-based synchronization
+    - Create buffer management for both streams
+    - Handle sync drift correction
+    - Implement frame skipping when behind
+    - Add sync quality monitoring
   - _Requirements: 1, 6, 7, 10, 15_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.11 Implement UI components and platform features
-  - **Component Library:**
-    - Create reusable button components (primary, secondary, icon)
-    - Implement input components (text, password, search)
-    - Create card components for lists and content
-    - Implement modal and bottom sheet components
-    - Create loading indicators (spinner, skeleton, progress)
-    - Implement toast/snackbar for notifications
-    - Create animated components (fade, slide, scale)
-    - Implement theme system (colors, typography, spacing)
-    - Create dark mode support
-  - **Platform-Specific Features:**
-    - Configure iOS-specific settings (Info.plist permissions)
-    - Implement iOS-specific UI adaptations (safe area, notch)
-    - Configure Android-specific settings (AndroidManifest.xml permissions)
-    - Implement Android-specific UI adaptations (navigation bar, status bar)
-    - Create platform-specific audio/video handling
-    - Implement iOS background audio support
-    - Create Android foreground service for conversations
-  - **Accessibility:**
-    - Add accessibility labels to all interactive elements
-    - Implement screen reader support (VoiceOver, TalkBack)
-    - Create high contrast mode support
-    - Implement font scaling support
-    - Add keyboard navigation support
-    - Create focus management for navigation
-    - Implement haptic feedback for important actions
+  - **13.11.1 Create component library - buttons:**
+    - Create `src/components/ui/Button.tsx` (primary, secondary, outline, ghost variants)
+    - Create `src/components/ui/IconButton.tsx` (circular icon buttons)
+    - Create `src/components/ui/FloatingActionButton.tsx`
+    - Implement loading state with spinner
+    - Add disabled state styling
+    - Implement haptic feedback on press
+  - **13.11.2 Create component library - inputs:**
+    - Create `src/components/ui/TextInput.tsx` with label and error states
+    - Create `src/components/ui/PasswordInput.tsx` with show/hide toggle
+    - Create `src/components/ui/SearchInput.tsx` with clear button
+    - Create `src/components/ui/TextArea.tsx` for multi-line input
+    - Implement form validation integration
+    - Add keyboard-aware behavior
+  - **13.11.3 Create component library - layout:**
+    - Create `src/components/ui/Card.tsx` with shadow and border variants
+    - Create `src/components/ui/ListItem.tsx` with icon, title, subtitle
+    - Create `src/components/ui/Divider.tsx`
+    - Create `src/components/ui/Spacer.tsx`
+    - Create `src/components/ui/Container.tsx` with safe area handling
+  - **13.11.4 Create component library - feedback:**
+    - Create `src/components/ui/Modal.tsx` with backdrop
+    - Create `src/components/ui/BottomSheet.tsx` with drag-to-dismiss
+    - Create `src/components/ui/Toast.tsx` for notifications
+    - Create `src/components/ui/Spinner.tsx` (loading indicator)
+    - Create `src/components/ui/Skeleton.tsx` (loading placeholder)
+    - Create `src/components/ui/ProgressBar.tsx`
+    - Create `src/components/ui/Badge.tsx`
+  - **13.11.5 Implement theme system:**
+    - Create `src/theme/index.ts` with colors, typography, spacing
+    - Implement light and dark mode themes
+    - Create `src/hooks/useTheme.ts` hook
+    - Create `src/context/ThemeContext.tsx`
+    - Implement theme persistence in AsyncStorage
+    - Add system theme detection and auto-switch
+  - **13.11.6 Configure iOS platform settings:**
+    - Update `ios/Info.plist` with all required permissions:
+      - NSMicrophoneUsageDescription
+      - NSCameraUsageDescription
+      - NSPhotoLibraryUsageDescription
+      - NSFaceIDUsageDescription
+    - Configure background audio mode (UIBackgroundModes: audio)
+    - Set up push notification capabilities
+    - Configure deep linking (URL schemes)
+    - Set app icons and launch screen
+  - **13.11.7 Configure Android platform settings:**
+    - Update `android/app/src/main/AndroidManifest.xml` with permissions:
+      - RECORD_AUDIO, CAMERA, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
+      - INTERNET, ACCESS_NETWORK_STATE
+      - FOREGROUND_SERVICE, WAKE_LOCK
+    - Create foreground service for active conversations
+    - Configure deep linking (intent filters)
+    - Set app icons and splash screen
+    - Configure notification channels
+  - **13.11.8 Implement accessibility features:**
+    - Add accessibilityLabel to all interactive elements
+    - Add accessibilityHint for complex actions
+    - Implement accessibilityRole for semantic meaning
+    - Test with VoiceOver (iOS) and TalkBack (Android)
+    - Implement font scaling support (up to 200%)
+    - Add high contrast mode support
+    - Implement focus management for navigation
+    - Add haptic feedback for important actions (react-native-haptic-feedback)
   - _Requirements: 1, 6, 7, 13_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.12 Implement app performance and monitoring
-  - **Performance Optimization:**
-    - Optimize React Native bundle size
-    - Implement code splitting and lazy loading
-    - Create image optimization and caching
-    - Implement list virtualization for long lists
-    - Optimize re-renders with React.memo and useMemo
-    - Create memory leak detection and prevention
-    - Implement app startup time optimization
-  - **Analytics and Monitoring:**
-    - Integrate Firebase Analytics or similar
-    - Implement event tracking for user actions
-    - Create screen view tracking
-    - Integrate crash reporting (Sentry, Crashlytics)
-    - Implement performance monitoring
-    - Create user feedback collection mechanism
-  - **Notifications and Deep Linking:**
-    - Configure deep linking for app navigation
-    - Implement push notification setup (FCM for Android, APNs for iOS)
-    - Create notification handlers for conversation updates
-    - Implement notification permissions request
-    - Create notification action handlers
-    - Implement badge count management
+  - **13.12.1 Optimize app performance:**
+    - Analyze and optimize React Native bundle size
+    - Implement React.lazy for screen code splitting
+    - Create image optimization with react-native-fast-image
+    - Implement list virtualization with FlashList or FlatList
+    - Optimize re-renders with React.memo, useMemo, useCallback
+    - Create memory leak detection in development mode
+    - Optimize app startup time (reduce initial bundle)
+    - Implement Hermes engine for Android (if not already)
+    - Profile and optimize JavaScript thread performance
+  - **13.12.2 Integrate analytics:**
+    - Install @react-native-firebase/analytics
+    - Create `src/services/AnalyticsService.ts`
+    - Implement screen view tracking
+    - Track user actions: conversation_started, conversation_ended, document_uploaded, voice_model_created, face_model_created
+    - Track feature usage: interruptions, knowledge_base_queries
+    - Implement user properties: subscription_tier, voice_model_active, face_model_active
+    - Create conversion tracking for onboarding completion
+  - **13.12.3 Integrate crash reporting:**
+    - Install @sentry/react-native or @react-native-firebase/crashlytics
+    - Create `src/services/CrashReportingService.ts`
+    - Implement automatic crash reporting
+    - Add breadcrumbs for debugging context
+    - Create error boundary with crash reporting
+    - Implement user feedback on crash
+    - Add performance monitoring (app start, screen load times)
+  - **13.12.4 Implement push notifications:**
+    - Install @react-native-firebase/messaging
+    - Create `src/services/NotificationService.ts`
+    - Configure FCM for Android
+    - Configure APNs for iOS
+    - Request notification permissions
+    - Handle foreground notifications
+    - Handle background notifications
+    - Create notification handlers for:
+      - Voice model training complete
+      - Face model processing complete
+      - Document processing complete
+    - Implement notification action handlers
+    - Create badge count management
+  - **13.12.5 Implement deep linking:**
+    - Install react-native-linking
+    - Configure URL schemes: `digitwinlive://`
+    - Create deep link routes:
+      - `digitwinlive://conversation` → open conversation screen
+      - `digitwinlive://knowledge` → open knowledge base
+      - `digitwinlive://settings` → open settings
+      - `digitwinlive://verify?token=xxx` → email verification
+    - Handle deep links in navigation
+    - Implement universal links for iOS
+    - Implement app links for Android
   - _Requirements: 10, 11_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 13.13 Implement mobile app testing
+  - **13.13.1 Unit tests for services:**
+    - Enhance existing tests in `src/__tests__/`
+    - Add tests for WebSocketService
+    - Add tests for NetworkService
+    - Add tests for VADService
+    - Add tests for VideoPlayerService
+    - Add tests for AVSyncService
+    - Add tests for SecureStorage
+    - Add tests for AnalyticsService
+    - Target: 80% coverage for services
+  - **13.13.2 Component tests:**
+    - Create tests for all UI components
+    - Test button interactions and states
+    - Test form validation
+    - Test modal and bottom sheet behavior
+    - Test navigation flows
+    - Use @testing-library/react-native
+  - **13.13.3 Integration tests:**
+    - Test authentication flow (login → main app)
+    - Test onboarding flow completion
+    - Test conversation flow (start → speak → response → end)
+    - Test document upload flow
+    - Test voice model creation flow
+    - Test face model creation flow
+  - **13.13.4 E2E tests:**
+    - Install Detox for E2E testing
+    - Create E2E test for complete user journey
+    - Test on iOS simulator
+    - Test on Android emulator
+    - Create CI/CD integration for E2E tests
+  - _Requirements: All mobile requirements_
+  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+
+- [ ] 13.14 Final mobile app integration and polish
+  - **13.14.1 End-to-end integration testing:**
+    - Test complete conversation flow with backend
+    - Verify audio streaming to ASR service
+    - Verify transcript display from ASR
+    - Verify RAG context retrieval
+    - Verify LLM response streaming
+    - Verify TTS audio playback
+    - Verify lip-sync video playback
+    - Test interruption handling end-to-end
+    - Test network disconnection and recovery
+  - **13.14.2 Performance validation:**
+    - Measure end-to-end latency (target: < 2000ms)
+    - Measure audio capture latency (target: < 100ms)
+    - Measure video playback latency (target: < 300ms)
+    - Test with various network conditions (3G, 4G, WiFi)
+    - Profile memory usage during long conversations
+    - Test battery consumption
+  - **13.14.3 UI/UX polish:**
+    - Review all screens for consistency
+    - Ensure smooth animations and transitions
+    - Verify loading states and error handling
+    - Test on various device sizes (phone, tablet)
+    - Verify dark mode appearance
+    - Test accessibility with screen readers
+    - Gather user feedback and iterate
+  - **13.14.4 App store preparation:**
+    - Create app icons in all required sizes
+    - Create splash screen assets
+    - Prepare app store screenshots
+    - Write app store description
+    - Create privacy policy and terms of service
+    - Configure app signing (iOS certificates, Android keystore)
+    - Create TestFlight build for iOS
+    - Create internal testing build for Android
+  - _Requirements: All mobile requirements (1, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18)_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 ## Phase 14: Testing and Quality Assurance
