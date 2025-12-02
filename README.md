@@ -228,6 +228,7 @@ The system follows a microservices architecture with the following key component
 
 ### 🔐 Security & Authentication
 
+- **[Security & Access Controls](./docs/SECURITY-ACCESS-CONTROLS.md)** - User data isolation, audit logging, and data retention
 - **[Authentication Flow](./apps/api-gateway/docs/authentication-flow.md)** - JWT & OAuth
 - **[RBAC Guide](./apps/api-gateway/docs/RBAC-GUIDE.md)** - Role-based access control
 - **[Rate Limiting](./docs/RATE-LIMITING.md)** - Usage controls and subscription tiers

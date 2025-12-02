@@ -623,6 +623,40 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  packages/security:
+    dependencies:
+      '@clone/database':
+        specifier: workspace:*
+        version: link:../database
+      '@clone/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@clone/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@prisma/client':
+        specifier: ^5.7.0
+        version: 5.22.0
+      winston:
+        specifier: ^3.11.0
+        version: 3.18.3
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.11
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.10.6
+        version: 20.19.24
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.24)(ts-node@10.9.2)
+      ts-jest:
+        specifier: ^29.1.1
+        version: 29.4.5(@babel/core@7.28.5)(jest@29.7.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   packages/service-auth:
     dependencies:
       '@grpc/grpc-js':
@@ -3772,6 +3806,17 @@ packages:
   /@opentelemetry/semantic-conventions@1.30.0:
     resolution: {integrity: sha512-4VlGgo32k2EQ2wcCY3vEU28A0O13aOtHz3Xt2/2U5FAh9EfhD6t6DqL5Z6yAnRCntbTFDU4YfbpyzSlHNWycPw==}
     engines: {node: '>=14'}
+    dev: false
+
+  /@prisma/client@5.22.0:
+    resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
+    engines: {node: '>=16.13'}
+    requiresBuild: true
+    peerDependencies:
+      prisma: '*'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
     dev: false
 
   /@prisma/client@6.18.0(prisma@6.18.0)(typescript@5.9.3):
