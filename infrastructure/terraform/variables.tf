@@ -143,3 +143,17 @@ variable "gke_gpu_node_pools" {
     }
   ]
 }
+
+# Monitoring Variables
+variable "alert_email" {
+  description = "Email address for monitoring alerts"
+  type        = string
+  default     = "alerts@example.com"
+}
+
+variable "discord_webhook_url" {
+  description = "Discord webhook URL for monitoring alerts (optional)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

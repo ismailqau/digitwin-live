@@ -1,0 +1,24 @@
+# Terraform Variables Example
+# Copy this file to terraform.tfvars and update with your actual values
+
+# Project Configuration
+project_id  = "your-gcp-project-id"
+environment = "dev"
+region      = "us-central1"
+
+# Monitoring Configuration
+alert_email         = "your-email@example.com"
+discord_webhook_url = "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+
+# Network Configuration
+subnet_cidr         = "10.0.0.0/24"
+vpc_connector_cidr  = "10.8.0.0/28"
+
+# Database Configuration
+database_tier    = "db-f1-micro"
+database_version = "POSTGRES_15"
+backup_enabled   = true
+
+# Cloud Run Configuration
+cloud_run_min_instances = 0
+cloud_run_max_instances = 10

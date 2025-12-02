@@ -214,6 +214,8 @@ The system follows a microservices architecture with the following key component
 - **[GCP Quick Reference](./docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
 - **[GCP Cleanup Guide](./docs/GCP-CLEANUP-GUIDE.md)** - Delete and manage resources
 - **[GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)** - Infrastructure architecture
+- **[Monitoring & Alerting](./docs/MONITORING.md)** - Minimal monitoring setup with email & Discord alerts
+- **[Terraform Backend](./infrastructure/terraform/BACKEND.md)** - Terraform state management
 
 ### 🗄️ Database & Storage
 

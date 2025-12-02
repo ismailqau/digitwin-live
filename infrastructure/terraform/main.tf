@@ -171,6 +171,8 @@ module "load_balancer" {
 module "monitoring" {
   source = "./modules/monitoring"
   
-  environment = var.environment
-  project_id  = var.project_id
+  environment         = var.environment
+  project_id          = var.project_id
+  alert_email         = var.alert_email
+  discord_webhook_url = var.discord_webhook_url
 }

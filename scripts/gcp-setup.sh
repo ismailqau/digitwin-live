@@ -138,11 +138,18 @@ create_artifact_registry() {
 create_storage_buckets() {
     log_header "Creating Cloud Storage Buckets"
     
+    # Determine environment from GCS bucket names or default to dev
+    ENV="dev"
+    if [[ "$GCS_BUCKET_VOICE_MODELS" == *"-prod" ]]; then
+        ENV="prod"
+    fi
+    
     BUCKETS=(
         "$GCS_BUCKET_VOICE_MODELS:Voice models storage"
         "$GCS_BUCKET_FACE_MODELS:Face models storage"
         "$GCS_BUCKET_DOCUMENTS:Documents storage"
         "$GCS_BUCKET_UPLOADS:User uploads storage"
+        "digitwinlive-terraform-state-${ENV}:Terraform state storage"
     )
     
     for bucket_info in "${BUCKETS[@]}"; do
@@ -162,8 +169,36 @@ create_storage_buckets() {
             if gsutil mb -p "$GCP_PROJECT_ID" -l "$GCP_REGION" "gs://$bucket"; then
                 log_success "Created bucket: $bucket"
                 
-                # Set lifecycle policy
-                cat > /tmp/lifecycle.json << EOF
+                # Special handling for Terraform state bucket
+                if [[ "$bucket" == *"terraform-state"* ]]; then
+                    log_info "Configuring Terraform state bucket..."
+                    
+                    # Enable versioning (critical for state files)
+                    gsutil versioning set on "gs://$bucket"
+                    log_success "Versioning enabled"
+                    
+                    # Set lifecycle policy to keep old versions for 30 days
+                    cat > /tmp/tf-lifecycle.json << EOF
+{
+  "lifecycle": {
+    "rule": [
+      {
+        "action": {"type": "Delete"},
+        "condition": {
+          "numNewerVersions": 3,
+          "age": 30
+        }
+      }
+    ]
+  }
+}
+EOF
+                    gsutil lifecycle set /tmp/tf-lifecycle.json "gs://$bucket" 2>/dev/null || true
+                    rm /tmp/tf-lifecycle.json
+                    log_success "Lifecycle policy set (keeps 3 versions, 30 days)"
+                else
+                    # Regular lifecycle policy for other buckets
+                    cat > /tmp/lifecycle.json << EOF
 {
   "lifecycle": {
     "rule": [
@@ -175,8 +210,9 @@ create_storage_buckets() {
   }
 }
 EOF
-                gsutil lifecycle set /tmp/lifecycle.json "gs://$bucket" 2>/dev/null || true
-                rm /tmp/lifecycle.json
+                    gsutil lifecycle set /tmp/lifecycle.json "gs://$bucket" 2>/dev/null || true
+                    rm /tmp/lifecycle.json
+                fi
             else
                 log_error "Failed to create bucket: $bucket"
             fi
@@ -193,21 +229,25 @@ create_cloud_sql() {
     
     log_info "Checking if Cloud SQL instance exists..."
     
-    if gcloud sql instances describe "$INSTANCE_NAME" &> /dev/null; then
+    if gcloud sql instances describe "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" &> /dev/null; then
         log_success "Cloud SQL instance $INSTANCE_NAME already exists"
         
-        INSTANCE_STATE=$(gcloud sql instances describe "$INSTANCE_NAME" --format="value(state)" 2>/dev/null)
+        INSTANCE_STATE=$(gcloud sql instances describe "$INSTANCE_NAME" --project="$GCP_PROJECT_ID" --format="value(state)" 2>/dev/null)
         log_info "Instance state: $INSTANCE_STATE"
     else
         log_info "Creating Cloud SQL instance: $INSTANCE_NAME"
         log_warning "This will take 5-10 minutes..."
         log_info "Instance type: db-f1-micro (shared core, 0.6GB RAM)"
-        log_info "PostgreSQL 15 with pgvector extension support"
+        log_info "PostgreSQL 15 (pgvector extension available)"
         log_info "Cost: ~$7.67/month"
+        log_info "Project: $GCP_PROJECT_ID"
+        log_info "Region: $GCP_REGION"
         echo ""
         
         # Create instance - PostgreSQL 15 supports pgvector
+        # Note: pgvector is enabled by default in PostgreSQL 15, no flag needed
         if gcloud sql instances create "$INSTANCE_NAME" \
+            --project="$GCP_PROJECT_ID" \
             --database-version=POSTGRES_15 \
             --tier=db-f1-micro \
             --region="$GCP_REGION" \
@@ -217,7 +257,7 @@ create_cloud_sql() {
             --backup-start-time=03:00 \
             --maintenance-window-day=SUN \
             --maintenance-window-hour=4 \
-            --database-flags=max_connections=100,cloudsql.enable_pgvector=on \
+            --database-flags=max_connections=100 \
             --availability-type=zonal 2>&1; then
             
             log_success "Cloud SQL instance created successfully!"
@@ -230,6 +270,7 @@ create_cloud_sql() {
             ROOT_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
             gcloud sql users set-password postgres \
                 --instance="$INSTANCE_NAME" \
+                --project="$GCP_PROJECT_ID" \
                 --password="$ROOT_PASSWORD" 2>/dev/null || true
             
             log_success "Root password set"
@@ -240,7 +281,8 @@ create_cloud_sql() {
             # Create database
             log_info "Creating database: $DB_NAME..."
             if gcloud sql databases create "$DB_NAME" \
-                --instance="$INSTANCE_NAME" 2>&1; then
+                --instance="$INSTANCE_NAME" \
+                --project="$GCP_PROJECT_ID" 2>&1; then
                 log_success "Database $DB_NAME created"
             else
                 log_warning "Database may already exist"
@@ -248,6 +290,7 @@ create_cloud_sql() {
             
             # Get connection name
             CONNECTION_NAME=$(gcloud sql instances describe "$INSTANCE_NAME" \
+                --project="$GCP_PROJECT_ID" \
                 --format="value(connectionName)" 2>/dev/null)
             
             log_success "Cloud SQL setup complete!"
@@ -381,7 +424,7 @@ print_summary() {
     log_info "Architecture:"
     echo "  - Cloud Run: API Gateway, WebSocket Server, Face Processing"
     echo "  - Cloud SQL: PostgreSQL 15 with pgvector extension"
-    echo "  - Cloud Storage: Voice models, Face models, Documents, Uploads"
+    echo "  - Cloud Storage: Voice models, Face models, Documents, Uploads, Terraform state"
     echo "  - Secret Manager: JWT secrets, Database credentials"
     echo ""
     
@@ -398,7 +441,14 @@ print_summary() {
     echo "  1. Update .env with production values"
     echo "  2. Connect to Cloud SQL and run: CREATE EXTENSION vector;"
     echo "  3. Run Prisma migrations: pnpm db:migrate"
-    echo "  4. Deploy services: pnpm gcp:deploy"
+    echo "  4. Deploy with Terraform: cd infrastructure/terraform && terraform init -backend-config=backend-dev.hcl"
+    echo "  5. Or deploy services directly: pnpm gcp:deploy"
+    echo ""
+    
+    log_info "Terraform Backend:"
+    echo "  - State bucket created: digitwinlive-terraform-state-${ENV}"
+    echo "  - Versioning enabled (keeps 3 versions, 30 days)"
+    echo "  - Initialize: terraform init -backend-config=backend-dev.hcl"
     echo ""
     
     log_info "Useful Commands:"
@@ -406,6 +456,7 @@ print_summary() {
     echo "  - View SQL instances: gcloud sql instances list"
     echo "  - View Cloud Run services: gcloud run services list"
     echo "  - View secrets: gcloud secrets list"
+    echo "  - Test monitoring: pnpm test:monitoring"
 }
 
 # Main execution
@@ -429,7 +480,7 @@ main() {
     echo "  - Cost: ~$7.67/month (db-f1-micro)"
     echo "  - Storage: 10GB SSD (auto-increase enabled)"
     echo "  - Backups: Daily at 3:00 AM"
-    echo "  - pgvector: Enabled for vector similarity search"
+    echo "  - pgvector: Available (enable after creation with CREATE EXTENSION)"
     echo "  - Use for: Database + Vector storage (replaces Weaviate)"
     echo ""
     

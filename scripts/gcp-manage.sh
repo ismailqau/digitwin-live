@@ -118,7 +118,7 @@ show_status() {
     
     # APIs
     log_info "APIs Status:"
-    APIS=("compute" "sqladmin" "storage-api" "run" "secretmanager")
+    APIS=("compute" "sqladmin" "storage-api" "run" "secretmanager" "monitoring")
     for api in "${APIS[@]}"; do
         if run_with_timeout 5 gcloud services list --enabled --filter="name:$api" 2>/dev/null | grep -q "$api"; then
             echo "  ✅ $api: enabled"
@@ -181,6 +181,17 @@ show_status() {
             echo "  ❌ $service: not deployed"
         fi
     done
+    
+    # Monitoring (minimal check)
+    echo ""
+    log_info "Monitoring:"
+    if run_with_timeout 5 gcloud services list --enabled --filter="name:monitoring.googleapis.com" 2>/dev/null | grep -q "monitoring"; then
+        ALERT_COUNT=$(run_with_timeout 5 gcloud alpha monitoring policies list --format="value(name)" 2>/dev/null | wc -l | xargs || echo "0")
+        echo "  ✅ Cloud Monitoring: enabled ($ALERT_COUNT alert policies)"
+        echo "  ℹ️  View dashboards: https://console.cloud.google.com/monitoring"
+    else
+        echo "  ❌ Cloud Monitoring: disabled"
+    fi
 }
 
 # Enable service
@@ -197,12 +208,14 @@ enable_service() {
                 "storage-api.googleapis.com"
                 "run.googleapis.com"
                 "secretmanager.googleapis.com"
+                "monitoring.googleapis.com"
             )
             for api in "${APIS[@]}"; do
                 log_info "Enabling $api..."
                 gcloud services enable "$api"
             done
             log_success "APIs enabled"
+            log_info "Note: Monitoring uses minimal essential alerts only"
             ;;
         storage)
             log_header "Creating Storage Buckets"
