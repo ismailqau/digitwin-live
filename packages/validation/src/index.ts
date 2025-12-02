@@ -90,6 +90,11 @@ export const userSettingsSchema = z.object({
   interruptionSensitivity: z.number().min(0).max(1).default(0.5),
 });
 
+// Export validation utilities
+export * from './sanitization';
+export * from './content-safety';
+export * from './file-validation';
+
 // Export types
 export type UserProfileInput = z.infer<typeof userProfileSchema>;
 export type AudioChunkInput = z.infer<typeof audioChunkSchema>;
