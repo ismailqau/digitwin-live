@@ -1,6 +1,6 @@
 # Event-Driven Architecture
 
-This document describes the event-driven architecture implementation for the DigitWin Live system using Google Cloud Pub/Sub.
+This document describes the event-driven architecture implementation for the DigiTwin Live system using Google Cloud Pub/Sub.
 
 ## Overview
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-**DigitWin Live uses PostgreSQL indexed cache tables for caching** instead of a separate caching service like Redis or Memcached.
+**DigiTwin Live uses PostgreSQL indexed cache tables for caching** instead of a separate caching service like Redis or Memcached.
 
 ## Why PostgreSQL Instead of Redis?
 
@@ -342,7 +342,7 @@ PostgreSQL-based caching provides:
 - ✅ Advanced querying capabilities
 - ✅ No additional services to manage
 
-For DigitWin Live, this approach offers the best balance of performance, simplicity, and cost-effectiveness.
+For DigiTwin Live, this approach offers the best balance of performance, simplicity, and cost-effectiveness.
 
 ## Additional Resources
 
@@ -354,7 +354,7 @@ For DigitWin Live, this approach offers the best balance of performance, simplic
 
 ### Overview
 
-The `@clone/cache-service` package provides a unified caching interface for all cache operations in DigitWin Live. It implements the PostgreSQL-based caching strategy with type-safe APIs and automatic cleanup.
+The `@clone/cache-service` package provides a unified caching interface for all cache operations in DigiTwin Live. It implements the PostgreSQL-based caching strategy with type-safe APIs and automatic cleanup.
 
 ### Installation
 

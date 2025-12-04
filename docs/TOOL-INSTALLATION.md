@@ -1,6 +1,6 @@
 # Tool Installation Guide
 
-Complete guide for installing all required tools and dependencies for the DigitWin Live development environment.
+Complete guide for installing all required tools and dependencies for the DigiTwin Live development environment.
 
 ## Table of Contents
 

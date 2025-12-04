@@ -1,6 +1,6 @@
 # Services
 
-This directory contains all the backend microservices for the DigitWin Live platform.
+This directory contains all the backend microservices for the DigiTwin Live platform.
 
 ## 🏗️ Service Architecture
 
@@ -329,4 +329,4 @@ When contributing to services:
 
 ## 📄 License
 
-All services are part of the DigitWin Live platform and follow the same licensing terms.
+All services are part of the DigiTwin Live platform and follow the same licensing terms.

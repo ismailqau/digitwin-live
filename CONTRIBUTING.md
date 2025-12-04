@@ -1,6 +1,6 @@
-# Contributing to DigitWin Live
+# Contributing to DigiTwin Live
 
-Thank you for your interest in contributing to DigitWin Live! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to DigiTwin Live! This document provides guidelines and instructions for contributing to the project.
 
 ## 📋 Table of Contents
 
@@ -376,7 +376,7 @@ We welcome feature requests! Please:
 
 ## 🙏 Thank You
 
-Thank you for contributing to DigitWin Live! Your contributions help make this project better for everyone.
+Thank you for contributing to DigiTwin Live! Your contributions help make this project better for everyone.
 
 ---
 

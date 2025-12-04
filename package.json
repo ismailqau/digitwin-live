@@ -2,7 +2,7 @@
   "name": "digitwinlive",
   "version": "1.0.0",
   "private": true,
-  "description": "DigitWin Live - Real-Time Conversational AI System - Monorepo",
+  "description": "DigiTwin Live - Real-Time Conversational AI System - Monorepo",
   "workspaces": [
     "apps/*",
     "services/*",
@@ -138,6 +138,8 @@
       "glob@<8": ">=11.0.0",
       "inflight": "npm:@aashutoshrathi/inflight@^1.0.0",
       "js-yaml@>=4.0.0 <4.1.1": ">=4.1.1",
+      "react@>18.3.1": "18.3.1",
+      "react-test-renderer@>18.3.1": "18.3.1",
       "js-yaml@<3.14.2": ">=3.14.2",
       "lodash.get": ">=4.4.2",
       "lodash.isequal": ">=4.5.0",

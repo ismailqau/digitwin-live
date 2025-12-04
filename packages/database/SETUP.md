@@ -1,6 +1,6 @@
 # Database Setup Guide
 
-Quick guide to set up the database for the DigitWin Live System.
+Quick guide to set up the database for the DigiTwin Live System.
 
 ## Prerequisites
 

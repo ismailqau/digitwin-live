@@ -19,6 +19,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 
 import { useConversation } from '../hooks/useConversation';
@@ -51,6 +52,26 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     authToken,
     autoConnect: false,
   });
+
+  const handleConnect = async () => {
+    console.log('[ConversationScreen] Connect button pressed');
+    console.log('[ConversationScreen] WebSocket URL:', websocketUrl);
+    console.log('[ConversationScreen] Token length:', authToken?.length);
+
+    try {
+      await connect();
+      console.log('[ConversationScreen] Connected successfully!');
+      Alert.alert('Success', 'Connected to server!');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('[ConversationScreen] Connection failed:', errorMsg);
+      Alert.alert(
+        'Connection Failed',
+        `Could not connect to server:\n\n${errorMsg}\n\nURL: ${websocketUrl}`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
 
   const getStateColor = () => {
     switch (state) {
@@ -191,7 +212,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
         {!isConnected && (
           <TouchableOpacity
             style={[styles.button, styles.connectButton]}
-            onPress={connect}
+            onPress={handleConnect}
             disabled={state === ConversationState.CONNECTING}
           >
             {state === ConversationState.CONNECTING ? (

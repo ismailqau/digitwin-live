@@ -1,6 +1,6 @@
 # Getting Started
 
-Quick guide to set up and run the DigitWin Live platform locally.
+Quick guide to set up and run the DigiTwin Live platform locally.
 
 ## Prerequisites
 

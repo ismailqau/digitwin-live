@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DigitWin Live platform uses **PostgreSQL indexed cache tables** instead of a separate caching service like Redis. This approach simplifies the infrastructure while providing excellent performance through PostgreSQL's advanced indexing capabilities.
+The DigiTwin Live platform uses **PostgreSQL indexed cache tables** instead of a separate caching service like Redis. This approach simplifies the infrastructure while providing excellent performance through PostgreSQL's advanced indexing capabilities.
 
 ## Design Decision
 
@@ -437,4 +437,4 @@ REINDEX TABLE cache_embeddings;
 
 ## Conclusion
 
-PostgreSQL-based caching provides a robust, performant, and cost-effective solution for the DigitWin Live platform. By leveraging PostgreSQL's advanced indexing and JSONB support, we achieve excellent cache performance without the complexity of managing a separate caching service.
+PostgreSQL-based caching provides a robust, performant, and cost-effective solution for the DigiTwin Live platform. By leveraging PostgreSQL's advanced indexing and JSONB support, we achieve excellent cache performance without the complexity of managing a separate caching service.

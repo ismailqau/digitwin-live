@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to set up environment variables for the DigitWin Live platform across different environments.
+This guide explains how to set up environment variables for the DigiTwin Live platform across different environments.
 
 ## Quick Start
 

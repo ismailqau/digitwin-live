@@ -103,12 +103,24 @@ async function bootstrap() {
 
   // Handle WebSocket connections and track connection count
   io.on('connection', (socket) => {
+    logger.info(`[WebSocket] New connection attempt from ${socket.id}`);
+    logger.info(`[WebSocket] Handshake auth:`, socket.handshake.auth);
     wsController.handleConnection(socket);
     // Update health service with connection count
     healthService.setActiveConnections(io.engine.clientsCount);
 
     socket.on('disconnect', () => {
+      logger.info(`[WebSocket] Client disconnected: ${socket.id}`);
       healthService.setActiveConnections(io.engine.clientsCount);
+    });
+  });
+
+  // Log connection errors
+  io.engine.on('connection_error', (err) => {
+    logger.error('[WebSocket] Connection error:', {
+      message: err.message,
+      code: err.code,
+      context: err.context,
     });
   });
 

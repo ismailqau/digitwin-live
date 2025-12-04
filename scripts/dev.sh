@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# DigitWin Live Development Server Startup Script
+# DigiTwin Live Development Server Startup Script
 # Cross-platform compatible with improved error handling
 
 set -euo pipefail
@@ -493,7 +493,7 @@ print_service_summary() {
 
 # Main execution
 main() {
-    log_header "🚀 Starting DigitWin Live Development Servers"
+    log_header "🚀 Starting DigiTwin Live Development Servers"
     
     # Run pre-flight checks
     preflight_checks

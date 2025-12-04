@@ -1,15 +1,11 @@
-module.exports = {
-  presets: ['module:metro-react-native-babel-preset', '@babel/preset-typescript'],
-  plugins: [
-    [
-      'module-resolver',
-      {
-        root: ['./src'],
-        extensions: ['.ios.js', '.android.js', '.js', '.ts', '.tsx', '.json'],
-        alias: {
-          '@': './src',
-        },
-      },
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    plugins: [
+      '@babel/plugin-transform-private-methods',
+      '@babel/plugin-transform-class-properties',
+      '@babel/plugin-transform-private-property-in-object',
     ],
-  ],
+  };
 };

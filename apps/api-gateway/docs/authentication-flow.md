@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DigitWin Live API uses JWT (JSON Web Tokens) for authentication with a dual-token system:
+The DigiTwin Live API uses JWT (JSON Web Tokens) for authentication with a dual-token system:
 
 - **Access Token**: Short-lived (15 minutes) token for API requests
 - **Refresh Token**: Long-lived (7 days) token for obtaining new access tokens

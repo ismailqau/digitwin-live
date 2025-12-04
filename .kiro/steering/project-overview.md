@@ -4,7 +4,7 @@ inclusion: always
 
 # Project Overview
 
-## DigitWin Live - Real-Time Conversational AI System
+## DigiTwin Live - Real-Time Conversational AI System
 
 This is a monorepo for a real-time conversational AI system that enables natural voice conversations with personalized digital twins, featuring voice cloning, face animation, and knowledge-based responses.
 

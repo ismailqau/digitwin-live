@@ -31,7 +31,7 @@ interface UseVoiceSampleUploadReturn {
   clearProgress: () => void;
 }
 
-const API_BASE_URL = process.env.REACT_NATIVE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.WEBSOCKET_URL || 'http://192.168.100.204:3001';
 
 export const useVoiceSampleUpload = (): UseVoiceSampleUploadReturn => {
   const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});
@@ -64,6 +64,7 @@ export const useVoiceSampleUpload = (): UseVoiceSampleUploadReturn => {
         // For now, we'll simulate the upload with a File object
         const audioFile = new File(['simulated audio data'], sample.filename, {
           type: 'audio/wav',
+          lastModified: Date.now(),
         });
         formData.append('audio', audioFile);
         formData.append('filename', sample.filename);

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DigitWin Live API implements a comprehensive RBAC system that combines:
+The DigiTwin Live API implements a comprehensive RBAC system that combines:
 
 - **Roles**: User roles (user, admin)
 - **Permissions**: Granular action-based permissions

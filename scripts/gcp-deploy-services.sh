@@ -135,7 +135,7 @@ ensure_artifact_registry() {
         if gcloud artifacts repositories create "$repo_name" \
             --repository-format=docker \
             --location="$GCP_REGION" \
-            --description="DigitWin Live container images" \
+            --description="DigiTwin Live container images" \
             --project="$GCP_PROJECT_ID" 2>&1; then
             log_success "Artifact Registry repository created"
         else

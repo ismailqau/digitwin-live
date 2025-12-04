@@ -1,6 +1,6 @@
 # Scripts Documentation
 
-This directory contains utility scripts for managing the DigitWin Live platform.
+This directory contains utility scripts for managing the DigiTwin Live platform.
 
 ## Available Scripts
 

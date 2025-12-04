@@ -1,6 +1,6 @@
 # @clone/database
 
-Database access layer with Prisma ORM and repository pattern for the Real-Time DigitWin Live System.
+Database access layer with Prisma ORM and repository pattern for the Real-Time DigiTwin Live System.
 
 ## Features
 

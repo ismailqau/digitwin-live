@@ -1,6 +1,6 @@
 # GCP Infrastructure Setup
 
-This document describes the Google Cloud Platform infrastructure for the DigitWin Live system.
+This document describes the Google Cloud Platform infrastructure for the DigiTwin Live system.
 
 ## Overview
 

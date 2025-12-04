@@ -1,6 +1,6 @@
 # GCP Management Guide
 
-Complete guide for managing Google Cloud Platform resources for DigitWin Live.
+Complete guide for managing Google Cloud Platform resources for DigiTwin Live.
 
 ## Table of Contents
 
@@ -347,7 +347,7 @@ Set up billing alerts:
 # Create budget alert
 gcloud billing budgets create \
   --billing-account=YOUR_BILLING_ACCOUNT \
-  --display-name="DigitWin Live Budget" \
+  --display-name="DigiTwin Live Budget" \
   --budget-amount=100 \
   --threshold-rule=percent=50 \
   --threshold-rule=percent=90

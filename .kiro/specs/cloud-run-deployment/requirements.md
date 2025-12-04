@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Cloud Run Deployment System enables automated deployment of the DigitWin Live services (API Gateway, WebSocket Server, and Face Processing Service) to Google Cloud Run. The system provides a simple, script-based deployment workflow that integrates with the existing GCP management infrastructure, allowing developers to deploy services individually or all at once using a single command.
+The Cloud Run Deployment System enables automated deployment of the DigiTwin Live services (API Gateway, WebSocket Server, and Face Processing Service) to Google Cloud Run. The system provides a simple, script-based deployment workflow that integrates with the existing GCP management infrastructure, allowing developers to deploy services individually or all at once using a single command.
 
 ## Glossary
 

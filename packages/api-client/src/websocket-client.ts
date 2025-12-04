@@ -20,6 +20,9 @@ export class WebSocketClient {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
+      console.log('[WebSocketClient] Attempting to connect to:', this.config.url);
+      console.log('[WebSocketClient] Token length:', this.config.token?.length || 0);
+
       this.socket = io(this.config.url, {
         auth: {
           token: this.config.token,
@@ -27,14 +30,37 @@ export class WebSocketClient {
         reconnection: this.config.reconnection ?? true,
         reconnectionDelay: this.config.reconnectionDelay ?? 1000,
         reconnectionAttempts: this.config.reconnectionAttempts ?? 5,
+        // Use polling first for React Native compatibility, then upgrade to websocket
+        transports: ['polling', 'websocket'],
+        timeout: 20000,
+        forceNew: true,
+        // Additional options for React Native
+        upgrade: true,
+        rememberUpgrade: false,
       });
 
       this.socket.on('connect', () => {
+        console.log('[WebSocketClient] Connected successfully!');
         resolve();
       });
 
       this.socket.on('connect_error', (error) => {
+        console.error('[WebSocketClient] Connection error:', error.message);
+        console.error('[WebSocketClient] Error details:', JSON.stringify(error));
         reject(error);
+      });
+
+      this.socket.on('connect_timeout', () => {
+        console.error('[WebSocketClient] Connection timeout');
+        reject(new Error('Connection timeout'));
+      });
+
+      this.socket.on('error', (error) => {
+        console.error('[WebSocketClient] Socket error:', error);
+      });
+
+      this.socket.on('disconnect', (reason) => {
+        console.log('[WebSocketClient] Disconnected:', reason);
       });
 
       this.socket.on('message', (message: ServerMessage) => {

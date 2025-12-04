@@ -96,29 +96,13 @@ export class AudioPlaybackManager {
    */
   private async setupAudioSession(): Promise<void> {
     try {
-      if (Platform.OS === 'ios') {
-        // iOS: Configure AVAudioSession
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-          shouldDuckAndroid: this.config.enableDucking,
-          interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
-          playThroughEarpieceAndroid: false,
-        });
-      } else {
-        // Android: Configure AudioManager (audio focus)
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-          shouldDuckAndroid: this.config.enableDucking,
-          interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
-          playThroughEarpieceAndroid: false,
-        });
-      }
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: this.config.enableDucking,
+        playThroughEarpieceAndroid: false,
+      });
     } catch (error) {
       console.error('Failed to setup audio session:', error);
       this.handleError(new Error(`Audio session setup failed: ${error}`));

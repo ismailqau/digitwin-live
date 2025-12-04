@@ -1,4 +1,4 @@
-# DigitWin Live
+# DigiTwin Live
 
 A real-time conversational AI system that enables natural voice conversations with personalized digital twins, featuring voice cloning, face animation, and knowledge-based responses.
 

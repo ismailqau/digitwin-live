@@ -1,6 +1,6 @@
 # 🚀 Complete Setup Guide
 
-Complete guide to set up the DigitWin Live development environment.
+Complete guide to set up the DigiTwin Live development environment.
 
 ---
 

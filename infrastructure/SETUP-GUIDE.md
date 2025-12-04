@@ -1,6 +1,6 @@
 # GCP Infrastructure Setup Guide
 
-This guide walks you through setting up the complete GCP infrastructure for the Real-Time DigitWin Live System from scratch.
+This guide walks you through setting up the complete GCP infrastructure for the Real-Time DigiTwin Live System from scratch.
 
 ## Prerequisites Checklist
 
@@ -66,9 +66,9 @@ gcloud version
 export ORG_ID="your-org-id"  # Optional
 
 # Create projects for each environment
-gcloud projects create digitwinlive --name="DigitWin Live Dev"
-gcloud projects create digitwinlive-staging --name="DigitWin Live Staging"
-gcloud projects create digitwinlive-prod --name="DigitWin Live Prod"
+gcloud projects create digitwinlive --name="DigiTwin Live Dev"
+gcloud projects create digitwinlive-staging --name="DigiTwin Live Staging"
+gcloud projects create digitwinlive-prod --name="DigiTwin Live Prod"
 ```
 
 ### Link Billing Account

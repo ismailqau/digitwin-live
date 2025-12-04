@@ -1,9 +1,9 @@
 # Documentation Map
 
-Visual guide to all documentation in the DigitWin Live platform.
+Visual guide to all documentation in the DigiTwin Live platform.
 
 ```
-📦 DigitWin Live Documentation
+📦 DigiTwin Live Documentation
 │
 ├── 🚀 GETTING STARTED
 │   ├── README.md (root)                    → Project overview

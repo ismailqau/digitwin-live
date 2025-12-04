@@ -1,7 +1,7 @@
 {
   "name": "@clone/test-utils",
   "version": "1.0.0",
-  "description": "Shared test utilities for DigitWin Live",
+  "description": "Shared test utilities for DigiTwin Live",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

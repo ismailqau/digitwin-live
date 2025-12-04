@@ -1,6 +1,6 @@
 # 📚 Documentation Structure
 
-Clean, organized documentation structure for DigitWin Live.
+Clean, organized documentation structure for DigiTwin Live.
 
 ---
 

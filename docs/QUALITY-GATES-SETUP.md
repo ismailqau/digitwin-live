@@ -1,6 +1,6 @@
 # 🎯 Quality Gates Setup Summary
 
-Complete setup of code quality gates, linting, and static analysis for DigitWin Live.
+Complete setup of code quality gates, linting, and static analysis for DigiTwin Live.
 
 ---
 

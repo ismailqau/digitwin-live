@@ -1,6 +1,6 @@
 # Infrastructure
 
-This directory contains all infrastructure-as-code (IaC) configurations for the Real-Time DigitWin Live System.
+This directory contains all infrastructure-as-code (IaC) configurations for the Real-Time DigiTwin Live System.
 
 ## Structure
 

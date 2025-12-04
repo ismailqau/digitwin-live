@@ -2,7 +2,7 @@
   "name": "@clone/mobile-app",
   "version": "1.0.0",
   "private": true,
-  "description": "React Native mobile application for DigitWin Live",
+  "description": "React Native mobile application for DigiTwin Live",
   "main": "index.js",
   "scripts": {
     "android": "expo start --android",
@@ -15,30 +15,49 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@babel/runtime": "^7.25.9",
     "@clone/api-client": "workspace:*",
     "@clone/constants": "workspace:*",
     "@clone/shared-types": "workspace:*",
     "@clone/validation": "workspace:*",
+    "@react-navigation/bottom-tabs": "^7.2.0",
+    "@react-navigation/native": "^7.0.14",
+    "@react-navigation/native-stack": "^7.2.0",
     "buffer": "^6.0.3",
-    "expo": "~54.0.20",
-    "expo-av": "~15.0.1",
-    "react": "^19.1.0",
-    "react-native": "0.81.5",
+    "expo": "~52.0.0",
+    "expo-av": "~15.0.2",
+    "expo-camera": "~16.0.0",
+    "expo-media-library": "~17.0.0",
+    "expo-splash-screen": "^31.0.11",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
     "react-native-audio-recorder-player": "^3.6.12",
-    "react-native-permissions": "^5.1.0"
+    "react-native-config": "^1.5.3",
+    "react-native-gesture-handler": "~2.20.2",
+    "react-native-get-random-values": "^2.0.0",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@babel/plugin-transform-class-properties": "^7.25.9",
+    "@babel/plugin-transform-private-methods": "^7.25.9",
+    "@babel/plugin-transform-private-property-in-object": "^7.25.9",
     "@babel/preset-typescript": "^7.24.0",
     "@clone/test-utils": "workspace:*",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.4.3",
     "@types/jest": "^29.5.12",
-    "@types/react": "^19.1.0",
+    "@types/react": "~18.3.12",
     "babel-jest": "^29.7.0",
-    "babel-plugin-module-resolver": "^5.0.0",
+    "babel-preset-expo": "~12.0.0",
     "jest": "^29.7.0",
-    "metro-react-native-babel-preset": "^0.77.0",
-    "react-test-renderer": "^19.1.0",
+    "react-test-renderer": "18.3.1",
     "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
   }
 }

@@ -1,6 +1,6 @@
-# 📚 DigitWin Live Documentation
+# 📚 DigiTwin Live Documentation
 
-Complete documentation for the DigitWin Live platform.
+Complete documentation for the DigiTwin Live platform.
 
 ---
 

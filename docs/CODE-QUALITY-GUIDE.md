@@ -1,6 +1,6 @@
 # 🎯 Code Quality Guide
 
-Complete guide for maintaining code quality in the DigitWin Live project.
+Complete guide for maintaining code quality in the DigiTwin Live project.
 
 ---
 

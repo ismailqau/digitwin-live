@@ -1,7 +1,7 @@
 # 📋 Session Summary: GCP Infrastructure & Vector Database Migration
 
 **Date**: November 9, 2025  
-**Project**: DigitWin Live - Real-time Conversational Clone Platform
+**Project**: DigiTwin Live - Real-time Conversational Clone Platform
 
 ---
 
@@ -467,7 +467,7 @@ pnpm gcp:cleanup-all
 
 ## 🎉 Summary
 
-The DigitWin Live project now has:
+The DigiTwin Live project now has:
 
 - **Enterprise-grade vector database infrastructure**
 - **Professional GCP management system**

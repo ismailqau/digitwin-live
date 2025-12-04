@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # GCP Setup Script
-# Creates all required GCP resources for DigitWin Live
+# Creates all required GCP resources for DigiTwin Live
 # Uses PostgreSQL with pgvector for vector storage (no GKE/Weaviate needed)
 
 set -e
@@ -120,7 +120,7 @@ create_artifact_registry() {
         if gcloud artifacts repositories create "$REPO_NAME" \
             --repository-format=docker \
             --location="$REPO_LOCATION" \
-            --description="DigitWin Live container images" 2>&1; then
+            --description="DigiTwin Live container images" 2>&1; then
             log_success "Artifact Registry repository created: $REPO_NAME"
         else
             log_error "Failed to create Artifact Registry repository"
@@ -338,7 +338,7 @@ create_service_accounts() {
         log_success "Service account already exists"
     else
         gcloud iam service-accounts create "$SA_NAME" \
-            --display-name="DigitWin Live Service Account"
+            --display-name="DigiTwin Live Service Account"
         
         log_success "Service account created"
     fi
@@ -461,7 +461,7 @@ print_summary() {
 
 # Main execution
 main() {
-    log_header "GCP Setup for DigitWin Live"
+    log_header "GCP Setup for DigiTwin Live"
     log_info "Using PostgreSQL with pgvector for vector storage"
     
     load_env

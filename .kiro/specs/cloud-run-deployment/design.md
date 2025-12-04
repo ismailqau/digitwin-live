@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Cloud Run Deployment System provides a streamlined, script-based approach to deploying DigitWin Live services to Google Cloud Run. The system leverages Google Cloud Build for container image creation and Artifact Registry for image storage, enabling consistent and reproducible deployments.
+The Cloud Run Deployment System provides a streamlined, script-based approach to deploying DigiTwin Live services to Google Cloud Run. The system leverages Google Cloud Build for container image creation and Artifact Registry for image storage, enabling consistent and reproducible deployments.
 
 ### Design Goals
 

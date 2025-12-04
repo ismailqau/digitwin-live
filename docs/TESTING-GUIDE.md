@@ -1,6 +1,6 @@
 # 🧪 Testing Guide
 
-Comprehensive testing guide for DigitWin Live.
+Comprehensive testing guide for DigiTwin Live.
 
 ---
 

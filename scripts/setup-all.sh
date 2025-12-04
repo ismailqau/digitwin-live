@@ -16,7 +16,7 @@ log_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
 log_header() { echo -e "\n${BLUE}=== $1 ===${NC}"; }
 
 echo ""
-log_header "DigitWin Live - Complete Setup"
+log_header "DigiTwin Live - Complete Setup"
 echo ""
 log_info "This script will set up your development environment"
 echo ""
