@@ -61,7 +61,7 @@ FROM node:22-slim
 WORKDIR /app
 
 # Install pnpm and openssl (required by Prisma)
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y && apt-get install -y openssl libssl3 && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm@9
 
 # Copy workspace files
@@ -92,10 +92,14 @@ COPY --from=builder /app/apps/api-gateway/dist ./apps/api-gateway/dist
 # Install production dependencies (ignore-scripts to skip husky install)
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-# Install prisma CLI temporarily and generate client, then remove it
-RUN npm install -g prisma@6 && \
-    cd packages/database && prisma generate && \
-    npm uninstall -g prisma
+# Generate Prisma client in production stage
+RUN cd packages/database && npx prisma@6 generate
+
+# Create symlink for Prisma client at expected location
+RUN mkdir -p /app/node_modules/.prisma && \
+    mkdir -p /app/node_modules/@prisma && \
+    cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/* /app/node_modules/.prisma/ 2>/dev/null || true && \
+    cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/@prisma/client /app/node_modules/@prisma/ 2>/dev/null || true
 
 # Set environment
 ENV NODE_ENV=production

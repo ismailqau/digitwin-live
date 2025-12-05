@@ -18,7 +18,6 @@
     "@clone/database": "workspace:*",
     "@clone/errors": "workspace:*",
     "@clone/logger": "workspace:*",
-    "@clone/rag-service": "workspace:*",
     "@clone/shared-types": "workspace:*",
     "@clone/validation": "workspace:*",
     "@google-cloud/storage": "^7.0.0",

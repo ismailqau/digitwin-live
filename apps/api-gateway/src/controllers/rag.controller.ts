@@ -1,5 +1,6 @@
 import { createLogger } from '@clone/logger';
-import { RAGOrchestrator } from '@clone/rag-service';
+// TODO: RAG service should be called via gRPC, not imported directly
+// import { RAGOrchestrator } from '@clone/rag-service';
 import { Response, NextFunction } from 'express';
 
 import { AuthRequest } from '../middleware/auth.middleware';
@@ -7,9 +8,9 @@ import { AuthRequest } from '../middleware/auth.middleware';
 const logger = createLogger('RAGController');
 
 export class RAGController {
-  private ragService: RAGOrchestrator;
+  private ragService: any; // TODO: Replace with gRPC client
 
-  constructor(ragService: RAGOrchestrator) {
+  constructor(ragService: any) {
     this.ragService = ragService;
   }
 

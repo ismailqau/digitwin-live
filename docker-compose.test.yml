@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    image: api-gateway:local
+    ports:
+      - '3000:8080'
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinline_dev
+      - JWT_SECRET=3h1Jy0SGM+u+CeMhCT98lLbDfrri6pGzFNXiPpRCnIc=
+      - REFRESH_SECRET=V2yKGotlGfpeaM4z78KsiGrpsTbW1TYiiVnBJ9XO2uI=
+      - CORS_ORIGIN=*
+      - GCP_PROJECT_ID=digitwinlive
+      - GCP_REGION=us-central1
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:8080/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  websocket-server:
+    image: websocket-server:local
+    ports:
+      - '3001:8080'
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinline_dev
+      - JWT_SECRET=3h1Jy0SGM+u+CeMhCT98lLbDfrri6pGzFNXiPpRCnIc=
+      - REFRESH_SECRET=V2yKGotlGfpeaM4z78KsiGrpsTbW1TYiiVnBJ9XO2uI=
+      - CORS_ORIGIN=*
+      - GCP_PROJECT_ID=digitwinlive
+      - GCP_REGION=us-central1
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:8080/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  face-processing:
+    image: face-processing:local
+    ports:
+      - '8001:8080'
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinline_dev
+      - GCP_PROJECT_ID=digitwinlive
+      - GCP_REGION=us-central1
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:8080/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
