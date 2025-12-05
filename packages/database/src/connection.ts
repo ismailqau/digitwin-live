@@ -64,10 +64,19 @@ export class DatabaseConnection {
   static async healthCheck(): Promise<boolean> {
     try {
       const prisma = DatabaseConnection.getInstance();
+      // Ensure connection is established
+      await prisma.$connect();
       await prisma.$queryRaw`SELECT 1`;
       return true;
     } catch (error) {
       console.error('❌ Database health check failed:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+        });
+      }
       return false;
     }
   }

@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from 'react';
 
+import ENV from '../config/env';
 import { VoiceSample } from '../services/VoiceSampleManager';
 
 interface UploadProgress {
@@ -31,7 +32,7 @@ interface UseVoiceSampleUploadReturn {
   clearProgress: () => void;
 }
 
-const API_BASE_URL = process.env.API_URL || 'http://localhost:3000';
+const API_BASE_URL = ENV.API_URL;
 
 export const useVoiceSampleUpload = (): UseVoiceSampleUploadReturn => {
   const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});

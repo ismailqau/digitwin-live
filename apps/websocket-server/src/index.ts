@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { createServer } from 'http';
 import { resolve } from 'path';
 
+import { DatabaseConnection } from '@clone/database';
 import cors from 'cors';
 import { config } from 'dotenv';
 import express from 'express';
@@ -19,6 +20,11 @@ const PORT = process.env.PORT || 3001;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 async function bootstrap() {
+  // Initialize database connection
+  logger.info('[websocket-server] Initializing database connection...');
+  await DatabaseConnection.connect();
+  logger.info('[websocket-server] Database connected successfully');
+
   // Setup dependency injection
   setupContainer();
 
@@ -136,7 +142,10 @@ async function bootstrap() {
     io.close();
     httpServer.close(() => {
       logger.info('[websocket-server] Server closed');
-      process.exit(0);
+      DatabaseConnection.disconnect().then(() => {
+        logger.info('[websocket-server] Database connection closed');
+        process.exit(0);
+      });
     });
     // Force exit after 3 seconds
     setTimeout(() => process.exit(0), 3000);

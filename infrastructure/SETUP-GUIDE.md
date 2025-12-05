@@ -153,7 +153,7 @@ echo "✓ Staging service account created: ~/terraform-key-staging.json"
 
 ```bash
 # Set project
-gcloud config set project digitwinlive-prod
+gcloud config set project digitwinlive
 
 # Create service account
 gcloud iam service-accounts create terraform-sa \
@@ -161,20 +161,20 @@ gcloud iam service-accounts create terraform-sa \
 
 # Grant roles
 gcloud projects add-iam-policy-binding digitwinlive-prod \
-  --member="serviceAccount:terraform-sa@digitwinlive-prod.iam.gserviceaccount.com" \
+  --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
   --role="roles/editor"
 
 gcloud projects add-iam-policy-binding digitwinlive-prod \
-  --member="serviceAccount:terraform-sa@digitwinlive-prod.iam.gserviceaccount.com" \
+  --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountAdmin"
 
 gcloud projects add-iam-policy-binding digitwinlive-prod \
-  --member="serviceAccount:terraform-sa@digitwinlive-prod.iam.gserviceaccount.com" \
+  --member="serviceAccount:terraform-sa@digitwinlive.iam.gserviceaccount.com" \
   --role="roles/resourcemanager.projectIamAdmin"
 
 # Create key
 gcloud iam service-accounts keys create ~/terraform-key-prod.json \
-  --iam-account=terraform-sa@digitwinlive-prod.iam.gserviceaccount.com
+  --iam-account=terraform-sa@digitwinlive.iam.gserviceaccount.com
 
 echo "✓ Prod service account created: ~/terraform-key-prod.json"
 ```

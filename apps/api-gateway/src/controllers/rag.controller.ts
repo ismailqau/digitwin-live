@@ -7,10 +7,22 @@ import { AuthRequest } from '../middleware/auth.middleware';
 
 const logger = createLogger('RAGController');
 
-export class RAGController {
-  private ragService: any; // TODO: Replace with gRPC client
+// TODO: Define proper RAG service interface
+interface RAGService {
+  processQuery: (params: {
+    query: string;
+    userId: string;
+    conversationHistory: unknown[];
+    userProfile: { name: string; personalityTraits: unknown[] };
+    filters?: { sourceType: string };
+  }) => Promise<{ sources: unknown[]; context: string }>;
+  healthCheck: () => Promise<unknown>;
+}
 
-  constructor(ragService: any) {
+export class RAGController {
+  private ragService: RAGService; // TODO: Replace with gRPC client
+
+  constructor(ragService: RAGService) {
     this.ragService = ragService;
   }
 

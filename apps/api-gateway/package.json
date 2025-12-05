@@ -21,7 +21,7 @@
     "@clone/shared-types": "workspace:*",
     "@clone/validation": "workspace:*",
     "@google-cloud/storage": "^7.0.0",
-    "@prisma/client": "^6.19.0",
+    "@prisma/client": "^6.18.0",
     "bullmq": "^5.0.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",

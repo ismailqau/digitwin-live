@@ -160,8 +160,8 @@ importers:
         specifier: ^7.0.0
         version: 7.17.2
       '@prisma/client':
-        specifier: ^6.19.0
-        version: 6.19.0(typescript@5.9.3)
+        specifier: ^6.18.0
+        version: 6.19.0(prisma@6.18.0)(typescript@5.9.3)
       bullmq:
         specifier: ^5.0.0
         version: 5.63.0
@@ -280,6 +280,9 @@ importers:
       expo-camera:
         specifier: ~16.0.0
         version: 16.0.18(expo@52.0.47)(react-native@0.76.9)(react@18.3.1)
+      expo-constants:
+        specifier: ^18.0.10
+        version: 18.0.10(expo@52.0.47)(react-native@0.76.9)
       expo-media-library:
         specifier: ~17.0.0
         version: 17.0.6(expo@52.0.47)(react-native@0.76.9)
@@ -394,7 +397,7 @@ importers:
         version: link:../../packages/validation
       '@prisma/client':
         specifier: ^6.18.0
-        version: 6.19.0(typescript@5.9.3)
+        version: 6.19.0(prisma@6.18.0)(typescript@5.9.3)
       '@types/pg':
         specifier: ^8.15.6
         version: 8.15.6
@@ -554,8 +557,8 @@ importers:
         specifier: ^7.0.0
         version: 7.17.2
       '@prisma/client':
-        specifier: ^6.2.0
-        version: 6.18.0(prisma@6.18.0)(typescript@5.9.3)
+        specifier: ^6.18.0
+        version: 6.19.0(prisma@6.18.0)(typescript@5.9.3)
     devDependencies:
       '@types/node':
         specifier: ^24.9.2
@@ -694,8 +697,8 @@ importers:
         specifier: workspace:*
         version: link:../logger
       '@prisma/client':
-        specifier: ^5.7.0
-        version: 5.22.0
+        specifier: ^6.18.0
+        version: 6.19.0(prisma@6.18.0)(typescript@5.9.3)
       winston:
         specifier: ^3.11.0
         version: 3.18.3
@@ -3190,7 +3193,6 @@ packages:
       xml2js: 0.6.0
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@expo/config-plugins@9.0.17:
     resolution: {integrity: sha512-m24F1COquwOm7PBl5wRbkT9P9DviCXe0D7S7nQsolfbhdCWuvMkfXeoWmgjtdhy7sDlOyIgBrAdnB6MfsWKqIg==}
@@ -3217,7 +3219,6 @@ packages:
 
   /@expo/config-types@54.0.8:
     resolution: {integrity: sha512-lyIn/x/Yz0SgHL7IGWtgTLg6TJWC9vL7489++0hzCHZ4iGjVcfZmPTUfiragZ3HycFFj899qN0jlhl49IHa94A==}
-    dev: true
 
   /@expo/config@10.0.11:
     resolution: {integrity: sha512-nociJ4zr/NmbVfMNe9j/+zRlt7wz/siISu7PjdWE4WE+elEGxWWxsGzltdJG0llzrM+khx8qUiFK5aiVcdMBww==}
@@ -3256,7 +3257,6 @@ packages:
       sucrase: 3.35.0
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@expo/devcert@1.2.0:
     resolution: {integrity: sha512-Uilcv3xGELD5t/b0eM4cxBFEKQRIivB3v7i+VhWLV/gL98aw810unLKKJbGAxAIhY6Ipyz8ChWibFsKFXYwstA==}
@@ -3277,6 +3277,18 @@ packages:
       getenv: 1.0.0
     transitivePeerDependencies:
       - supports-color
+
+  /@expo/env@2.0.7:
+    resolution: {integrity: sha512-BNETbLEohk3HQ2LxwwezpG8pq+h7Fs7/vAMP3eAtFT1BCpprLYoBBFZH7gW4aqGfqOcVP4Lc91j014verrYNGg==}
+    dependencies:
+      chalk: 4.1.2
+      debug: 4.4.3
+      dotenv: 16.4.7
+      dotenv-expand: 11.0.7
+      getenv: 2.0.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /@expo/fingerprint@0.11.11:
     resolution: {integrity: sha512-gNyn1KnAOpEa8gSNsYqXMTcq0fSwqU/vit6fP5863vLSKxHm/dNt/gm/uZJxrRZxKq71KUJWF6I7d3z8qIfq5g==}
@@ -3382,7 +3394,6 @@ packages:
       '@xmldom/xmldom': 0.8.11
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
-    dev: true
 
   /@expo/prebuild-config@8.2.0:
     resolution: {integrity: sha512-CxiPpd980s0jyxi7eyN3i/7YKu3XL+8qPjBZUCYtc0+axpGweqIkq2CslyLSKHyqVyH/zlPkbVgWdyiYavFS5Q==}
@@ -4232,35 +4243,7 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@prisma/client@5.22.0:
-    resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
-    engines: {node: '>=16.13'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dev: false
-
-  /@prisma/client@6.18.0(prisma@6.18.0)(typescript@5.9.3):
-    resolution: {integrity: sha512-jnL2I9gDnPnw4A+4h5SuNn8Gc+1mL1Z79U/3I9eE2gbxJG1oSA+62ByPW4xkeDgwE0fqMzzpAZ7IHxYnLZ4iQA==}
-    engines: {node: '>=18.18'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-      typescript: '>=5.1.0'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-      typescript:
-        optional: true
-    dependencies:
-      prisma: 6.18.0(typescript@5.9.3)
-      typescript: 5.9.3
-    dev: false
-
-  /@prisma/client@6.19.0(typescript@5.9.3):
+  /@prisma/client@6.19.0(prisma@6.18.0)(typescript@5.9.3):
     resolution: {integrity: sha512-QXFT+N/bva/QI2qoXmjBzL7D6aliPffIwP+81AdTGq0FXDoLxLkWivGMawG8iM5B9BKfxLIXxfWWAF6wbuJU6g==}
     engines: {node: '>=18.18'}
     requiresBuild: true
@@ -4273,6 +4256,7 @@ packages:
       typescript:
         optional: true
     dependencies:
+      prisma: 6.18.0(typescript@5.9.3)
       typescript: 5.9.3
     dev: false
 
@@ -8327,6 +8311,20 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
+  /expo-constants@18.0.10(expo@52.0.47)(react-native@0.76.9):
+    resolution: {integrity: sha512-Rhtv+X974k0Cahmvx6p7ER5+pNhBC0XbP1lRviL2J1Xl4sT2FBaIuIxF/0I0CbhOsySf0ksqc5caFweAy9Ewiw==}
+    peerDependencies:
+      expo: '*'
+      react-native: '*'
+    dependencies:
+      '@expo/config': 12.0.10
+      '@expo/env': 2.0.7
+      expo: 52.0.47(@babel/core@7.28.5)(@babel/preset-env@7.28.5)(react-native@0.76.9)(react@18.3.1)
+      react-native: 0.76.9(@babel/core@7.28.5)(@babel/preset-env@7.28.5)(@types/react@18.3.27)(react@18.3.1)
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
   /expo-file-system@18.0.12(expo@52.0.47)(react-native@0.76.9):
     resolution: {integrity: sha512-HAkrd/mb8r+G3lJ9MzmGeuW2B+BxQR1joKfeCyY4deLl1zoZ48FrAWjgZjHK9aHUVhJ0ehzInu/NQtikKytaeg==}
     peerDependencies:
@@ -9077,7 +9075,6 @@ packages:
   /getenv@2.0.0:
     resolution: {integrity: sha512-VilgtJj/ALgGY77fiLam5iD336eSWi96Q15JSAG1zi8NRBysm3LXKdGnHb4m5cuyxvOLQQKWpBZAT6ni4FI2iQ==}
     engines: {node: '>=6'}
-    dev: true
 
   /giget@2.0.0:
     resolution: {integrity: sha512-L5bGsVkxJbJgdnwyuheIunkGatUF/zssUoxxjACCseZYAVbaqdh9Tsmmlkl8vYan09H7sbvKt4pS8GqKLBrEzA==}

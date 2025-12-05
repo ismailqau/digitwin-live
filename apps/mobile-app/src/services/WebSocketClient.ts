@@ -11,13 +11,12 @@
 
 import { io, Socket } from 'socket.io-client';
 
+import ENV from '../config/env';
+
 import { SecureStorage } from './SecureStorage';
 
-console.log('[WebSocketClient] Module loaded');
-
 // WebSocket server configuration
-// For iOS simulator, use 127.0.0.1 (localhost doesn't work in React Native)
-const WEBSOCKET_URL = process.env.WEBSOCKET_URL || 'http://127.0.0.1:3001';
+const WEBSOCKET_URL = ENV.WEBSOCKET_URL;
 const RECONNECTION_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000]; // Exponential backoff
 const CONNECTION_TIMEOUT = 8000; // 30 seconds
 const HEARTBEAT_INTERVAL = 4000; // 15 seconds

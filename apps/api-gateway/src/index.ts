@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, DatabaseConnection } from '@clone/database';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
@@ -24,6 +24,16 @@ const PORT = process.env.PORT || 3000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 const app: Express = express();
+
+// Initialize database connection
+console.log('[api-gateway] Initializing database connection...');
+DatabaseConnection.connect()
+  .then(() => {
+    console.log('[api-gateway] Database connected successfully');
+  })
+  .catch((error) => {
+    console.error('[api-gateway] Failed to connect to database:', error);
+  });
 
 // Initialize rate limit cleanup service
 const prisma = new PrismaClient();
@@ -110,6 +120,23 @@ app.get('/health/live', async (_req, res) => {
   }
 });
 
+// Debug endpoint to check environment configuration
+app.get('/debug/env', (_req, res) => {
+  const databaseUrl = process.env.DATABASE_URL;
+  const hasDatabaseUrl = !!databaseUrl;
+  const databaseUrlFormat = databaseUrl
+    ? databaseUrl.substring(0, 30) + '...' + databaseUrl.substring(databaseUrl.length - 30)
+    : 'NOT SET';
+
+  res.json({
+    nodeEnv: process.env.NODE_ENV,
+    hasDatabaseUrl,
+    databaseUrlFormat,
+    gcpProjectId: process.env.GCP_PROJECT_ID,
+    gcpRegion: process.env.GCP_REGION,
+  });
+});
+
 // API Documentation
 app.use(
   '/docs',
@@ -148,8 +175,8 @@ const shutdown = (signal: string) => {
   cleanupService.stop();
   server.close(() => {
     console.log('[api-gateway] Server closed');
-    prisma.$disconnect().then(() => {
-      console.log('[api-gateway] Database connection closed');
+    Promise.all([prisma.$disconnect(), DatabaseConnection.disconnect()]).then(() => {
+      console.log('[api-gateway] Database connections closed');
       process.exit(0);
     });
   });

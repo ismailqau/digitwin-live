@@ -10,18 +10,15 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 import ConversationScreen from '../components/ConversationScreen';
+import ENV from '../config/env';
 import type { MainTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Configuration - these should come from environment variables in production
-// Socket.io uses HTTP/HTTPS protocol, not ws://
-// For iOS Simulator: use 127.0.0.1 or 127.0.0.1
-// For Physical Device: use your computer's IP (192.168.100.204)
-const WEBSOCKET_URL = process.env.WEBSOCKET_URL || 'http://127.0.0.1:3001';
+// Configuration
+const WEBSOCKET_URL = ENV.WEBSOCKET_URL;
 // Valid JWT token for development (expires in 24h) - Generated with correct JWT_SECRET
 const AUTH_TOKEN =
-  process.env.AUTH_TOKEN ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItMTIzIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwic3Vic2NyaXB0aW9uVGllciI6ImZyZWUiLCJwZXJtaXNzaW9ucyI6WyJjb252ZXJzYXRpb246Y3JlYXRlIiwiY29udmVyc2F0aW9uOnJlYWQiLCJrbm93bGVkZ2U6cmVhZCJdLCJyb2xlcyI6WyJ1c2VyIl0sImlhdCI6MTc2NDg3OTc0MywiZXhwIjoxNzY0OTY2MTQzfQ.jzP1gS00_aGB8KhTpuowS2AOp4aVmKJ-niwpVXQwPrU';
 
 // Wrapper for existing ConversationScreen

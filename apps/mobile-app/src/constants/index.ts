@@ -4,10 +4,12 @@
  * Application-wide constants and configuration values
  */
 
+import ENV from '../config/env';
+
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.API_URL || 'http://localhost:3000',
-  WEBSOCKET_URL: process.env.WEBSOCKET_URL || 'ws://localhost:3001',
+  BASE_URL: ENV.API_URL,
+  WEBSOCKET_URL: ENV.WEBSOCKET_URL,
   TIMEOUT: 30000, // 30 seconds
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second
