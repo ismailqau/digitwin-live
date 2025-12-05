@@ -24,7 +24,7 @@ export const options = {
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
-const WS_URL = __ENV.WS_URL || 'http://localhost:3001';
+const WEBSOCKET_URL = __ENV.WEBSOCKET_URL || 'http://localhost:3001';
 
 export default function () {
   // Test 1: Health check - API Gateway
@@ -43,7 +43,7 @@ export default function () {
   sleep(0.5);
 
   // Test 2: Health check - WebSocket Server
-  const wsHealthRes = http.get(`${WS_URL}/health`);
+  const wsHealthRes = http.get(`${WEBSOCKET_URL}/health`);
 
   check(wsHealthRes, {
     'WebSocket health status is 200': (r) => r.status === 200,

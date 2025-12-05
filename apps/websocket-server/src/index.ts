@@ -124,9 +124,9 @@ async function bootstrap() {
     });
   });
 
-  // Start server
-  httpServer.listen(PORT, () => {
-    logger.info(`WebSocket server listening on port ${PORT}`);
+  // Start server - bind to 0.0.0.0 to accept connections from network
+  httpServer.listen(Number(PORT), '0.0.0.0', () => {
+    logger.info(`WebSocket server listening on port ${PORT} (0.0.0.0)`);
     logger.info(`CORS origin: ${CORS_ORIGIN}`);
   });
 

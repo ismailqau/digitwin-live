@@ -5,82 +5,17 @@
  * Splash → Login → Register → ForgotPassword → EmailVerification
  */
 
-import { useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-import { useAuthStore } from '../store/authStore';
+import EmailVerificationScreen from '../screens/auth/EmailVerificationScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import SplashScreen from '../screens/auth/SplashScreen';
 import type { AuthStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
-
-// Placeholder screens - will be replaced with actual implementations
-const SplashScreen = () => {
-  const navigation = useNavigation();
-
-  React.useEffect(() => {
-    // Auto-navigate to Login after a brief delay
-    const timer = setTimeout(() => {
-      navigation.navigate('Login' as never);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [navigation]);
-
-  return (
-    <View style={styles.placeholder}>
-      <Text style={styles.title}>DigiTwin Live</Text>
-      <Text style={styles.subtitle}>Loading...</Text>
-    </View>
-  );
-};
-
-const LoginScreen = () => {
-  const { login } = useAuthStore();
-
-  const handleSkipLogin = () => {
-    // Mock login for testing
-    const mockUser = {
-      id: 'test-user-123',
-      email: 'test@example.com',
-      name: 'Test User',
-      createdAt: new Date().toISOString(),
-    };
-    login(mockUser, 'mock-access-token', 'mock-refresh-token');
-  };
-
-  return (
-    <View style={styles.placeholder}>
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.subtitle}>Sign in to your account</Text>
-      <TouchableOpacity style={styles.button} onPress={handleSkipLogin}>
-        <Text style={styles.buttonText}>Skip Login (Demo)</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const RegisterScreen = () => (
-  <View style={styles.placeholder}>
-    <Text style={styles.title}>Register</Text>
-    <Text style={styles.subtitle}>Create a new account</Text>
-  </View>
-);
-
-const ForgotPasswordScreen = () => (
-  <View style={styles.placeholder}>
-    <Text style={styles.title}>Forgot Password</Text>
-    <Text style={styles.subtitle}>Reset your password</Text>
-  </View>
-);
-
-const EmailVerificationScreen = () => (
-  <View style={styles.placeholder}>
-    <Text style={styles.title}>Email Verification</Text>
-    <Text style={styles.subtitle}>Check your email</Text>
-  </View>
-);
 
 export default function AuthNavigator() {
   return (
@@ -89,7 +24,7 @@ export default function AuthNavigator() {
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-        contentStyle: { backgroundColor: '#f5f5f5' },
+        contentStyle: { backgroundColor: '#FFFFFF' },
       }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
@@ -108,35 +43,3 @@ export default function AuthNavigator() {
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  placeholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

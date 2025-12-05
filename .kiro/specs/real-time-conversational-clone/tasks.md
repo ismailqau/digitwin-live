@@ -1543,7 +1543,7 @@ apps/mobile-app/
 └── __tests__/                # Test files
 ```
 
-- [x] 13. Set up React Native project structure and navigation
+- [ ] 13. Set up React Native project structure and navigation
   - **13.0.1 Install and configure React Navigation:**
     - Install @react-navigation/native, @react-navigation/stack, @react-navigation/bottom-tabs
     - Install required dependencies: react-native-screens, react-native-safe-area-context, react-native-gesture-handler
@@ -1562,7 +1562,7 @@ apps/mobile-app/
   - **13.0.4 Configure environment variables:**
     - Install react-native-config
     - Create `.env.development`, `.env.staging`, `.env.production`
-    - Configure API_URL, WS_URL, environment-specific settings
+    - Configure API_URL, WEBSOCKET_URL, environment-specific settings
   - **13.0.5 Configure platform-specific settings:**
     - Update `ios/Info.plist` with required permissions (microphone, camera, photo library)
     - Update `android/app/src/main/AndroidManifest.xml` with permissions
@@ -1570,7 +1570,7 @@ apps/mobile-app/
   - _Requirements: 1, 7_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 13.1 Implement authentication screens
+- [x] 13.1 Implement authentication screens
   - **13.1.1 Create splash screen:**
     - Create `src/screens/auth/SplashScreen.tsx`
     - Implement app logo animation (fade in, scale)
@@ -1621,7 +1621,58 @@ apps/mobile-app/
     - Store JWT access token and refresh token securely
     - Implement token refresh logic in API client
     - Clear tokens on logout
-  - _Requirements: 10_
+  - **13.1.8 Implement WebSocket client integration and ensure compatibility:**
+    - Create `src/services/WebSocketClient.ts` for WebSocket connection management
+    - Install socket.io-client for React Native
+    - Configure WebSocket connection to backend server at port 3001
+    - Implement JWT authentication in WebSocket handshake (pass token in auth header)
+    - Create connection state management (connecting, connected, disconnected, reconnecting, error)
+    - Implement automatic reconnection with exponential backoff (1s, 2s, 4s, 8s, 16s, 30s max)
+    - Create event listeners for server messages:
+      - `connect` - Connection established
+      - `disconnect` - Connection lost
+      - `error` - Connection error
+      - `authenticated` - Authentication successful
+      - `auth_error` - Authentication failed
+    - Implement heartbeat/ping-pong mechanism for connection health monitoring
+    - Create message queue for offline scenarios (store messages when disconnected)
+    - Implement message retry logic for failed sends
+    - Add connection quality monitoring (latency tracking via ping/pong)
+    - Create WebSocket service hooks for React components:
+      - `useWebSocket()` - Access WebSocket connection
+      - `useWebSocketEvent(eventName, handler)` - Subscribe to events
+      - `useConnectionStatus()` - Monitor connection state
+    - Verify WebSocket server compatibility:
+      - Test connection handshake with JWT token
+      - Verify message format compatibility (JSON structure)
+      - Test bidirectional communication (send/receive)
+      - Verify event names match server implementation
+      - Test reconnection behavior
+      - Verify error handling and error message format
+    - Implement WebSocket error handling:
+      - Handle connection timeout (30s)
+      - Handle authentication failures (redirect to login)
+      - Handle server errors (display user-friendly message)
+      - Handle network errors (show offline indicator)
+    - Create WebSocket connection UI indicators:
+      - Show connecting spinner during handshake
+      - Display connected status (green indicator)
+      - Show reconnecting status with retry count
+      - Display disconnected status (red indicator)
+      - Show error messages with retry button
+    - Integrate with existing authentication flow:
+      - Connect WebSocket after successful login
+      - Disconnect WebSocket on logout
+      - Reconnect with new token after refresh
+    - Create WebSocket service tests:
+      - Test connection establishment
+      - Test authentication flow
+      - Test reconnection logic
+      - Test message sending and receiving
+      - Test error handling
+      - Mock WebSocket server for testing
+  - _Requirements: 10, 15_
+  - _Note: WebSocket server runs on port 3001 (apps/websocket-server), ensure mobile app connects to correct endpoint_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [ ] 13.2 Implement onboarding flow screens

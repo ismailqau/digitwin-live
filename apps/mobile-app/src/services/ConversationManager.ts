@@ -8,7 +8,6 @@
  * - Audio playback
  */
 
-import { WebSocketClient } from '@clone/api-client';
 import type {
   AudioChunkMessage,
   InterruptionMessage,
@@ -32,6 +31,7 @@ import AudioPlaybackManager, {
   type AudioChunkData,
   type PlaybackConfig,
 } from './AudioPlaybackManager';
+import { getWebSocketClient, ConnectionState, type WebSocketClient } from './WebSocketClient';
 
 export enum ConversationState {
   IDLE = 'idle',
@@ -84,14 +84,13 @@ export class ConversationManager {
   constructor(config: ConversationManagerConfig, callbacks: ConversationCallbacks = {}) {
     this.callbacks = callbacks;
 
-    // Initialize WebSocket client
-    this.wsClient = new WebSocketClient({
-      url: config.websocketUrl,
-      token: config.authToken,
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-    });
+    // Initialize WebSocket client (using singleton)
+    this.wsClient = getWebSocketClient();
+
+    // Set auth token if provided
+    if (config.authToken) {
+      this.wsClient.setAuthToken(config.authToken);
+    }
 
     // Initialize Audio Manager
     this.audioManager = new AudioManager(config.audioConfig, {
@@ -166,16 +165,24 @@ export class ConversationManager {
       this.handleError(msg.errorMessage, msg.recoverable);
     });
 
-    this.wsClient.onConnect(() => {
-      this.setState(ConversationState.CONNECTED);
+    // Handle connection state changes
+    this.wsClient.onConnectionStateChange((state) => {
+      if (state === ConnectionState.CONNECTED) {
+        this.setState(ConversationState.CONNECTED);
+      } else if (state === ConnectionState.DISCONNECTED) {
+        this.setState(ConversationState.DISCONNECTED);
+      } else if (state === ConnectionState.ERROR) {
+        this.handleError('WebSocket connection error', true);
+      }
     });
 
-    this.wsClient.onDisconnect(() => {
-      this.setState(ConversationState.DISCONNECTED);
-    });
-
-    this.wsClient.onError((error: Error) => {
-      this.handleError(error.message, false);
+    // Handle WebSocket errors
+    this.wsClient.on('error', (error: unknown) => {
+      const errorMessage =
+        error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'WebSocket error';
+      this.handleError(errorMessage, false);
     });
   }
 
@@ -183,12 +190,20 @@ export class ConversationManager {
    * Connect to the WebSocket server
    */
   async connect(): Promise<void> {
+    console.log('[ConversationManager] connect() called');
     try {
+      console.log('[ConversationManager] Setting state to CONNECTING');
       this.setState(ConversationState.CONNECTING);
+
+      console.log('[ConversationManager] Calling wsClient.connect()');
       await this.wsClient.connect();
+
+      console.log('[ConversationManager] Connection successful, generating session ID');
       this.sessionId = this.generateSessionId();
       this.setState(ConversationState.CONNECTED);
+      console.log('[ConversationManager] Connected with session:', this.sessionId);
     } catch (error) {
+      console.error('[ConversationManager] Connection failed:', error);
       this.handleError(`Failed to connect: ${error}`, true);
       throw error;
     }

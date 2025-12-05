@@ -45,9 +45,37 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
-# React Native
+# React Native / Expo
 .expo/
 .expo-shared/
+ios/
+android/
+*.xcworkspace
+*.xcodeproj
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+Pods/
+*.hmap
+*.ipa
+*.apk
+*.aab
+*.dSYM.zip
+*.dSYM
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+**/.xcode.env.local
 
 # Terraform
 *.tfstate

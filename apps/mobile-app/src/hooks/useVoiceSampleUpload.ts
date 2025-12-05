@@ -31,7 +31,7 @@ interface UseVoiceSampleUploadReturn {
   clearProgress: () => void;
 }
 
-const API_BASE_URL = process.env.WEBSOCKET_URL || 'http://192.168.100.204:3001';
+const API_BASE_URL = process.env.API_URL || 'http://localhost:3000';
 
 export const useVoiceSampleUpload = (): UseVoiceSampleUploadReturn => {
   const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});

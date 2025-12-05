@@ -101,7 +101,7 @@ Environment variables are configured in:
 Key variables:
 
 - `API_URL` - Backend API URL
-- `WS_URL` - WebSocket server URL
+- `WEBSOCKET_URL` - WebSocket server URL
 - `ENVIRONMENT` - Current environment
 - `DEBUG` - Debug mode flag
 

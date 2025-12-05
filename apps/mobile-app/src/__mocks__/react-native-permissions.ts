@@ -3,6 +3,9 @@
  * Used in tests to avoid dependency on native modules
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare const jest: any;
+
 export const PERMISSIONS = {
   IOS: {
     MICROPHONE: 'ios.permission.MICROPHONE',
@@ -20,15 +23,18 @@ export const RESULTS = {
   LIMITED: 'limited',
 };
 
-// Mock functions - these will be replaced by jest.fn() at runtime
-export const check = () => Promise.resolve(RESULTS.GRANTED);
-export const request = () => Promise.resolve(RESULTS.GRANTED);
-export const checkMultiple = () => Promise.resolve({});
-export const requestMultiple = () => Promise.resolve({});
-export const openSettings = () => Promise.resolve();
-export const checkNotifications = () => Promise.resolve({ status: RESULTS.GRANTED, settings: {} });
-export const requestNotifications = () =>
-  Promise.resolve({ status: RESULTS.GRANTED, settings: {} });
+// Mock functions using jest.fn() for proper mock functionality
+export const check = jest.fn(() => Promise.resolve(RESULTS.GRANTED));
+export const request = jest.fn(() => Promise.resolve(RESULTS.GRANTED));
+export const checkMultiple = jest.fn(() => Promise.resolve({}));
+export const requestMultiple = jest.fn(() => Promise.resolve({}));
+export const openSettings = jest.fn(() => Promise.resolve());
+export const checkNotifications = jest.fn(() =>
+  Promise.resolve({ status: RESULTS.GRANTED, settings: {} })
+);
+export const requestNotifications = jest.fn(() =>
+  Promise.resolve({ status: RESULTS.GRANTED, settings: {} })
+);
 
 export default {
   PERMISSIONS,

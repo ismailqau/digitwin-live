@@ -54,6 +54,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   });
 
   const handleConnect = async () => {
+    Alert.alert('Debug', 'Connect button pressed!');
     console.log('[ConversationScreen] Connect button pressed');
     console.log('[ConversationScreen] WebSocket URL:', websocketUrl);
     console.log('[ConversationScreen] Token length:', authToken?.length);

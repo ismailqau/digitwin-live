@@ -6,7 +6,7 @@
 set -e
 
 API_URL="${API_URL:-http://localhost:3000}"
-WS_URL="${WS_URL:-http://localhost:3001}"
+WEBSOCKET_URL="${WEBSOCKET_URL:-http://localhost:3001}"
 CONCURRENT_USERS="${CONCURRENT_USERS:-10}"
 REQUESTS_PER_USER="${REQUESTS_PER_USER:-50}"
 TOTAL_REQUESTS=$((CONCURRENT_USERS * REQUESTS_PER_USER))
@@ -15,7 +15,7 @@ echo "=========================================="
 echo "       SIMPLE LOAD TEST"
 echo "=========================================="
 echo "API Gateway URL: $API_URL"
-echo "WebSocket URL: $WS_URL"
+echo "WebSocket URL: $WEBSOCKET_URL"
 echo "Concurrent Users: $CONCURRENT_USERS"
 echo "Requests per User: $REQUESTS_PER_USER"
 echo "Total Requests: $TOTAL_REQUESTS"
@@ -38,7 +38,7 @@ run_user_requests() {
                 endpoint="$API_URL/health"
                 ;;
             1)
-                endpoint="$WS_URL/health"
+                endpoint="$WEBSOCKET_URL/health"
                 ;;
             2)
                 endpoint="$API_URL/api/v1/voice/models"
