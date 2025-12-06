@@ -210,6 +210,9 @@ The system follows a microservices architecture with the following key component
 
 ### ☁️ GCP & Infrastructure
 
+- **[GCP Deployment Guide](./docs/GCP-DEPLOYMENT-GUIDE.md)** - Complete deployment walkthrough with pgvector setup
+- **[GCP Troubleshooting](./docs/GCP-TROUBLESHOOTING.md)** - Common issues and solutions
+- **[GCP Rollback Procedures](./docs/GCP-ROLLBACK-PROCEDURES.md)** - Emergency rollback and recovery
 - **[GCP Management](./docs/GCP-MANAGEMENT.md)** - Complete GCP resource management
 - **[GCP Quick Reference](./docs/GCP-QUICK-REFERENCE.md)** - Command cheat sheet
 - **[GCP Cleanup Guide](./docs/GCP-CLEANUP-GUIDE.md)** - Delete and manage resources
@@ -300,37 +303,49 @@ pnpm --filter @clone/shared-types test --watch
 
 ## 🚢 Deployment
 
-### Infrastructure (GCP)
+### Quick Deployment to GCP
 
-The system is deployed on Google Cloud Platform using Terraform:
-
-```bash
-# Initialize infrastructure
-./infrastructure/scripts/init-terraform.sh dev
-
-# Plan changes
-./infrastructure/scripts/plan-terraform.sh dev <project-id>
-
-# Apply changes
-./infrastructure/scripts/apply-terraform.sh dev
-```
-
-**📖 Infrastructure Guide**: See [GCP Infrastructure](./docs/GCP-INFRASTRUCTURE.md)
-
-### Application Deployment
+Deploy to Google Cloud Platform using Cloud Run and Cloud SQL:
 
 ```bash
-# Build for production
-pnpm build
+# 1. Set up GCP infrastructure
+./scripts/gcp-setup.sh
 
-# Deploy to staging
-./scripts/deploy.sh staging
+# 2. Enable pgvector extension in Cloud SQL
+# (See deployment guide for detailed instructions)
 
-# Deploy to production
-./scripts/deploy.sh production
+# 3. Run database migrations
+pnpm db:migrate:deploy
+
+# 4. Deploy all services
+./scripts/gcp-deploy.sh deploy --env=production
 ```
 
-**📖 Deployment Guide**: See [Infrastructure README](./infrastructure/README.md)
+**📖 Complete Guide**: See [GCP Deployment Guide](./docs/GCP-DEPLOYMENT-GUIDE.md) for:
+
+- Step-by-step setup instructions
+- PostgreSQL with pgvector configuration
+- Troubleshooting common issues
+- Rollback procedures
+- Cost optimization tips
+
+### Infrastructure Management
+
+```bash
+# Check status of all resources
+./scripts/gcp-manage.sh status
+
+# View estimated costs
+./scripts/gcp-manage.sh cost
+
+# Stop resources to save costs
+./scripts/gcp-manage.sh stop sql-instance
+
+# Clean up resources
+./scripts/gcp-cleanup.sh
+```
+
+**📖 Management Guide**: See [GCP Management](./docs/GCP-MANAGEMENT.md)
 
 ## 🔧 Configuration
 

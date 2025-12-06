@@ -34,12 +34,15 @@ Complete documentation for the DigiTwin Live platform.
 
 ### ☁️ GCP & Infrastructure
 
-| Document                                        | Description                              |
-| ----------------------------------------------- | ---------------------------------------- |
-| [GCP Management](./GCP-MANAGEMENT.md)           | Complete GCP resource management guide   |
-| [GCP Quick Reference](./GCP-QUICK-REFERENCE.md) | Command cheat sheet for daily operations |
-| [GCP Cleanup Guide](./GCP-CLEANUP-GUIDE.md)     | Delete and manage GCP resources          |
-| [GCP Infrastructure](./GCP-INFRASTRUCTURE.md)   | Infrastructure architecture and setup    |
+| Document                                                | Description                                   |
+| ------------------------------------------------------- | --------------------------------------------- |
+| [GCP Deployment Guide](./GCP-DEPLOYMENT-GUIDE.md)       | Complete deployment walkthrough with pgvector |
+| [GCP Troubleshooting](./GCP-TROUBLESHOOTING.md)         | Common issues and solutions                   |
+| [GCP Rollback Procedures](./GCP-ROLLBACK-PROCEDURES.md) | Emergency rollback and recovery procedures    |
+| [GCP Management](./GCP-MANAGEMENT.md)                   | Complete GCP resource management guide        |
+| [GCP Quick Reference](./GCP-QUICK-REFERENCE.md)         | Command cheat sheet for daily operations      |
+| [GCP Cleanup Guide](./GCP-CLEANUP-GUIDE.md)             | Delete and manage GCP resources               |
+| [GCP Infrastructure](./GCP-INFRASTRUCTURE.md)           | Infrastructure architecture and setup         |
 
 ### 🗄️ Database & Storage
 
@@ -155,6 +158,12 @@ Complete documentation for the DigiTwin Live platform.
 3. [Tool Installation](./TOOL-INSTALLATION.md) - Install prerequisites
 4. [Environment Setup](./ENVIRONMENT-SETUP.md) - Configuration details
 
+### "I need to deploy to GCP"
+
+1. [GCP Deployment Guide](./GCP-DEPLOYMENT-GUIDE.md) - Complete deployment walkthrough
+2. [GCP Troubleshooting](./GCP-TROUBLESHOOTING.md) - Common deployment issues
+3. [GCP Rollback Procedures](./GCP-ROLLBACK-PROCEDURES.md) - Emergency rollback
+
 ### "I need to configure GCP"
 
 1. [GCP Management](./GCP-MANAGEMENT.md) - Complete resource management
@@ -204,9 +213,9 @@ Complete documentation for the DigiTwin Live platform.
 
 ## 📊 Documentation Stats
 
-- **Total Documents**: 20+
+- **Total Documents**: 23+
 - **Setup Guides**: 4
-- **GCP Guides**: 4
+- **GCP Guides**: 7
 - **Architecture Docs**: 6
 - **Development & Quality Docs**: 5
 - **Security Docs**: 3
