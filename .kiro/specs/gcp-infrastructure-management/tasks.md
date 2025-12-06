@@ -1,0 +1,132 @@
+# Implementation Plan
+
+- [ ] 1. Update gcp-setup.sh to ensure complete infrastructure setup
+  - Review and fix any issues in current script
+  - Ensure all required APIs are enabled (compute, sqladmin, storage, run, secretmanager, artifactregistry, cloudbuild)
+  - Verify Artifact Registry creation with Docker auth
+  - Ensure all storage buckets are created with lifecycle policies
+  - Verify Cloud SQL creation with proper tier selection (db-f1-micro for dev, db-custom-1-3840 for prod)
+  - Ensure service accounts are created with all required IAM roles
+  - Verify secrets are created in Secret Manager
+  - Add clear pgvector installation instructions in output
+  - Test script idempotency (can run multiple times safely)
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.1, 2.2, 2.3_
+
+- [ ] 2. Update gcp-manage.sh to ensure proper resource management
+  - Review and fix status command to show all resources with proper timeout handling
+  - Ensure start/stop commands work for Cloud SQL instances
+  - Verify cost estimation shows accurate calculations
+  - Add list command if missing
+  - Test all commands work correctly
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.3, 8.4, 8.5_
+
+- [ ] 3. Test containers work with local PostgreSQL database
+  - [ ] 3.1 Set up local PostgreSQL with pgvector
+    - Install PostgreSQL 15+ locally
+    - Enable pgvector extension: CREATE EXTENSION IF NOT EXISTS vector;
+    - Create test database: digitwinlive-db
+    - Verify connection works
+    - _Requirements: 9.1, 9.2, 9.3_
+  - [ ] 3.2 Test api-gateway container locally
+    - Build container: docker build -f apps/api-gateway/Dockerfile -t api-gateway:test .
+    - Run with local database connection
+    - Verify Prisma client works
+    - Verify service starts and responds to requests
+    - Check logs for errors
+    - _Requirements: 3.3, 3.4, 3.5_
+  - [ ] 3.3 Test websocket-server container locally
+    - Build container: docker build -f apps/websocket-server/Dockerfile -t websocket-server:test .
+    - Run with local database connection
+    - Verify service starts and accepts WebSocket connections
+    - Check logs for errors
+    - _Requirements: 3.3, 3.4, 3.5_
+  - [ ] 3.4 Test face-processing-service container locally
+    - Build container: docker build -f services/face-processing-service/Dockerfile -t face-processing:test .
+    - Run container (no database needed for this service)
+    - Verify service starts and responds to requests
+    - Check logs for errors
+    - _Requirements: 3.3, 3.4_
+
+- [ ] 4. Create new gcp-deploy.sh from scratch
+  - [ ] 4.1 Implement environment loading
+    - Load from .env, .env.development, or .env.production based on --env flag
+    - Skip ${SECRET\_\*} placeholders (handled by Secret Manager)
+    - Validate required variables (GCP_PROJECT_ID, GCP_REGION)
+    - _Requirements: 5.1, 5.2, 5.7, 5.8_
+  - [ ] 4.2 Implement build_and_push_image function
+    - Create cloudbuild.yaml for each service
+    - Submit build to Cloud Build
+    - Tag with timestamp and latest
+    - Return image URL on success
+    - Exit with error on failure
+    - _Requirements: 3.1, 3.2, 3.7_
+  - [ ] 4.3 Implement deploy_service function
+    - Fetch current service URLs first (for inter-service communication)
+    - Configure all environment variables from .env file
+    - Mount secrets from Secret Manager (jwt-secret, refresh-secret, database-password)
+    - Configure Cloud SQL Unix socket connection (--add-cloudsql-instances)
+    - Set resource limits (512Mi memory, 1 CPU)
+    - Set autoscaling (min 0, max 10 instances)
+    - Set timeout (300 seconds)
+    - Allow unauthenticated access (--allow-unauthenticated)
+    - Pass inter-service URLs (API_GATEWAY_URL, WEBSOCKET_URL, FACE_PROCESSING_URL)
+    - Deploy to Cloud Run
+    - Get and return service URL
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10_
+  - [ ] 4.4 Implement deploy command
+    - Support deploying all services or specific service
+    - Support --env flag for environment selection
+    - Ensure Artifact Registry exists
+    - Grant secret permissions to service accounts
+    - For each service: build, push, deploy
+    - Display all service URLs at the end
+    - _Requirements: Deployment workflow_
+  - [ ] 4.5 Implement status command
+    - Show all deployed services with URLs
+    - Show current revision
+    - Show deployment state
+    - _Requirements: 10.4_
+  - [ ] 4.6 Implement urls command
+    - Display all service URLs
+    - Format for easy copy-paste to .env files
+    - _Requirements: Service URL display_
+  - [ ] 4.7 Implement delete command
+    - Delete specific service or all services
+    - Confirm before deletion
+    - _Requirements: Resource deletion_
+
+- [ ] 5. Update environment files for proper configuration
+  - [ ] 5.1 Verify .env.development
+    - Localhost URLs for all services (127.0.0.1)
+    - Local PostgreSQL connection (127.0.0.1:5432)
+    - Development security settings
+    - _Requirements: 9.1, 9.2, 9.4_
+  - [ ] 5.2 Verify .env.production
+    - Cloud Run URLs (will be updated by deploy script)
+    - Unix socket for Cloud SQL (/cloudsql/PROJECT:REGION:INSTANCE)
+    - ${SECRET\_\*} placeholders for secrets
+    - Production security settings
+    - _Requirements: 5.3, 5.4, 5.5, 5.6_
+  - [ ] 5.3 Update .env.example
+    - Document all variables with comments
+    - Provide example values
+    - Include deployment quick reference
+    - _Requirements: Documentation_
+
+- [ ] 6. Test complete deployment workflow
+  - Run gcp-setup.sh in test GCP project
+  - Verify all resources created
+  - Enable pgvector extension in Cloud SQL
+  - Run database migrations: pnpm db:migrate
+  - Deploy all services: ./scripts/gcp-deploy.sh deploy --env=production
+  - Verify all services are accessible
+  - Check service logs for errors
+  - Test inter-service communication
+  - _Requirements: All deployment requirements_
+
+- [ ] 7. Create essential documentation
+  - Update README with setup and deployment instructions
+  - Document pgvector setup steps
+  - Add troubleshooting section for common issues
+  - Include rollback instructions
+  - _Requirements: Documentation_
