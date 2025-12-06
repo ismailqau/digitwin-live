@@ -12,7 +12,7 @@
   - Test script idempotency (can run multiple times safely)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.1, 2.2, 2.3_
 
-- [ ] 2. Update gcp-manage.sh to ensure proper resource management
+- [x] 2. Update gcp-manage.sh to ensure proper resource management
   - Review and fix status command to show all resources with proper timeout handling
   - Ensure start/stop commands work for Cloud SQL instances
   - Verify cost estimation shows accurate calculations

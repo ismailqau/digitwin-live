@@ -152,7 +152,6 @@ enable_apis() {
     APIS=(
         "compute.googleapis.com"
         "sqladmin.googleapis.com"
-        "storage-api.googleapis.com"
         "storage-component.googleapis.com"
         "storage.googleapis.com"
         "run.googleapis.com"
@@ -162,7 +161,6 @@ enable_apis() {
         "cloudresourcemanager.googleapis.com"
         "iam.googleapis.com"
         "servicenetworking.googleapis.com"
-        "containerregistry.googleapis.com"
     )
     
     local enabled_count=0
