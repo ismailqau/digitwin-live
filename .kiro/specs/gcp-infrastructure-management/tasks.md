@@ -20,7 +20,7 @@
   - Test all commands work correctly
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [x] 3. Test containers work with local PostgreSQL database
+- [ ] 3. Test containers work with local PostgreSQL database
   - [x] 3.1 Set up local PostgreSQL with pgvector
     - Install PostgreSQL 15+ locally
     - Enable pgvector extension: CREATE EXTENSION IF NOT EXISTS vector;
@@ -47,20 +47,20 @@
     - Check logs for errors
     - _Requirements: 3.3, 3.4_
 
-- [ ] 4. Create new gcp-deploy.sh from scratch
-  - [ ] 4.1 Implement environment loading
+- [x] 4. Create new gcp-deploy.sh from scratch
+  - [x] 4.1 Implement environment loading
     - Load from .env, .env.development, or .env.production based on --env flag
     - Skip ${SECRET\_\*} placeholders (handled by Secret Manager)
     - Validate required variables (GCP_PROJECT_ID, GCP_REGION)
     - _Requirements: 5.1, 5.2, 5.7, 5.8_
-  - [ ] 4.2 Implement build_and_push_image function
+  - [x] 4.2 Implement build_and_push_image function
     - Create cloudbuild.yaml for each service
     - Submit build to Cloud Build
     - Tag with timestamp and latest
     - Return image URL on success
     - Exit with error on failure
     - _Requirements: 3.1, 3.2, 3.7_
-  - [ ] 4.3 Implement deploy_service function
+  - [x] 4.3 Implement deploy_service function
     - Fetch current service URLs first (for inter-service communication)
     - Configure all environment variables from .env file
     - Mount secrets from Secret Manager (jwt-secret, refresh-secret, database-password)
@@ -73,7 +73,7 @@
     - Deploy to Cloud Run
     - Get and return service URL
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10_
-  - [ ] 4.4 Implement deploy command
+  - [x] 4.4 Implement deploy command
     - Support deploying all services or specific service
     - Support --env flag for environment selection
     - Ensure Artifact Registry exists
@@ -81,36 +81,36 @@
     - For each service: build, push, deploy
     - Display all service URLs at the end
     - _Requirements: Deployment workflow_
-  - [ ] 4.5 Implement status command
+  - [x] 4.5 Implement status command
     - Show all deployed services with URLs
     - Show current revision
     - Show deployment state
     - _Requirements: 10.4_
-  - [ ] 4.6 Implement urls command
+  - [x] 4.6 Implement urls command
     - Display all service URLs
     - Format for easy copy-paste to .env files
     - _Requirements: Service URL display_
-  - [ ] 4.7 Implement delete command
+  - [x] 4.7 Implement delete command
     - Delete specific service or all services
     - Confirm before deletion
     - _Requirements: Resource deletion_
 
-- [ ] 5. Update environment files for proper configuration
-  - [ ] 5.1 Verify .env.development
-    - Localhost URLs for all services (127.0.0.1)
-    - Proxy PostgreSQL connection (127.0.0.1:5433)
-    - Development security settings
+- [x] 5. Update environment files for proper configuration
+  - [x] 5.1 Verify .env.development
+    - Localhost URLs for all services (127.0.0.1) ✅
+    - Local PostgreSQL connection (127.0.0.1:5432) ✅ Fixed from 5433
+    - Development security settings ✅
     - _Requirements: 9.1, 9.2, 9.4_
-  - [ ] 5.2 Verify .env.production
-    - Cloud Run URLs (will be updated by deploy script)
-    - Unix socket for Cloud SQL (/cloudsql/PROJECT:REGION:INSTANCE)
-    - ${SECRET\_\*} placeholders for secrets
-    - Production security settings
+  - [x] 5.2 Verify .env.production
+    - Cloud Run URLs (will be updated by deploy script) ✅
+    - Unix socket for Cloud SQL (/cloudsql/PROJECT:REGION:INSTANCE) ✅
+    - ${SECRET\_\*} placeholders for secrets ✅
+    - Production security settings ✅
     - _Requirements: 5.3, 5.4, 5.5, 5.6_
-  - [ ] 5.3 Update .env.example
-    - Document all variables with comments
-    - Provide example values
-    - Include deployment quick reference
+  - [x] 5.3 Update .env.example
+    - Document all variables with comments ✅
+    - Provide example values ✅
+    - Include deployment quick reference ✅ Enhanced with setup and management commands
     - _Requirements: Documentation_
 
 - [ ] 6. Test complete deployment workflow
