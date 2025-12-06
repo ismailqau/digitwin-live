@@ -33,11 +33,11 @@ Download and install from [postgresql.org](https://www.postgresql.org/download/w
 
 ```bash
 # Create database
-createdb digitwinline_dev
+createdb digitwinlive-db
 
 # Or using psql
 psql -U postgres
-CREATE DATABASE digitwinline_dev;
+CREATE DATABASE digitwinlive-db;
 \q
 ```
 
@@ -48,7 +48,7 @@ CREATE DATABASE digitwinline_dev;
 cp packages/database/.env.example packages/database/.env
 
 # Edit .env and set DATABASE_URL
-# Example: DATABASE_URL="postgresql://postgres:postgres@localhost:5432/digitwinline_dev?schema=public"
+# Example: DATABASE_URL="postgresql://postgres:postgres@localhost:5432/digitwinlive-db?schema=public"
 ```
 
 ### 4. Install Dependencies
@@ -164,17 +164,17 @@ sudo systemctl start postgresql  # Linux
 Update your DATABASE_URL with correct credentials:
 
 ```bash
-DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@localhost:5432/digitwinline_dev"
+DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@localhost:5432/digitwinlive-db"
 ```
 
 ### Database Does Not Exist
 
-**Problem:** `Error: database "digitwinline_dev" does not exist`
+**Problem:** `Error: database "digitwinlive-db" does not exist`
 
 **Solution:**
 
 ```bash
-createdb digitwinline_dev
+createdb digitwinlive-db
 ```
 
 ### Migration Conflicts
@@ -188,8 +188,8 @@ createdb digitwinline_dev
 pnpm prisma migrate reset
 
 # Or drop and recreate database
-dropdb digitwinline_dev
-createdb digitwinline_dev
+dropdb digitwinlive-db
+createdb digitwinlive-db
 pnpm prisma migrate dev
 ```
 

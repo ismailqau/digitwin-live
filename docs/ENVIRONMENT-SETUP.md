@@ -71,7 +71,7 @@ JWT_SECRET=your-jwt-secret
 REFRESH_SECRET=your-refresh-secret
 
 # Database (includes caching via indexed tables)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinline_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinlive-db
 
 # Caching (PostgreSQL-based)
 ENABLE_CACHING=true
@@ -121,10 +121,10 @@ brew services start postgresql  # macOS
 sudo systemctl start postgresql  # Ubuntu
 
 # Create database
-createdb digitwinline_dev
+createdb digitwinlive-db
 
 # Set environment variables
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinline_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/digitwinlive-db
 ```
 
 #### Cloud SQL (Production)
@@ -394,7 +394,7 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: digitwinline_dev
+      POSTGRES_DB: digitwinlive-db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -434,7 +434,7 @@ spec:
 pg_isready
 
 # Test connection
-psql -h localhost -U postgres -d digitwinline_dev
+psql -h localhost -U postgres -d digitwinlive-db
 
 # Verify DATABASE_URL format
 echo $DATABASE_URL

@@ -8,7 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinline_dev
+      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinlive-db
       - JWT_SECRET=3h1Jy0SGM+u+CeMhCT98lLbDfrri6pGzFNXiPpRCnIc=
       - REFRESH_SECRET=V2yKGotlGfpeaM4z78KsiGrpsTbW1TYiiVnBJ9XO2uI=
       - CORS_ORIGIN=*
@@ -35,7 +35,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinline_dev
+      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinlive-db
       - JWT_SECRET=3h1Jy0SGM+u+CeMhCT98lLbDfrri6pGzFNXiPpRCnIc=
       - REFRESH_SECRET=V2yKGotlGfpeaM4z78KsiGrpsTbW1TYiiVnBJ9XO2uI=
       - CORS_ORIGIN=*
@@ -62,7 +62,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinline_dev
+      - DATABASE_URL=postgresql://ismail@host.docker.internal:5432/digitwinlive-db
       - GCP_PROJECT_ID=digitwinlive
       - GCP_REGION=us-central1
     extra_hosts:

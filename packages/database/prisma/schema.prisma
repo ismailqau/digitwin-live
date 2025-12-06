@@ -374,6 +374,7 @@ model DocumentChunk {
   chunkIndex Int      @map("chunk_index")
   content    String   @db.Text
   embedding  String   @db.Text // Stored as text representation of vector for pgvector
+  embeddingVector Unsupported("vector(768)")? @map("embedding_vector") // pgvector column for similarity search
   metadata   Json     @default("{}")
   createdAt  DateTime @default(now()) @map("created_at")
 
@@ -393,7 +394,8 @@ model DocumentChunk {
 model EmbeddingCache {
   id        String   @id @default(uuid())
   queryHash String   @unique @map("query_hash") // Hash of the query text
-  embedding Float[] // Vector embedding
+  embedding Float[] // Vector embedding (for application use)
+  embeddingVector Unsupported("vector(768)")? @map("embedding_vector") // pgvector column for similarity search
   createdAt DateTime @default(now()) @map("created_at")
   expiresAt DateTime @map("expires_at")
 

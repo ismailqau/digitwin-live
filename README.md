@@ -77,7 +77,7 @@ node scripts/generate-secrets.js
 # Copy generated secrets to .env
 
 # 4. Set up database
-createdb digitwinline_dev
+createdb digitwinlive-db
 pnpm db:migrate
 pnpm db:generate
 

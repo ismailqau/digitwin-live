@@ -40,14 +40,14 @@ node scripts/generate-secrets.js
 
 ```bash
 # Create database
-createdb digitwinline_dev
+createdb digitwinlive-db
 
 # Run database migrations
 pnpm db:migrate
 pnpm db:generate
 
 # Set DATABASE_URL in .env
-DATABASE_URL=postgresql://username@localhost:5432/digitwinline_dev
+DATABASE_URL=postgresql://username@localhost:5432/digitwinlive-db
 ```
 
 ### 4. Set Up Vector Database
@@ -173,7 +173,7 @@ node scripts/generate-secrets.js    # Generate secrets
 node scripts/validate-env.js        # Validate config
 
 # Database
-createdb digitwinline_dev   # Create database
+createdb digitwinlive-db   # Create database
 psql $DATABASE_URL                  # Connect to database
 ```
 

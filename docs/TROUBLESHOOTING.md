@@ -102,7 +102,7 @@ Error: P1010: User was denied access on the database
 2. **Create database if it doesn't exist:**
 
    ```bash
-   createdb digitwinline_dev
+   createdb digitwinlive-db
    ```
 
 3. **Run migrations:**

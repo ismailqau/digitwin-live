@@ -381,7 +381,7 @@ psql $DATABASE_URL -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 ```bash
 # Create database
-createdb digitwinline_dev
+createdb digitwinlive-db
 
 # Run migrations
 pnpm db:migrate
