@@ -20,27 +20,27 @@
   - Test all commands work correctly
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 3. Test containers work with local PostgreSQL database
-  - [ ] 3.1 Set up local PostgreSQL with pgvector
+- [x] 3. Test containers work with local PostgreSQL database
+  - [x] 3.1 Set up local PostgreSQL with pgvector
     - Install PostgreSQL 15+ locally
     - Enable pgvector extension: CREATE EXTENSION IF NOT EXISTS vector;
     - Create test database: digitwinlive-db
     - Verify connection works
     - _Requirements: 9.1, 9.2, 9.3_
-  - [ ] 3.2 Test api-gateway container locally
+  - [x] 3.2 Test api-gateway container locally
     - Build container: docker build -f apps/api-gateway/Dockerfile -t api-gateway:test .
     - Run with local database connection
     - Verify Prisma client works
     - Verify service starts and responds to requests
     - Check logs for errors
     - _Requirements: 3.3, 3.4, 3.5_
-  - [ ] 3.3 Test websocket-server container locally
+  - [x] 3.3 Test websocket-server container locally
     - Build container: docker build -f apps/websocket-server/Dockerfile -t websocket-server:test .
     - Run with local database connection
     - Verify service starts and accepts WebSocket connections
     - Check logs for errors
     - _Requirements: 3.3, 3.4, 3.5_
-  - [ ] 3.4 Test face-processing-service container locally
+  - [x] 3.4 Test face-processing-service container locally
     - Build container: docker build -f services/face-processing-service/Dockerfile -t face-processing:test .
     - Run container (no database needed for this service)
     - Verify service starts and responds to requests
@@ -98,7 +98,7 @@
 - [ ] 5. Update environment files for proper configuration
   - [ ] 5.1 Verify .env.development
     - Localhost URLs for all services (127.0.0.1)
-    - Local PostgreSQL connection (127.0.0.1:5432)
+    - Proxy PostgreSQL connection (127.0.0.1:5433)
     - Development security settings
     - _Requirements: 9.1, 9.2, 9.4_
   - [ ] 5.2 Verify .env.production

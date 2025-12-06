@@ -40,8 +40,10 @@ RUN pnpm install --frozen-lockfile
 # Copy Prisma schema for database package
 COPY packages/database/prisma ./packages/database/prisma
 
-# Generate Prisma client
-RUN pnpm --filter @clone/database prisma:generate
+# Generate Prisma client with retry and timeout handling
+RUN pnpm --filter @clone/database prisma:generate || \
+    (echo "Retrying Prisma generate..." && sleep 10 && pnpm --filter @clone/database prisma:generate) || \
+    (echo "Final retry..." && sleep 20 && pnpm --filter @clone/database prisma:generate)
 
 # Copy source files
 COPY packages/config/src ./packages/config/src
