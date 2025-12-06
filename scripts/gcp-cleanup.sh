@@ -99,15 +99,172 @@ show_cleanup_menu() {
     esac
 }
 
+# Discover all resources
+discover_resources() {
+    log_header "Discovering GCP Resources"
+    
+    echo ""
+    log_info "Scanning project: $GCP_PROJECT_ID"
+    echo ""
+    
+    # GKE Clusters
+    log_info "Checking GKE clusters..."
+    GKE_CLUSTERS=$(gcloud container clusters list --format="value(name,location)" 2>/dev/null || echo "")
+    if [ -n "$GKE_CLUSTERS" ]; then
+        GKE_COUNT=$(echo "$GKE_CLUSTERS" | wc -l | xargs)
+        echo "  ✓ Found $GKE_COUNT GKE cluster(s)"
+    else
+        echo "  - No GKE clusters found"
+    fi
+    
+    # Cloud SQL Instances
+    log_info "Checking Cloud SQL instances..."
+    SQL_INSTANCES=$(gcloud sql instances list --format="value(name)" 2>/dev/null || echo "")
+    if [ -n "$SQL_INSTANCES" ]; then
+        SQL_COUNT=$(echo "$SQL_INSTANCES" | wc -l | xargs)
+        echo "  ✓ Found $SQL_COUNT Cloud SQL instance(s)"
+    else
+        echo "  - No Cloud SQL instances found"
+    fi
+    
+    # Storage Buckets
+    log_info "Checking storage buckets..."
+    STORAGE_BUCKETS=$(gsutil ls 2>/dev/null | sed 's|gs://||' | sed 's|/||' || echo "")
+    if [ -n "$STORAGE_BUCKETS" ]; then
+        BUCKET_COUNT=$(echo "$STORAGE_BUCKETS" | wc -l | xargs)
+        echo "  ✓ Found $BUCKET_COUNT storage bucket(s)"
+    else
+        echo "  - No storage buckets found"
+    fi
+    
+    # Cloud Run Services
+    log_info "Checking Cloud Run services..."
+    CLOUD_RUN_SERVICES=$(gcloud run services list --format="value(metadata.name)" 2>/dev/null || echo "")
+    if [ -n "$CLOUD_RUN_SERVICES" ]; then
+        RUN_COUNT=$(echo "$CLOUD_RUN_SERVICES" | wc -l | xargs)
+        echo "  ✓ Found $RUN_COUNT Cloud Run service(s)"
+    else
+        echo "  - No Cloud Run services found"
+    fi
+    
+    # Service Accounts
+    log_info "Checking service accounts..."
+    SERVICE_ACCOUNTS=$(gcloud iam service-accounts list --format="value(email)" --filter="email:digitwinlive*" 2>/dev/null || echo "")
+    if [ -n "$SERVICE_ACCOUNTS" ]; then
+        SA_COUNT=$(echo "$SERVICE_ACCOUNTS" | wc -l | xargs)
+        echo "  ✓ Found $SA_COUNT service account(s)"
+    else
+        echo "  - No service accounts found"
+    fi
+    
+    # Secrets
+    log_info "Checking secrets..."
+    SECRETS=$(gcloud secrets list --format="value(name)" 2>/dev/null || echo "")
+    if [ -n "$SECRETS" ]; then
+        SECRET_COUNT=$(echo "$SECRETS" | wc -l | xargs)
+        echo "  ✓ Found $SECRET_COUNT secret(s)"
+    else
+        echo "  - No secrets found"
+    fi
+    
+    echo ""
+}
+
+# Show detailed resource list
+show_resource_details() {
+    log_header "Resource Details"
+    
+    echo ""
+    
+    # GKE Clusters
+    if [ -n "$GKE_CLUSTERS" ]; then
+        log_info "GKE Clusters:"
+        gcloud container clusters list --format="table(name,location,currentMasterVersion,currentNodeCount,status)" 2>/dev/null || echo "  (Unable to list)"
+        echo ""
+    fi
+    
+    # Cloud SQL Instances
+    if [ -n "$SQL_INSTANCES" ]; then
+        log_info "Cloud SQL Instances:"
+        gcloud sql instances list --format="table(name,databaseVersion,region,tier,state)" 2>/dev/null || echo "  (Unable to list)"
+        echo ""
+    fi
+    
+    # Storage Buckets
+    if [ -n "$STORAGE_BUCKETS" ]; then
+        log_info "Storage Buckets:"
+        echo "$STORAGE_BUCKETS" | while read -r bucket; do
+            if [ -n "$bucket" ]; then
+                SIZE=$(gsutil du -s "gs://$bucket" 2>/dev/null | awk '{print $1}' || echo "0")
+                SIZE_HUMAN=$(numfmt --to=iec "$SIZE" 2>/dev/null || echo "${SIZE}B")
+                LOCATION=$(gsutil ls -L -b "gs://$bucket" 2>/dev/null | grep "Location constraint:" | awk '{print $3}' || echo "unknown")
+                echo "  - $bucket ($SIZE_HUMAN, $LOCATION)"
+            fi
+        done
+        echo ""
+    fi
+    
+    # Cloud Run Services
+    if [ -n "$CLOUD_RUN_SERVICES" ]; then
+        log_info "Cloud Run Services:"
+        gcloud run services list --format="table(metadata.name,status.url,status.conditions.status)" 2>/dev/null || echo "  (Unable to list)"
+        echo ""
+    fi
+    
+    # Service Accounts
+    if [ -n "$SERVICE_ACCOUNTS" ]; then
+        log_info "Service Accounts:"
+        echo "$SERVICE_ACCOUNTS" | while read -r sa; do
+            if [ -n "$sa" ]; then
+                echo "  - $sa"
+            fi
+        done
+        echo ""
+    fi
+    
+    # Secrets
+    if [ -n "$SECRETS" ]; then
+        log_info "Secrets:"
+        gcloud secrets list --format="table(name,created,replication.automatic)" 2>/dev/null || echo "  (Unable to list)"
+        echo ""
+    fi
+}
+
 # Confirm full deletion
 confirm_full_deletion() {
-    log_warning "This will DELETE ALL resources:"
+    # First discover resources
+    discover_resources
+    
+    # Check if any resources exist
+    TOTAL_RESOURCES=0
+    [ -n "$GKE_CLUSTERS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$GKE_CLUSTERS" | wc -l | xargs)))
+    [ -n "$SQL_INSTANCES" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$SQL_INSTANCES" | wc -l | xargs)))
+    [ -n "$STORAGE_BUCKETS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$STORAGE_BUCKETS" | wc -l | xargs)))
+    [ -n "$CLOUD_RUN_SERVICES" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$CLOUD_RUN_SERVICES" | wc -l | xargs)))
+    [ -n "$SERVICE_ACCOUNTS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$SERVICE_ACCOUNTS" | wc -l | xargs)))
+    [ -n "$SECRETS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$SECRETS" | wc -l | xargs)))
+    
+    if [ "$TOTAL_RESOURCES" -eq 0 ]; then
+        log_success "No resources found to delete!"
+        exit 0
+    fi
+    
+    # Show detailed list
     echo ""
-    echo "  - All Cloud Storage buckets"
-    echo "  - Cloud SQL instances"
-    echo "  - GKE clusters"
-    echo "  - Service accounts"
-    echo "  - Secrets"
+    read -p "Show detailed resource information? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        show_resource_details
+    fi
+    
+    log_warning "This will DELETE $TOTAL_RESOURCES resource(s):"
+    echo ""
+    [ -n "$GKE_CLUSTERS" ] && echo "  - GKE clusters: $(echo "$GKE_CLUSTERS" | wc -l | xargs)"
+    [ -n "$SQL_INSTANCES" ] && echo "  - Cloud SQL instances: $(echo "$SQL_INSTANCES" | wc -l | xargs)"
+    [ -n "$STORAGE_BUCKETS" ] && echo "  - Storage buckets: $(echo "$STORAGE_BUCKETS" | wc -l | xargs)"
+    [ -n "$CLOUD_RUN_SERVICES" ] && echo "  - Cloud Run services: $(echo "$CLOUD_RUN_SERVICES" | wc -l | xargs)"
+    [ -n "$SERVICE_ACCOUNTS" ] && echo "  - Service accounts: $(echo "$SERVICE_ACCOUNTS" | wc -l | xargs)"
+    [ -n "$SECRETS" ] && echo "  - Secrets: $(echo "$SECRETS" | wc -l | xargs)"
     echo ""
     log_error "THIS ACTION CANNOT BE UNDONE!"
     echo ""
@@ -123,6 +280,31 @@ confirm_full_deletion() {
 
 # Selective deletion menu
 selective_deletion() {
+    # First discover resources
+    discover_resources
+    
+    # Check if any resources exist
+    TOTAL_RESOURCES=0
+    [ -n "$GKE_CLUSTERS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$GKE_CLUSTERS" | wc -l | xargs)))
+    [ -n "$SQL_INSTANCES" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$SQL_INSTANCES" | wc -l | xargs)))
+    [ -n "$STORAGE_BUCKETS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$STORAGE_BUCKETS" | wc -l | xargs)))
+    [ -n "$CLOUD_RUN_SERVICES" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$CLOUD_RUN_SERVICES" | wc -l | xargs)))
+    [ -n "$SERVICE_ACCOUNTS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$SERVICE_ACCOUNTS" | wc -l | xargs)))
+    [ -n "$SECRETS" ] && TOTAL_RESOURCES=$((TOTAL_RESOURCES + $(echo "$SECRETS" | wc -l | xargs)))
+    
+    if [ "$TOTAL_RESOURCES" -eq 0 ]; then
+        log_success "No resources found to delete!"
+        exit 0
+    fi
+    
+    # Show detailed list
+    echo ""
+    read -p "Show detailed resource information? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        show_resource_details
+    fi
+    
     log_header "Selective Resource Deletion"
     
     echo ""
@@ -130,38 +312,68 @@ selective_deletion() {
     echo ""
     
     # GKE
-    read -p "Delete GKE cluster? (y/N) " -n 1 -r
-    echo
-    DELETE_GKE=$REPLY
+    if [ -n "$GKE_CLUSTERS" ]; then
+        read -p "Delete GKE cluster(s)? (y/N) " -n 1 -r
+        echo
+        DELETE_GKE=$REPLY
+    else
+        DELETE_GKE="n"
+    fi
     
     # Cloud SQL
-    read -p "Delete Cloud SQL instances? (y/N) " -n 1 -r
-    echo
-    DELETE_SQL=$REPLY
+    if [ -n "$SQL_INSTANCES" ]; then
+        read -p "Delete Cloud SQL instance(s)? (y/N) " -n 1 -r
+        echo
+        DELETE_SQL=$REPLY
+    else
+        DELETE_SQL="n"
+    fi
+    
+    # Cloud Run
+    if [ -n "$CLOUD_RUN_SERVICES" ]; then
+        read -p "Delete Cloud Run service(s)? (y/N) " -n 1 -r
+        echo
+        DELETE_CLOUD_RUN=$REPLY
+    else
+        DELETE_CLOUD_RUN="n"
+    fi
     
     # Buckets
-    read -p "Delete Storage buckets? (y/N) " -n 1 -r
-    echo
-    DELETE_BUCKETS=$REPLY
+    if [ -n "$STORAGE_BUCKETS" ]; then
+        read -p "Delete Storage bucket(s)? (y/N) " -n 1 -r
+        echo
+        DELETE_BUCKETS=$REPLY
+    else
+        DELETE_BUCKETS="n"
+    fi
     
     # Service accounts
-    read -p "Delete Service accounts? (y/N) " -n 1 -r
-    echo
-    DELETE_SA=$REPLY
+    if [ -n "$SERVICE_ACCOUNTS" ]; then
+        read -p "Delete Service account(s)? (y/N) " -n 1 -r
+        echo
+        DELETE_SA=$REPLY
+    else
+        DELETE_SA="n"
+    fi
     
     # Secrets
-    read -p "Delete Secrets? (y/N) " -n 1 -r
-    echo
-    DELETE_SECRETS=$REPLY
+    if [ -n "$SECRETS" ]; then
+        read -p "Delete Secret(s)? (y/N) " -n 1 -r
+        echo
+        DELETE_SECRETS=$REPLY
+    else
+        DELETE_SECRETS="n"
+    fi
     
     # Confirm selections
     echo ""
     log_warning "You selected to delete:"
-    [[ $DELETE_GKE =~ ^[Yy]$ ]] && echo "  ✓ GKE cluster"
-    [[ $DELETE_SQL =~ ^[Yy]$ ]] && echo "  ✓ Cloud SQL instances"
-    [[ $DELETE_BUCKETS =~ ^[Yy]$ ]] && echo "  ✓ Storage buckets"
-    [[ $DELETE_SA =~ ^[Yy]$ ]] && echo "  ✓ Service accounts"
-    [[ $DELETE_SECRETS =~ ^[Yy]$ ]] && echo "  ✓ Secrets"
+    [[ $DELETE_GKE =~ ^[Yy]$ ]] && echo "  ✓ GKE cluster(s)"
+    [[ $DELETE_SQL =~ ^[Yy]$ ]] && echo "  ✓ Cloud SQL instance(s)"
+    [[ $DELETE_CLOUD_RUN =~ ^[Yy]$ ]] && echo "  ✓ Cloud Run service(s)"
+    [[ $DELETE_BUCKETS =~ ^[Yy]$ ]] && echo "  ✓ Storage bucket(s)"
+    [[ $DELETE_SA =~ ^[Yy]$ ]] && echo "  ✓ Service account(s)"
+    [[ $DELETE_SECRETS =~ ^[Yy]$ ]] && echo "  ✓ Secret(s)"
     echo ""
     
     read -p "Confirm deletion? (yes/NO) " -r
@@ -175,18 +387,65 @@ selective_deletion() {
 
 # Weaviate is no longer used - using PostgreSQL pgvector instead
 
+# Delete Cloud Run services
+delete_cloud_run() {
+    if [[ ! $DELETE_CLOUD_RUN =~ ^[Yy]$ ]] && [ "$1" != "force" ]; then
+        log_info "Skipping Cloud Run services deletion"
+        return 0
+    fi
+    
+    log_header "Deleting Cloud Run Services"
+    
+    # Get all Cloud Run services
+    SERVICES=$(gcloud run services list --format="value(metadata.name)" 2>/dev/null || echo "")
+    
+    if [ -z "$SERVICES" ]; then
+        log_info "No Cloud Run services found, skipping"
+        return 0
+    fi
+    
+    # Delete each service
+    echo "$SERVICES" | while read -r service; do
+        if [ -n "$service" ]; then
+            log_warning "Deleting Cloud Run service: $service..."
+            if gcloud run services delete "$service" --region="$GCP_REGION" --quiet 2>/dev/null; then
+                log_success "Cloud Run service $service deleted"
+            else
+                log_warning "Failed to delete $service (may not exist or already deleted)"
+            fi
+        fi
+    done
+    
+    log_success "Cloud Run cleanup completed"
+}
+
 # Delete GKE cluster
 delete_gke() {
+    if [[ ! $DELETE_GKE =~ ^[Yy]$ ]] && [ "$1" != "force" ]; then
+        log_info "Skipping GKE cluster deletion"
+        return 0
+    fi
+    
     log_header "Deleting GKE Cluster"
     
-    if gcloud container clusters describe digitwinlive-cluster --region="$GCP_REGION" &> /dev/null; then
-        log_warning "Deleting GKE cluster (this may take 5-10 minutes)..."
-        gcloud container clusters delete digitwinlive-cluster \
-            --region="$GCP_REGION" \
-            --quiet
-        log_success "GKE cluster deleted"
+    # Use discovered clusters if available
+    if [ -n "$GKE_CLUSTERS" ]; then
+        echo "$GKE_CLUSTERS" | while read -r cluster_info; do
+            if [ -n "$cluster_info" ]; then
+                CLUSTER_NAME=$(echo "$cluster_info" | awk '{print $1}')
+                CLUSTER_LOCATION=$(echo "$cluster_info" | awk '{print $2}')
+                log_warning "Deleting GKE cluster: $CLUSTER_NAME in $CLUSTER_LOCATION (this may take 5-10 minutes)..."
+                if gcloud container clusters delete "$CLUSTER_NAME" \
+                    --region="$CLUSTER_LOCATION" \
+                    --quiet 2>/dev/null; then
+                    log_success "GKE cluster $CLUSTER_NAME deleted"
+                else
+                    log_warning "Failed to delete GKE cluster $CLUSTER_NAME (may not exist or already deleted)"
+                fi
+            fi
+        done
     else
-        log_info "GKE cluster not found, skipping"
+        log_info "No GKE clusters found, skipping"
     fi
 }
 
@@ -229,8 +488,11 @@ delete_cloud_sql() {
         
         if [[ $REPLY =~ ^yes$ ]]; then
             log_warning "Deleting Cloud SQL instance: $INSTANCE_NAME..."
-            gcloud sql instances delete "$INSTANCE_NAME" --quiet
-            log_success "Cloud SQL instance $INSTANCE_NAME deleted"
+            if gcloud sql instances delete "$INSTANCE_NAME" --quiet 2>/dev/null; then
+                log_success "Cloud SQL instance $INSTANCE_NAME deleted"
+            else
+                log_warning "Failed to delete $INSTANCE_NAME (may not exist or already deleted)"
+            fi
         else
             log_info "Cancelled"
         fi
@@ -293,8 +555,11 @@ delete_cloud_sql() {
             # Delete all
             for instance in "${INSTANCE_ARRAY[@]}"; do
                 log_warning "Deleting Cloud SQL instance: $instance..."
-                gcloud sql instances delete "$instance" --quiet 2>/dev/null || log_error "Failed to delete $instance"
-                log_success "Cloud SQL instance $instance deleted"
+                if gcloud sql instances delete "$instance" --quiet 2>/dev/null; then
+                    log_success "Cloud SQL instance $instance deleted"
+                else
+                    log_warning "Failed to delete $instance (may not exist or already deleted)"
+                fi
             done
         else
             # Delete selected instances
@@ -304,8 +569,11 @@ delete_cloud_sql() {
                 if [[ $choice =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#INSTANCE_ARRAY[@]}" ]; then
                     instance="${INSTANCE_ARRAY[$((choice-1))]}"
                     log_warning "Deleting Cloud SQL instance: $instance..."
-                    gcloud sql instances delete "$instance" --quiet 2>/dev/null || log_error "Failed to delete $instance"
-                    log_success "Cloud SQL instance $instance deleted"
+                    if gcloud sql instances delete "$instance" --quiet 2>/dev/null; then
+                        log_success "Cloud SQL instance $instance deleted"
+                    else
+                        log_warning "Failed to delete $instance (may not exist or already deleted)"
+                    fi
                 else
                     log_warning "Invalid choice: $choice"
                 fi
@@ -358,8 +626,11 @@ delete_buckets() {
         
         if [[ $REPLY =~ ^yes$ ]]; then
             log_warning "Deleting bucket: $BUCKET_NAME..."
-            gsutil -m rm -r "gs://$BUCKET_NAME" 2>/dev/null || true
-            log_success "Bucket $BUCKET_NAME deleted"
+            if gsutil -m rm -r "gs://$BUCKET_NAME" 2>/dev/null; then
+                log_success "Bucket $BUCKET_NAME deleted"
+            else
+                log_warning "Failed to delete bucket $BUCKET_NAME (may not exist or already deleted)"
+            fi
         else
             log_info "Cancelled"
         fi
@@ -419,8 +690,11 @@ delete_buckets() {
             # Delete all
             for bucket in "${BUCKET_ARRAY[@]}"; do
                 log_warning "Deleting bucket: $bucket..."
-                gsutil -m rm -r "gs://$bucket" 2>/dev/null || true
-                log_success "Bucket $bucket deleted"
+                if gsutil -m rm -r "gs://$bucket" 2>/dev/null; then
+                    log_success "Bucket $bucket deleted"
+                else
+                    log_warning "Failed to delete bucket $bucket (may not exist or already deleted)"
+                fi
             done
         else
             # Delete selected buckets
@@ -430,8 +704,11 @@ delete_buckets() {
                 if [[ $choice =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#BUCKET_ARRAY[@]}" ]; then
                     bucket="${BUCKET_ARRAY[$((choice-1))]}"
                     log_warning "Deleting bucket: $bucket..."
-                    gsutil -m rm -r "gs://$bucket" 2>/dev/null || true
-                    log_success "Bucket $bucket deleted"
+                    if gsutil -m rm -r "gs://$bucket" 2>/dev/null; then
+                        log_success "Bucket $bucket deleted"
+                    else
+                        log_warning "Failed to delete bucket $bucket (may not exist or already deleted)"
+                    fi
                 else
                     log_warning "Invalid choice: $choice"
                 fi
@@ -442,82 +719,82 @@ delete_buckets() {
 
 # Delete service accounts (optional)
 delete_service_accounts() {
-    log_header "Service Accounts"
+    if [[ ! $DELETE_SA =~ ^[Yy]$ ]] && [ "$1" != "force" ]; then
+        log_info "Skipping service accounts deletion"
+        return 0
+    fi
     
-    read -p "Delete service accounts? (y/N) " -n 1 -r
-    echo
+    log_header "Deleting Service Accounts"
     
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        SA_EMAIL="digitwinlive-sa@$GCP_PROJECT_ID.iam.gserviceaccount.com"
-        
-        if gcloud iam service-accounts describe "$SA_EMAIL" &> /dev/null; then
-            log_info "Deleting service account..."
-            gcloud iam service-accounts delete "$SA_EMAIL" --quiet
+    SA_EMAIL="digitwinlive-sa@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+    
+    if gcloud iam service-accounts describe "$SA_EMAIL" &> /dev/null; then
+        log_info "Deleting service account: $SA_EMAIL"
+        if gcloud iam service-accounts delete "$SA_EMAIL" --quiet 2>/dev/null; then
             log_success "Service account deleted"
-            
-            # Delete local key file
-            if [ -f "secrets/gcp-service-account-prod.json" ]; then
-                rm "secrets/gcp-service-account-prod.json"
-                log_success "Local key file deleted"
-            fi
         else
-            log_info "Service account not found"
+            log_warning "Failed to delete service account (may not exist or already deleted)"
+        fi
+        
+        # Delete local key file
+        if [ -f "secrets/gcp-service-account-prod.json" ]; then
+            rm "secrets/gcp-service-account-prod.json" 2>/dev/null || true
+            log_success "Local key file deleted"
         fi
     else
-        log_info "Keeping service accounts"
+        log_info "Service account not found, skipping"
     fi
 }
 
 # Delete secrets (optional)
 delete_secrets() {
-    log_header "Secrets"
+    if [[ ! $DELETE_SECRETS =~ ^[Yy]$ ]] && [ "$1" != "force" ]; then
+        log_info "Skipping secrets deletion"
+        return 0
+    fi
     
-    read -p "Delete all secrets from Secret Manager? (y/N) " -n 1 -r
-    echo
+    log_header "Deleting Secrets"
     
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Listing secrets..."
-        SECRETS=$(gcloud secrets list --format="value(name)" 2>/dev/null)
-        
-        if [ -n "$SECRETS" ]; then
-            for secret in $SECRETS; do
-                log_info "Deleting secret: $secret"
-                gcloud secrets delete "$secret" --quiet 2>/dev/null || true
-            done
-            log_success "Secrets deleted"
-        else
-            log_info "No secrets found"
-        fi
+    log_info "Listing secrets..."
+    SECRETS=$(gcloud secrets list --format="value(name)" 2>/dev/null || echo "")
+    
+    if [ -n "$SECRETS" ]; then
+        for secret in $SECRETS; do
+            log_info "Deleting secret: $secret"
+            if gcloud secrets delete "$secret" --quiet 2>/dev/null; then
+                log_success "Secret $secret deleted"
+            else
+                log_warning "Failed to delete secret $secret (may not exist or already deleted)"
+            fi
+        done
+        log_success "Secrets cleanup completed"
     else
-        log_info "Keeping secrets"
+        log_info "No secrets found, skipping"
     fi
 }
 
 # Disable APIs (optional)
 disable_apis() {
-    log_header "APIs"
+    log_header "Disabling APIs"
     
-    read -p "Disable GCP APIs? (y/N) " -n 1 -r
-    echo
+    log_info "Disabling APIs..."
     
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Disabling APIs..."
-        
-        APIS=(
-            "container.googleapis.com"
-            "sqladmin.googleapis.com"
-            "run.googleapis.com"
-        )
-        
-        for api in "${APIS[@]}"; do
-            log_info "Disabling $api..."
-            gcloud services disable "$api" --force --quiet 2>/dev/null || true
-        done
-        
-        log_success "APIs disabled"
-    else
-        log_info "Keeping APIs enabled"
-    fi
+    APIS=(
+        "container.googleapis.com"
+        "sqladmin.googleapis.com"
+        "run.googleapis.com"
+    )
+    
+    for api in "${APIS[@]}"; do
+        log_info "Disabling $api..."
+        if gcloud services disable "$api" --force --quiet 2>/dev/null; then
+            log_success "API $api disabled"
+        else
+            log_warning "Failed to disable $api (may not be enabled or already disabled)"
+        fi
+    done
+    
+    log_success "API cleanup completed"
 }
 
 # Print summary
@@ -527,58 +804,70 @@ print_summary() {
     echo ""
     log_success "Cleanup completed!"
     echo ""
-    log_info "Deleted resources:"
-    echo "  ✅ Storage buckets"
-    echo "  ✅ Cloud SQL instance (if existed)"
-    echo "  ✅ GKE cluster (if existed)"
+    log_info "Resources processed:"
+    [[ $DELETE_CLOUD_RUN =~ ^[Yy]$ ]] && echo "  ✅ Cloud Run services"
+    [[ $DELETE_GKE =~ ^[Yy]$ ]] && echo "  ✅ GKE clusters"
+    [[ $DELETE_SQL =~ ^[Yy]$ ]] && echo "  ✅ Cloud SQL instances"
+    [[ $DELETE_BUCKETS =~ ^[Yy]$ ]] && echo "  ✅ Storage buckets"
+    [[ $DELETE_SA =~ ^[Yy]$ ]] && echo "  ✅ Service accounts"
+    [[ $DELETE_SECRETS =~ ^[Yy]$ ]] && echo "  ✅ Secrets"
     echo ""
-    log_info "Remaining resources (if not deleted):"
-    echo "  - Service accounts"
-    echo "  - Secrets in Secret Manager"
-    echo "  - Enabled APIs"
-    echo ""
-    log_info "To view remaining resources:"
-    echo "  ./scripts/gcp-manage.sh list"
-    echo ""
-    log_info "To check costs:"
-    echo "  ./scripts/gcp-manage.sh cost"
+    log_info "To verify remaining resources, run:"
+    echo "  gcloud projects get-iam-policy $GCP_PROJECT_ID"
+    echo "  gcloud services list --enabled"
 }
 
 # Show resource selection menu (streamlined - no extra confirmation)
 show_resource_menu() {
+    # First discover resources
+    discover_resources
+    
     log_header "Select Resources to Delete"
     
     echo ""
     log_info "Available resources:"
     echo ""
-    echo "  1) GKE cluster"
+    echo "  1) GKE cluster(s)"
     echo "  2) Cloud SQL instances"
+    echo "  3) Cloud Run services"
     echo "  4) Storage buckets"
     echo "  5) Service accounts"
     echo "  6) Secrets"
-    echo "  7) All of the above"
-    echo "  8) Cancel"
+    echo "  7) Show detailed resource info"
+    echo "  8) All of the above"
+    echo "  9) Cancel"
     echo ""
     read -p "Enter choices (comma-separated, e.g., 1,3,4): " -r
     echo
     
     SELECTED_RESOURCES=$REPLY
     
+    # Handle show details option
+    if [[ $SELECTED_RESOURCES == *"7"* ]]; then
+        show_resource_details
+        echo ""
+        read -p "Continue with selection? Enter new choices or press Enter to cancel: " -r
+        echo
+        SELECTED_RESOURCES=$REPLY
+    fi
+    
     # Parse selections
     DELETE_GKE="n"
     DELETE_SQL="n"
+    DELETE_CLOUD_RUN="n"
     DELETE_BUCKETS="n"
     DELETE_SA="n"
     DELETE_SECRETS="n"
     
-    if [[ $SELECTED_RESOURCES == "8" ]] || [ -z "$SELECTED_RESOURCES" ]; then
+    if [[ $SELECTED_RESOURCES == "9" ]] || [ -z "$SELECTED_RESOURCES" ]; then
         log_info "Cleanup cancelled"
         exit 0
     fi
     
-    if [[ $SELECTED_RESOURCES == "7" ]]; then
+    if [[ $SELECTED_RESOURCES == "8" ]]; then
         DELETE_GKE="y"
         DELETE_SQL="y"
+        DELETE_CLOUD_RUN="y"
         DELETE_BUCKETS="y"
         DELETE_SA="y"
         DELETE_SECRETS="y"
@@ -589,6 +878,7 @@ show_resource_menu() {
             case $choice in
                 1) DELETE_GKE="y" ;;
                 2) DELETE_SQL="y" ;;
+                3) DELETE_CLOUD_RUN="y" ;;
                 4) DELETE_BUCKETS="y" ;;
                 5) DELETE_SA="y" ;;
                 6) DELETE_SECRETS="y" ;;
@@ -626,12 +916,26 @@ main() {
         exit 1
     fi
     
-    gcloud config set project "$GCP_PROJECT_ID" &> /dev/null
+    # Set project (ignore auth errors - will be caught by individual commands)
+    gcloud config set project "$GCP_PROJECT_ID" 2>/dev/null || true
+    
+    # Verify authentication
+    if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null | grep -q .; then
+        log_error "Not authenticated with gcloud. Please run: gcloud auth login"
+        exit 1
+    fi
     
     # Determine cleanup mode
     if [ "$FORCE_ALL" = "true" ]; then
         # Force full deletion
         confirm_full_deletion
+        DELETE_GKE="y"
+        DELETE_SQL="y"
+        DELETE_CLOUD_RUN="y"
+        DELETE_BUCKETS="y"
+        DELETE_SA="y"
+        DELETE_SECRETS="y"
+        delete_cloud_run force
         delete_gke force
         delete_cloud_sql force
         delete_buckets force
@@ -641,6 +945,7 @@ main() {
     elif [ "$FORCE_SELECTIVE" = "true" ]; then
         # Force selective deletion (y/n for each)
         selective_deletion
+        delete_cloud_run
         delete_gke
         delete_cloud_sql
         delete_buckets
@@ -656,6 +961,7 @@ main() {
     elif [ "$FORCE_MENU" = "true" ]; then
         # Force menu selection
         show_resource_menu
+        delete_cloud_run
         delete_gke
         delete_cloud_sql
         delete_buckets
@@ -672,6 +978,13 @@ main() {
         # Interactive menu
         if show_cleanup_menu; then
             # Full deletion mode
+            DELETE_GKE="y"
+            DELETE_SQL="y"
+            DELETE_CLOUD_RUN="y"
+            DELETE_BUCKETS="y"
+            DELETE_SA="y"
+            DELETE_SECRETS="y"
+            delete_cloud_run force
             delete_gke force
             delete_cloud_sql force
             delete_buckets force
@@ -706,6 +1019,7 @@ main() {
                     ;;
             esac
             
+            delete_cloud_run
             delete_gke
             delete_cloud_sql
             delete_buckets

@@ -225,7 +225,7 @@ create_cloud_sql() {
     log_header "Creating Cloud SQL Instance with pgvector"
     
     INSTANCE_NAME="digitwinlive-db"
-    DB_NAME="digitwinlive_prod"
+    DB_NAME="digitwinlive-db"
     
     log_info "Checking if Cloud SQL instance exists..."
     
