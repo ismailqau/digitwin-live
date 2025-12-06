@@ -14,6 +14,7 @@
 # =============================================================================
 
 set -e
+set -o pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -145,31 +146,56 @@ ensure_artifact_registry() {
 # =============================================================================
 # Ensure Secret Permissions (Requirement 11.6)
 # =============================================================================
-ensure_secret_permissions() {
-    log_info "Ensuring secret permissions for service accounts..."
+ensure_service_account_permissions() {
+    log_info "Ensuring permissions for service accounts..."
     
-    local SA_EMAIL="digitwinlive-sa@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+    # Get project number for default compute service account
+    local PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT_ID" --format="value(projectNumber)")
+    local COMPUTE_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
+    local CUSTOM_SA="digitwinlive-sa@$GCP_PROJECT_ID.iam.gserviceaccount.com"
     
-    # Check if service account exists
-    if ! gcloud iam service-accounts describe "$SA_EMAIL" &> /dev/null; then
-        log_warning "Service account not found: $SA_EMAIL"
-        log_info "Run: ./scripts/gcp-setup.sh"
-        return 0
+    log_info "Configuring permissions for: $COMPUTE_SA"
+    
+    # Grant Cloud SQL Client role to default compute service account
+    log_info "Granting Cloud SQL Client role to default SA..."
+    gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+        --member="serviceAccount:$COMPUTE_SA" \
+        --role="roles/cloudsql.client" \
+        --condition=None \
+        --quiet &> /dev/null || true
+        
+    # Grant Cloud SQL Client role to custom service account if it exists
+    if gcloud iam service-accounts describe "$CUSTOM_SA" &> /dev/null 2>&1; then
+        log_info "Granting Cloud SQL Client role to custom SA..."
+        gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+            --member="serviceAccount:$CUSTOM_SA" \
+            --role="roles/cloudsql.client" \
+            --condition=None \
+            --quiet &> /dev/null || true
     fi
     
-    # Grant secret access
+    # Grant secret access to both service accounts
     local secrets=("jwt-secret" "refresh-secret" "database-password")
     
     for secret in "${secrets[@]}"; do
         if gcloud secrets describe "$secret" &> /dev/null; then
+            # Grant to default compute service account (used by Cloud Run by default)
             gcloud secrets add-iam-policy-binding "$secret" \
-                --member="serviceAccount:$SA_EMAIL" \
+                --member="serviceAccount:$COMPUTE_SA" \
                 --role="roles/secretmanager.secretAccessor" \
                 --quiet &> /dev/null || true
+            
+            # Also grant to custom service account if it exists
+            if gcloud iam service-accounts describe "$CUSTOM_SA" &> /dev/null 2>&1; then
+                gcloud secrets add-iam-policy-binding "$secret" \
+                    --member="serviceAccount:$CUSTOM_SA" \
+                    --role="roles/secretmanager.secretAccessor" \
+                    --quiet &> /dev/null || true
+            fi
         fi
     done
     
-    log_success "Secret permissions configured"
+    log_success "Service account permissions configured"
 }
 
 # =============================================================================
@@ -222,6 +248,11 @@ build_and_push_image() {
     log_info "Image: $IMAGE_NAME"
     log_info "Tags: $TIMESTAMP, latest"
     
+    # Check source size
+    local source_size=$(du -sh . 2>/dev/null | cut -f1)
+    log_info "Source directory size: $source_size"
+    log_info "Note: .gcloudignore filters will reduce upload size"
+    
     # Create cloudbuild.yaml
     local BUILD_CONFIG="/tmp/cloudbuild-$service.yaml"
     
@@ -247,17 +278,22 @@ images:
 
 options:
   machineType: 'N1_HIGHCPU_8'
-  logging: CLOUD_LOGGING_ONLY
+  logging: LEGACY
+  diskSizeGb: 100
 
-timeout: '1800s'
+timeout: '2400s'
 EOF
     
     log_info "Submitting build to Cloud Build..."
+    log_info "This may take 5-15 minutes depending on cache availability..."
+    log_info "Uploading source code to Cloud Build..."
+    log_info "Build logs will stream below..."
+    echo ""
     
     # Submit build (Property 14: exit on failure)
-    if gcloud builds submit \
+    # Logs stream by default when not using --quiet
+    if timeout 2400 gcloud builds submit \
         --config="$BUILD_CONFIG" \
-        --quiet \
         --project="$GCP_PROJECT_ID" \
         . 2>&1 | tee /tmp/build-$service.log; then
         
@@ -344,6 +380,22 @@ deploy_service() {
         fi
     done
     
+    # Add Cloud SQL connection variables BEFORE creating env file (Requirement 4.4, Property 18)
+    if [ -n "$CLOUD_SQL_CONNECTION_NAME" ]; then
+        # Add DATABASE_HOST for Unix socket connection (Property 9)
+        # The entrypoint script will construct DATABASE_URL from these components
+        env_vars+=("DATABASE_HOST=/cloudsql/$CLOUD_SQL_CONNECTION_NAME")
+    fi
+    
+    # Create env vars file to avoid escaping issues with commas and special characters
+    local env_file="/tmp/env-vars-$service.yaml"
+    echo "# Environment variables for $service" > "$env_file"
+    for env_var in "${env_vars[@]}"; do
+        local key="${env_var%%=*}"
+        local value="${env_var#*=}"
+        echo "$key: '$value'" >> "$env_file"
+    done
+    
     # Build gcloud command
     local deploy_cmd=(
         gcloud run deploy "$service"
@@ -357,28 +409,17 @@ deploy_service() {
         --max-instances=10
         --timeout=300
         --quiet
+        --env-vars-file="$env_file"
     )
-    
-    # Add environment variables
-    if [ ${#env_vars[@]} -gt 0 ]; then
-        local env_string=$(IFS=,; echo "${env_vars[*]}")
-        deploy_cmd+=(--set-env-vars="$env_string")
-    fi
     
     # Add secrets from Secret Manager (Requirement 4.3, Property 17)
     deploy_cmd+=(
-        --set-secrets="JWT_SECRET=jwt-secret:latest"
-        --set-secrets="REFRESH_SECRET=refresh-secret:latest"
-        --set-secrets="DATABASE_PASSWORD=database-password:latest"
+        --set-secrets="JWT_SECRET=jwt-secret:latest,REFRESH_SECRET=refresh-secret:latest,DATABASE_PASSWORD=database-password:latest"
     )
     
     # Add Cloud SQL connection (Requirement 4.4, Property 18)
     if [ -n "$CLOUD_SQL_CONNECTION_NAME" ]; then
         deploy_cmd+=(--add-cloudsql-instances="$CLOUD_SQL_CONNECTION_NAME")
-        
-        # Set DATABASE_URL for Unix socket connection (Property 9)
-        local db_url="postgresql://${DATABASE_USER:-postgres}:\${DATABASE_PASSWORD}@/${DATABASE_NAME:-digitwinlive-db}?host=/cloudsql/$CLOUD_SQL_CONNECTION_NAME"
-        deploy_cmd+=(--set-env-vars="DATABASE_URL=$db_url")
     fi
     
     log_info "Deploying to Cloud Run..."
@@ -415,15 +456,21 @@ deploy_service() {
             
             # Return URL
             echo "$SERVICE_URL"
+            
+            # Cleanup temp files
+            rm -f "$env_file"
+            
             return 0
         else
             log_error "Could not retrieve service URL"
+            rm -f "$env_file"
             return 1
         fi
     else
         log_error "Deployment failed for $service"
         log_info "Check deployment logs: /tmp/deploy-$service.log"
         log_info "Or view in Cloud Console: https://console.cloud.google.com/run"
+        rm -f "$env_file"
         return 1
     fi
 }
@@ -438,40 +485,53 @@ cmd_deploy() {
     
     # Ensure prerequisites
     ensure_artifact_registry || return 1
-    ensure_secret_permissions
+    ensure_service_account_permissions
     
     # Get current service URLs for inter-service communication
     get_current_service_urls
     
-    # Define services with their Dockerfiles
-    declare -A services
-    services=(
-        ["api-gateway"]="apps/api-gateway/Dockerfile"
-        ["websocket-server"]="apps/websocket-server/Dockerfile"
-        ["face-processing-service"]="services/face-processing-service/Dockerfile"
+    # Define services with their Dockerfiles (bash 3.2 compatible)
+    # Format: "service_name:dockerfile_path"
+    local all_services=(
+        "api-gateway:apps/api-gateway/Dockerfile"
+        "websocket-server:apps/websocket-server/Dockerfile"
+        "face-processing-service:services/face-processing-service/Dockerfile"
     )
     
     # Determine which services to deploy
     local services_to_deploy=()
     
     if [ "$service_name" = "all" ]; then
-        services_to_deploy=("api-gateway" "websocket-server" "face-processing-service")
+        services_to_deploy=("${all_services[@]}")
         log_info "Deploying all services"
-    elif [ -n "${services[$service_name]}" ]; then
-        services_to_deploy=("$service_name")
-        log_info "Deploying service: $service_name"
     else
-        log_error "Unknown service: $service_name"
-        log_info "Available services: api-gateway, websocket-server, face-processing-service"
-        return 1
+        # Find the matching service
+        local found=false
+        for svc in "${all_services[@]}"; do
+            local svc_name="${svc%%:*}"
+            if [ "$svc_name" = "$service_name" ]; then
+                services_to_deploy=("$svc")
+                found=true
+                break
+            fi
+        done
+        
+        if [ "$found" = false ]; then
+            log_error "Unknown service: $service_name"
+            log_info "Available services: api-gateway, websocket-server, face-processing-service"
+            return 1
+        fi
+        
+        log_info "Deploying service: $service_name"
     fi
     
     # Deploy each service
     local deployed_urls=()
     local failed_services=()
     
-    for service in "${services_to_deploy[@]}"; do
-        local dockerfile="${services[$service]}"
+    for svc_entry in "${services_to_deploy[@]}"; do
+        local service="${svc_entry%%:*}"
+        local dockerfile="${svc_entry##*:}"
         
         # Check if Dockerfile exists
         if [ ! -f "$dockerfile" ]; then
@@ -480,19 +540,27 @@ cmd_deploy() {
             continue
         fi
         
-        # Build and push image
-        local image=$(build_and_push_image "$service" "$dockerfile")
+        log_info "Starting build for $service using $dockerfile"
         
-        if [ $? -ne 0 ] || [ -z "$image" ]; then
+        # Build and push image
+        # Call function and capture only the last line (image URL) while showing all logs
+        build_and_push_image "$service" "$dockerfile" | tee /tmp/build-output-$service.txt
+        local build_exit=${PIPESTATUS[0]}
+        local image=$(tail -1 /tmp/build-output-$service.txt 2>/dev/null)
+        
+        if [ $build_exit -ne 0 ] || [ -z "$image" ]; then
             log_error "Failed to build image for $service"
             failed_services+=("$service")
             continue
         fi
         
         # Deploy service
-        local service_url=$(deploy_service "$service" "$image")
+        # Call function and capture only the last line (service URL) while showing all logs
+        deploy_service "$service" "$image" | tee /tmp/deploy-output-$service.txt
+        local deploy_exit=${PIPESTATUS[0]}
+        local service_url=$(tail -1 /tmp/deploy-output-$service.txt 2>/dev/null)
         
-        if [ $? -ne 0 ] || [ -z "$service_url" ]; then
+        if [ $deploy_exit -ne 0 ] || [ -z "$service_url" ]; then
             log_error "Failed to deploy $service"
             failed_services+=("$service")
             continue

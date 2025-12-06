@@ -93,6 +93,10 @@ RUN mkdir -p /app/node_modules/.prisma && \
     cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/* /app/node_modules/.prisma/ 2>/dev/null || true && \
     cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/@prisma/client /app/node_modules/@prisma/ 2>/dev/null || true
 
+# Copy entrypoint script
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Set environment
 ENV NODE_ENV=production
 ENV WEBSOCKET_PORT=8080
@@ -100,4 +104,5 @@ ENV WEBSOCKET_PORT=8080
 EXPOSE 8080
 
 WORKDIR /app/apps/websocket-server
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

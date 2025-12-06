@@ -16,10 +16,20 @@ import { setupContainer, container } from './infrastructure/config/container';
 import logger from './infrastructure/logging/logger';
 import { WebSocketController } from './presentation/controllers/WebSocketController';
 
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.WEBSOCKET_PORT || '8080', 10);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 async function bootstrap() {
+  // Debug environment variables
+  logger.info('[websocket-server] Environment check:', {
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    hasDatabaseHost: !!process.env.DATABASE_HOST,
+    hasDatabaseUser: !!process.env.DATABASE_USER,
+    hasDatabasePassword: !!process.env.DATABASE_PASSWORD,
+    databaseHost: process.env.DATABASE_HOST,
+    databaseName: process.env.DATABASE_NAME,
+  });
+
   // Initialize database connection
   logger.info('[websocket-server] Initializing database connection...');
   await DatabaseConnection.connect();

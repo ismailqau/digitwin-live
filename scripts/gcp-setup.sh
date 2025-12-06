@@ -132,8 +132,14 @@ setup_project() {
     gcloud config set compute/region "$GCP_REGION" --quiet
     log_success "Region set to: $GCP_REGION"
     
-    # Determine environment
-    if [[ "$GCS_BUCKET_VOICE_MODELS" == *"-prod" ]] || [[ "$NODE_ENV" == "production" ]]; then
+    # Determine environment (use global ENV_NAME if set by main, otherwise detect)
+    if [ -n "$ENV_NAME" ]; then
+        if [ "$ENV_NAME" == "production" ]; then
+            ENV="prod"
+        else
+            ENV="dev"
+        fi
+    elif [[ "$GCS_BUCKET_VOICE_MODELS" == *"-prod" ]] || [[ "$NODE_ENV" == "production" ]]; then
         ENV="prod"
     else
         ENV="dev"
@@ -908,7 +914,9 @@ main() {
     
     # Parse arguments
     local SKIP_SQL=false
+    local BUCKETS_ONLY=false
     local ENV_FILE=".env"
+    local ENV_NAME=""
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -916,7 +924,22 @@ main() {
                 SKIP_SQL=true
                 shift
                 ;;
+            --buckets-only)
+                BUCKETS_ONLY=true
+                shift
+                ;;
+            --env=development)
+                ENV_FILE=".env.development"
+                ENV_NAME="development"
+                shift
+                ;;
+            --env=production)
+                ENV_FILE=".env.production"
+                ENV_NAME="production"
+                shift
+                ;;
             --env=*)
+                # Support custom file path
                 ENV_FILE="${1#*=}"
                 shift
                 ;;
@@ -924,9 +947,18 @@ main() {
                 echo "Usage: $0 [options]"
                 echo ""
                 echo "Options:"
-                echo "  --skip-sql       Skip Cloud SQL creation"
-                echo "  --env=FILE       Use specific environment file (default: .env)"
-                echo "  --help, -h       Show this help message"
+                echo "  --skip-sql              Skip Cloud SQL creation"
+                echo "  --buckets-only          Create only storage buckets (skip other resources)"
+                echo "  --env=development       Use .env.development file"
+                echo "  --env=production        Use .env.production file"
+                echo "  --env=FILE              Use custom environment file"
+                echo "  --help, -h              Show this help message"
+                echo ""
+                echo "Examples:"
+                echo "  $0 --env=development"
+                echo "  $0 --env=production --skip-sql"
+                echo "  $0 --env=production --buckets-only"
+                echo "  $0 --env=.env.staging"
                 exit 0
                 ;;
             *)
@@ -937,11 +969,25 @@ main() {
     done
     
     # Load environment
+    if [ -n "$ENV_NAME" ]; then
+        log_info "Using environment: $ENV_NAME"
+        export ENV_NAME
+    fi
     load_env "$ENV_FILE"
     
     # Run setup steps
     check_prerequisites
     setup_project
+    
+    # If buckets-only mode, just create buckets and exit
+    if [ "$BUCKETS_ONLY" = true ]; then
+        log_info "Buckets-only mode: Creating storage buckets only"
+        create_storage_buckets
+        log_success "Storage buckets created successfully!"
+        exit 0
+    fi
+    
+    # Full setup
     enable_apis
     create_artifact_registry
     create_storage_buckets
