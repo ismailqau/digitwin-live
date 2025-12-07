@@ -17,7 +17,7 @@
   - **Property 4: Guest session creation**
   - **Validates: Requirements 3.1, 3.2, 3.3**
 
-- [ ] 3. Update WebSocketController to always emit auth response
+- [x] 3. Update WebSocketController to always emit auth response
   - Wrap `handleConnection()` in try-catch to ensure errors are caught
   - Always emit `auth_error` with error code and message before disconnecting on auth failure
   - Emit `session_created` with `isGuest` flag for successful connections
@@ -25,11 +25,11 @@
   - Add detailed logging for all connection attempts and outcomes
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 4.1, 4.2, 4.3_
 
-- [ ] 3.1 Write property test for authentication response guarantee
+- [x] 3.1 Write property test for authentication response guarantee
   - **Property 1: Authentication response guarantee**
   - **Validates: Requirements 1.1, 1.2, 1.3**
 
-- [ ] 3.2 Write unit tests for WebSocketController error handling
+- [x] 3.2 Write unit tests for WebSocketController error handling
   - Test auth failure with missing token
   - Test auth failure with invalid token
   - Test auth failure with expired token
@@ -37,13 +37,13 @@
   - Test successful auth with guest token
   - _Requirements: 1.1, 1.2, 1.3, 3.2_
 
-- [ ] 4. Add AUTHENTICATING state to WebSocketClient
+- [x] 4. Add AUTHENTICATING state to WebSocketClient
   - Add AUTHENTICATING to ConnectionState enum
   - Update state machine to transition: CONNECTING → AUTHENTICATING → (CONNECTED | ERROR)
   - Add state transition logging
   - _Requirements: 5.1, 5.2_
 
-- [ ] 4.1 Write property test for client state consistency
+- [x] 4.1 Write property test for client state consistency
   - **Property 2: Client state consistency**
   - **Validates: Requirements 5.1, 5.2, 5.3**
 

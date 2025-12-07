@@ -23,6 +23,7 @@ const HEARTBEAT_INTERVAL = 10000; // 15 seconds
 
 export enum ConnectionState {
   CONNECTING = 'connecting',
+  AUTHENTICATING = 'authenticating',
   CONNECTED = 'connected',
   DISCONNECTED = 'disconnected',
   RECONNECTING = 'reconnecting',
@@ -280,16 +281,19 @@ export class WebSocketClient {
   private setupEventListeners(): void {
     if (!this.socket) return;
 
-    // Connection established
+    // Connection established - transition to AUTHENTICATING state
     this.socket.on('connect', () => {
       const ms = Date.now() - this.connectionStartTime;
-      WebSocketMonitor.info('connection', `Connected (${ms}ms)`, {
-        socketId: this.socket?.id,
-        duration: ms,
-      });
-      this.setConnectionState(ConnectionState.CONNECTED);
-      this.reconnectAttempts = 0;
-      this.processMessageQueue();
+      WebSocketMonitor.info(
+        'connection',
+        `Socket.IO connected (${ms}ms), waiting for authentication`,
+        {
+          socketId: this.socket?.id,
+          duration: ms,
+        }
+      );
+      this.setConnectionState(ConnectionState.AUTHENTICATING);
+      // Note: Will transition to CONNECTED when session_created is received
     });
 
     // Connection lost
@@ -314,9 +318,16 @@ export class WebSocketClient {
       this.scheduleReconnect();
     });
 
-    // Session created
+    // Session created - transition to CONNECTED state
     this.socket.on('session_created', (data) => {
-      WebSocketMonitor.info('lifecycle', `Session created: ${data?.sessionId}`, data);
+      const ms = Date.now() - this.connectionStartTime;
+      WebSocketMonitor.info('lifecycle', `Session created: ${data?.sessionId} (total ${ms}ms)`, {
+        ...data,
+        totalDuration: ms,
+      });
+      this.setConnectionState(ConnectionState.CONNECTED);
+      this.reconnectAttempts = 0;
+      this.processMessageQueue();
       this.emit('session_created', data);
     });
 
@@ -373,8 +384,16 @@ export class WebSocketClient {
    */
   private setConnectionState(state: ConnectionState): void {
     if (this.connectionState !== state) {
+      const previousState = this.connectionState;
       this.connectionState = state;
-      WebSocketMonitor.debug('lifecycle', `State changed: ${state}`);
+
+      // Log state transition with context
+      WebSocketMonitor.info('lifecycle', `State transition: ${previousState} → ${state}`, {
+        from: previousState,
+        to: state,
+        connectionId: this.connectionId,
+        socketId: this.socket?.id,
+      });
 
       this.stateHandlers.forEach((handler) => {
         try {
