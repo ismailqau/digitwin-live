@@ -9,6 +9,7 @@ import {
 } from '../../application/services/AuthService';
 import { ConnectionService } from '../../application/services/ConnectionService';
 import { MessageRouterService } from '../../application/services/MessageRouterService';
+import { MetricsService } from '../../application/services/MetricsService';
 import { SessionService } from '../../application/services/SessionService';
 import { ClientMessage } from '../../domain/models/Message';
 import logger from '../../infrastructure/logging/logger';
@@ -44,7 +45,8 @@ export class WebSocketController {
     @inject(SessionService) private sessionService: SessionService,
     @inject(ConnectionService) private connectionService: ConnectionService,
     @inject(MessageRouterService) private messageRouter: MessageRouterService,
-    @inject(AuthService) private authService: AuthService
+    @inject(AuthService) private authService: AuthService,
+    @inject(MetricsService) private metricsService: MetricsService
   ) {}
 
   /**
@@ -63,6 +65,9 @@ export class WebSocketController {
   async handleConnection(socket: Socket): Promise<void> {
     const connectionStartTime = Date.now();
     const socketId = socket.id;
+
+    // Record connection attempt in metrics
+    this.metricsService.recordConnectionAttempt(socketId);
 
     // Extract token early for logging
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
@@ -106,6 +111,9 @@ export class WebSocketController {
       };
 
       socket.emit('session_created', sessionCreatedPayload);
+
+      // Record successful connection in metrics
+      this.metricsService.recordConnectionSuccess(socketId);
 
       // Log session creation with all required details (Requirement 4.2)
       const connectionDuration = Date.now() - connectionStartTime;
@@ -171,18 +179,25 @@ export class WebSocketController {
     // Determine error code and message
     let errorCode: AuthErrorCode;
     let errorMessage: string;
+    let metricsReason: 'AUTH_REQUIRED' | 'AUTH_INVALID' | 'AUTH_EXPIRED' | 'SESSION_CREATE_FAILED';
 
     if (error instanceof AuthError) {
       errorCode = error.code;
       errorMessage = error.message;
+      metricsReason = errorCode as 'AUTH_REQUIRED' | 'AUTH_INVALID' | 'AUTH_EXPIRED';
     } else if (error instanceof Error && error.message === 'Session creation timeout') {
       // Session creation timeout - treat as internal error but report as auth error
       errorCode = AuthErrorCode.AUTH_INVALID;
       errorMessage = 'Session creation failed';
+      metricsReason = 'SESSION_CREATE_FAILED';
     } else {
       errorCode = AuthErrorCode.AUTH_INVALID;
       errorMessage = AUTH_ERROR_MESSAGES[AuthErrorCode.AUTH_INVALID];
+      metricsReason = 'AUTH_INVALID';
     }
+
+    // Record connection failure in metrics
+    this.metricsService.recordConnectionFailure(socketId, metricsReason);
 
     // Create auth error payload
     const authErrorPayload: AuthErrorPayload = {
@@ -269,6 +284,9 @@ export class WebSocketController {
   ): Promise<void> {
     const connectionDuration = Date.now() - connectionStartTime;
     const disconnectTime = Date.now();
+
+    // Record disconnection in metrics
+    this.metricsService.recordDisconnection(socketId);
 
     // Log disconnection with all required details (Requirement 4.4)
     logger.info('[WebSocketController] Client disconnected', {

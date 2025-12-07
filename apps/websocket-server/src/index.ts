@@ -100,6 +100,28 @@ async function bootstrap() {
     }
   });
 
+  // Metrics endpoint
+  app.get('/metrics', (_req, res) => {
+    try {
+      const metrics = metricsService.getMetricsSummary();
+      const alerts = metricsService.getAlertStatus();
+
+      res.json({
+        service: 'websocket-server',
+        timestamp: new Date().toISOString(),
+        metrics,
+        alerts,
+      });
+    } catch (error) {
+      logger.error('[websocket-server] Failed to get metrics', { error });
+      res.status(500).json({
+        error: 'Failed to retrieve metrics',
+        service: 'websocket-server',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 
@@ -114,8 +136,10 @@ async function bootstrap() {
     pingInterval: 25000,
   });
 
-  // Get WebSocket controller from DI container
+  // Get WebSocket controller and metrics service from DI container
   const wsController = container.resolve(WebSocketController);
+  const { MetricsService } = await import('./application/services/MetricsService');
+  const metricsService = container.resolve(MetricsService);
 
   // Handle WebSocket connections and track connection count
   io.on('connection', (socket) => {
@@ -133,8 +157,9 @@ async function bootstrap() {
 
     wsController.handleConnection(socket);
 
-    // Update health service with connection count
+    // Update health service and metrics with connection count
     healthService.setActiveConnections(io.engine.clientsCount);
+    metricsService.setActiveConnections(io.engine.clientsCount);
 
     socket.on('disconnect', () => {
       // Log disconnection at transport level (Requirement 4.4)
@@ -145,6 +170,7 @@ async function bootstrap() {
         event: 'transport_disconnect',
       });
       healthService.setActiveConnections(io.engine.clientsCount);
+      metricsService.setActiveConnections(io.engine.clientsCount);
     });
   });
 
