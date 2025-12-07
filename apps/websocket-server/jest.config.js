@@ -12,4 +12,9 @@ module.exports = {
     '/dist/',
     '/coverage/',
   ],
+  transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
+  moduleNameMapper: {
+    ...baseConfig.moduleNameMapper,
+    '^uuid$': require.resolve('uuid'),
+  },
 };

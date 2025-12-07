@@ -97,7 +97,7 @@
   - **Property 6: Logging completeness**
   - **Validates: Requirements 4.1, 4.2, 4.3**
 
-- [ ] 9. Add integration tests for end-to-end connection flows
+- [x] 9. Add integration tests for end-to-end connection flows
   - Test successful connection with valid JWT token
   - Test connection with guest token
   - Test connection failure with invalid token
