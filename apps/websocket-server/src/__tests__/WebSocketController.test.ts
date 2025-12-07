@@ -681,4 +681,340 @@ describe('WebSocketController', () => {
       });
     });
   });
+
+  /**
+   * Property-Based Test for Logging Completeness
+   *
+   * **Feature: websocket-connection-timeout-fix, Property 6: Logging completeness**
+   * **Validates: Requirements 4.1, 4.2, 4.3**
+   *
+   * For any connection attempt, the server must log at least one entry with
+   * socket ID, timestamp, and outcome (success/failure).
+   */
+  describe('Property 6: Logging completeness', () => {
+    beforeEach(() => {
+      // Clear mock logger calls before each test
+      mockLogger.info.mockClear();
+      mockLogger.warn.mockClear();
+      mockLogger.error.mockClear();
+      mockLogger.debug.mockClear();
+    });
+
+    /**
+     * Generator for valid UUID v4 strings
+     */
+    const uuidV4Arb = fc
+      .tuple(
+        fc.hexaString({ minLength: 8, maxLength: 8 }),
+        fc.hexaString({ minLength: 4, maxLength: 4 }),
+        fc.hexaString({ minLength: 3, maxLength: 3 }),
+        fc.hexaString({ minLength: 3, maxLength: 3 }),
+        fc.hexaString({ minLength: 12, maxLength: 12 })
+      )
+      .map(([a, b, c, d, e]) => {
+        const version = '4' + c.slice(0, 3);
+        const variant = ['8', '9', 'a', 'b'][Math.floor(Math.random() * 4)] + d.slice(0, 3);
+        return `${a}-${b}-${version}-${variant}-${e}`;
+      });
+
+    /**
+     * Generator for valid guest tokens (non-expired)
+     */
+    const validGuestTokenArb = fc
+      .tuple(uuidV4Arb, fc.integer({ min: 0, max: GUEST_TOKEN_EXPIRATION_MS - 1000 }))
+      .map(([uuid, ageMs]) => {
+        const timestamp = Date.now() - ageMs;
+        return `guest_${uuid}_${timestamp}`;
+      });
+
+    /**
+     * Generator for expired guest tokens
+     */
+    const expiredGuestTokenArb = fc
+      .tuple(
+        uuidV4Arb,
+        fc.integer({ min: GUEST_TOKEN_EXPIRATION_MS + 1000, max: GUEST_TOKEN_EXPIRATION_MS * 10 })
+      )
+      .map(([uuid, ageMs]) => {
+        const timestamp = Date.now() - ageMs;
+        return `guest_${uuid}_${timestamp}`;
+      });
+
+    /**
+     * Generator for invalid tokens
+     */
+    const invalidTokenArb = fc
+      .string({ minLength: 1, maxLength: 100 })
+      .filter((s) => !s.startsWith('guest_') && !s.startsWith('mock-'));
+
+    it('should log connection attempt for any connection', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(
+            fc.constant(null),
+            validGuestTokenArb,
+            expiredGuestTokenArb,
+            invalidTokenArb,
+            fc.constant('mock-guest-token')
+          ),
+          async (token) => {
+            mockLogger.info.mockClear();
+            mockLogger.warn.mockClear();
+
+            const socket = createMockSocket({ token });
+
+            await controller.handleConnection(socket);
+
+            // Check that at least one log entry was made
+            const totalLogCalls =
+              mockLogger.info.mock.calls.length + mockLogger.warn.mock.calls.length;
+
+            if (totalLogCalls === 0) {
+              return false;
+            }
+
+            // Find the connection attempt log
+            const connectionAttemptLog = mockLogger.info.mock.calls.find(
+              (call) => call[0] && call[0].includes('Connection attempt')
+            );
+
+            if (!connectionAttemptLog) {
+              return false;
+            }
+
+            // Verify the log contains required fields
+            const logData = connectionAttemptLog[1];
+            return (
+              logData &&
+              typeof logData.socketId === 'string' &&
+              typeof logData.timestamp === 'number' &&
+              typeof logData.tokenType === 'string'
+            );
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should log outcome (success or failure) for any connection', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(
+            fc.tuple(validGuestTokenArb, fc.constant('success' as const)),
+            fc.tuple(fc.constant('mock-guest-token'), fc.constant('success' as const)),
+            fc.tuple(fc.constant(null), fc.constant('failure' as const)),
+            fc.tuple(expiredGuestTokenArb, fc.constant('failure' as const)),
+            fc.tuple(invalidTokenArb, fc.constant('failure' as const))
+          ),
+          async ([token, expectedOutcome]) => {
+            mockLogger.info.mockClear();
+            mockLogger.warn.mockClear();
+
+            const socket = createMockSocket({ token });
+
+            await controller.handleConnection(socket);
+
+            if (expectedOutcome === 'success') {
+              // Should have session creation log
+              const sessionCreatedLog = mockLogger.info.mock.calls.find(
+                (call) => call[0] && call[0].includes('Session created successfully')
+              );
+
+              if (!sessionCreatedLog) {
+                return false;
+              }
+
+              const logData = sessionCreatedLog[1];
+              return (
+                logData &&
+                typeof logData.socketId === 'string' &&
+                typeof logData.sessionId === 'string' &&
+                typeof logData.userId === 'string' &&
+                typeof logData.timestamp === 'number'
+              );
+            } else {
+              // Should have authentication failure log
+              const authFailureLog = mockLogger.warn.mock.calls.find(
+                (call) => call[0] && call[0].includes('Authentication failed')
+              );
+
+              if (!authFailureLog) {
+                return false;
+              }
+
+              const logData = authFailureLog[1];
+              return (
+                logData &&
+                typeof logData.socketId === 'string' &&
+                typeof logData.errorCode === 'string' &&
+                typeof logData.timestamp === 'number'
+              );
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should include socket ID in all connection-related logs', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(
+            fc.constant(null),
+            validGuestTokenArb,
+            expiredGuestTokenArb,
+            invalidTokenArb,
+            fc.constant('mock-guest-token')
+          ),
+          async (token) => {
+            mockLogger.info.mockClear();
+            mockLogger.warn.mockClear();
+            mockLogger.debug.mockClear();
+
+            const socket = createMockSocket({ token });
+            const socketId = socket.id;
+
+            await controller.handleConnection(socket);
+
+            // Get all log calls
+            const allLogCalls = [
+              ...mockLogger.info.mock.calls,
+              ...mockLogger.warn.mock.calls,
+              ...mockLogger.debug.mock.calls,
+            ];
+
+            // Filter for connection-related logs
+            const connectionLogs = allLogCalls.filter(
+              (call) =>
+                call[0] &&
+                (call[0].includes('Connection') ||
+                  call[0].includes('Session') ||
+                  call[0].includes('Authentication'))
+            );
+
+            // All connection-related logs should have socketId
+            return connectionLogs.every((call) => {
+              const logData = call[1];
+              return logData && logData.socketId === socketId;
+            });
+          }
+        ),
+        { numRuns: 50 }
+      );
+    });
+
+    it('should include timestamp in all connection-related logs', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(
+            fc.constant(null),
+            validGuestTokenArb,
+            expiredGuestTokenArb,
+            invalidTokenArb,
+            fc.constant('mock-guest-token')
+          ),
+          async (token) => {
+            mockLogger.info.mockClear();
+            mockLogger.warn.mockClear();
+
+            const socket = createMockSocket({ token });
+
+            const beforeTime = Date.now();
+            await controller.handleConnection(socket);
+            const afterTime = Date.now();
+
+            // Get all log calls
+            const allLogCalls = [...mockLogger.info.mock.calls, ...mockLogger.warn.mock.calls];
+
+            // Filter for connection-related logs
+            const connectionLogs = allLogCalls.filter(
+              (call) =>
+                call[0] &&
+                (call[0].includes('Connection') ||
+                  call[0].includes('Session') ||
+                  call[0].includes('Authentication'))
+            );
+
+            // All connection-related logs should have timestamp within the test window
+            return connectionLogs.every((call) => {
+              const logData = call[1];
+              return (
+                logData &&
+                typeof logData.timestamp === 'number' &&
+                logData.timestamp >= beforeTime &&
+                logData.timestamp <= afterTime
+              );
+            });
+          }
+        ),
+        { numRuns: 50 }
+      );
+    });
+
+    it('should log token type for all connection attempts', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(
+            fc.tuple(fc.constant(null), fc.constant('none')),
+            fc.tuple(validGuestTokenArb, fc.constant('guest')),
+            fc.tuple(fc.constant('mock-guest-token'), fc.constant('mock')),
+            fc.tuple(invalidTokenArb, fc.constant('jwt'))
+          ),
+          async ([token, expectedTokenType]) => {
+            mockLogger.info.mockClear();
+
+            const socket = createMockSocket({ token });
+
+            await controller.handleConnection(socket);
+
+            // Find the connection attempt log
+            const connectionAttemptLog = mockLogger.info.mock.calls.find(
+              (call) => call[0] && call[0].includes('Connection attempt')
+            );
+
+            if (!connectionAttemptLog) {
+              return false;
+            }
+
+            const logData = connectionAttemptLog[1];
+            return logData && logData.tokenType === expectedTokenType;
+          }
+        ),
+        { numRuns: 50 }
+      );
+    });
+
+    it('should log error details for authentication failures', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(fc.constant(null), expiredGuestTokenArb, invalidTokenArb),
+          async (token) => {
+            mockLogger.warn.mockClear();
+
+            const socket = createMockSocket({ token });
+
+            await controller.handleConnection(socket);
+
+            // Find the authentication failure log
+            const authFailureLog = mockLogger.warn.mock.calls.find(
+              (call) => call[0] && call[0].includes('Authentication failed')
+            );
+
+            if (!authFailureLog) {
+              return false;
+            }
+
+            const logData = authFailureLog[1];
+            return (
+              logData &&
+              typeof logData.errorCode === 'string' &&
+              typeof logData.errorMessage === 'string' &&
+              typeof logData.error === 'string'
+            );
+          }
+        ),
+        { numRuns: 50 }
+      );
+    });
+  });
 });

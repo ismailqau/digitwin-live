@@ -119,24 +119,44 @@ async function bootstrap() {
 
   // Handle WebSocket connections and track connection count
   io.on('connection', (socket) => {
-    logger.info(`[WebSocket] New connection attempt from ${socket.id}`);
-    logger.info(`[WebSocket] Handshake auth:`, socket.handshake.auth);
+    const connectionTime = Date.now();
+
+    // Log connection attempt with context (Requirement 4.1)
+    logger.info('[WebSocket] New connection established', {
+      socketId: socket.id,
+      timestamp: connectionTime,
+      clientIp: socket.handshake.address,
+      transport: socket.conn.transport.name,
+      activeConnections: io.engine.clientsCount,
+      event: 'connection',
+    });
+
     wsController.handleConnection(socket);
+
     // Update health service with connection count
     healthService.setActiveConnections(io.engine.clientsCount);
 
     socket.on('disconnect', () => {
-      logger.info(`[WebSocket] Client disconnected: ${socket.id}`);
+      // Log disconnection at transport level (Requirement 4.4)
+      logger.info('[WebSocket] Transport disconnected', {
+        socketId: socket.id,
+        timestamp: Date.now(),
+        activeConnections: io.engine.clientsCount - 1,
+        event: 'transport_disconnect',
+      });
       healthService.setActiveConnections(io.engine.clientsCount);
     });
   });
 
-  // Log connection errors
+  // Log connection errors with full context (Requirement 4.5)
   io.engine.on('connection_error', (err) => {
-    logger.error('[WebSocket] Connection error:', {
+    logger.error('[WebSocket] Connection error', {
       message: err.message,
       code: err.code,
       context: err.context,
+      stack: err.stack,
+      timestamp: Date.now(),
+      event: 'connection_error',
     });
   });
 

@@ -79,13 +79,13 @@
   - Test error logging includes full context
   - _Requirements: 2.2, 5.4_
 
-- [-] 7. Add guest mode UI indicators to mobile app
+- [x] 7. Add guest mode UI indicators to mobile app
   - Display "Guest Mode" badge when `isGuest: true` in session
   - Show "Sign in to save your data" prompt for guest users
   - Add "Sign In" button in guest mode UI
   - _Requirements: 3.4_
 
-- [ ] 8. Add comprehensive logging to server
+- [x] 8. Add comprehensive logging to server
   - Log all connection attempts with socket ID, token type, timestamp
   - Log session creation with user ID, session ID, socket ID
   - Log authentication failures with reason, token type, socket ID
@@ -93,7 +93,7 @@
   - Log connection errors with full stack trace and context
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 8.1 Write property test for logging completeness
+- [x] 8.1 Write property test for logging completeness
   - **Property 6: Logging completeness**
   - **Validates: Requirements 4.1, 4.2, 4.3**
 

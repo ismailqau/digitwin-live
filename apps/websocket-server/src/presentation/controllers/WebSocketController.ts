@@ -52,33 +52,44 @@ export class WebSocketController {
    *
    * Always emits either `session_created` or `auth_error` before disconnecting.
    * This ensures the client always receives feedback about the connection attempt.
+   *
+   * Comprehensive logging covers:
+   * - Connection attempts (Requirement 4.1)
+   * - Session creation (Requirement 4.2)
+   * - Authentication failures (Requirement 4.3)
+   * - Disconnections (Requirement 4.4)
+   * - Connection errors (Requirement 4.5)
    */
   async handleConnection(socket: Socket): Promise<void> {
     const connectionStartTime = Date.now();
     const socketId = socket.id;
 
-    // Log connection attempt
+    // Extract token early for logging
+    const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
+    const tokenType = this.getTokenType(token);
+
+    // Log connection attempt with all required details (Requirement 4.1)
     logger.info('[WebSocketController] Connection attempt', {
       socketId,
+      tokenType,
       timestamp: connectionStartTime,
-      hasToken: !!socket.handshake.auth.token,
+      hasToken: !!token,
       hasAuthHeader: !!socket.handshake.headers.authorization,
+      clientIp: socket.handshake.address,
+      userAgent: socket.handshake.headers['user-agent'],
     });
 
     try {
-      // Extract token from handshake
-      const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
-      const tokenType = this.getTokenType(token);
-
-      // Log token type
-      logger.debug('[WebSocketController] Token extracted', {
-        socketId,
-        tokenType,
-        hasToken: !!token,
-      });
-
       // Verify token (throws AuthError on failure)
       const payload = this.authService.verifyToken(token);
+
+      // Log token verification success
+      logger.debug('[WebSocketController] Token verified successfully', {
+        socketId,
+        tokenType,
+        userId: payload.userId,
+        isGuest: payload.isGuest,
+      });
 
       // Create session with timeout
       const session = await this.createSessionWithTimeout(payload.userId, socketId);
@@ -96,9 +107,9 @@ export class WebSocketController {
 
       socket.emit('session_created', sessionCreatedPayload);
 
-      // Log successful connection
+      // Log session creation with all required details (Requirement 4.2)
       const connectionDuration = Date.now() - connectionStartTime;
-      logger.info('[WebSocketController] Client connected successfully', {
+      logger.info('[WebSocketController] Session created successfully', {
         socketId,
         sessionId: session.id,
         userId: payload.userId,
@@ -106,6 +117,7 @@ export class WebSocketController {
         tokenType,
         connectionDurationMs: connectionDuration,
         timestamp: Date.now(),
+        event: 'session_created',
       });
 
       // Set up message handlers
@@ -148,6 +160,8 @@ export class WebSocketController {
 
   /**
    * Handles connection errors by emitting auth_error and disconnecting
+   *
+   * Logs authentication failures with full context (Requirement 4.3)
    */
   private handleConnectionError(socket: Socket, error: unknown, connectionStartTime: number): void {
     const socketId = socket.id;
@@ -177,7 +191,7 @@ export class WebSocketController {
       timestamp: Date.now(),
     };
 
-    // Log authentication failure
+    // Log authentication failure with full context (Requirement 4.3)
     logger.warn('[WebSocketController] Authentication failed', {
       socketId,
       errorCode,
@@ -187,6 +201,9 @@ export class WebSocketController {
       timestamp: Date.now(),
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
+      clientIp: socket.handshake.address,
+      userAgent: socket.handshake.headers['user-agent'],
+      event: 'auth_error',
     });
 
     // Emit auth_error event before disconnecting
@@ -239,6 +256,11 @@ export class WebSocketController {
     });
   }
 
+  /**
+   * Handles client disconnection
+   *
+   * Logs disconnections with full context (Requirement 4.4)
+   */
   private async handleDisconnection(
     sessionId: string,
     socketId: string,
@@ -246,13 +268,17 @@ export class WebSocketController {
     reason: string
   ): Promise<void> {
     const connectionDuration = Date.now() - connectionStartTime;
+    const disconnectTime = Date.now();
 
+    // Log disconnection with all required details (Requirement 4.4)
     logger.info('[WebSocketController] Client disconnected', {
       socketId,
       sessionId,
       reason,
       connectionDurationMs: connectionDuration,
-      timestamp: Date.now(),
+      connectionDurationSeconds: Math.floor(connectionDuration / 1000),
+      timestamp: disconnectTime,
+      event: 'disconnect',
     });
 
     this.connectionService.unregisterConnection(sessionId);
