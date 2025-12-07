@@ -64,6 +64,7 @@ Complete documentation for the DigiTwin Live platform.
 
 | Document                                                                   | Description                                                                 |
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [Services Overview](./SERVICES-OVERVIEW.md)                                | Complete reference for all services and packages                            |
 | [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) | Complete system design                                                      |
 | [Conversation Flow Orchestration](./CONVERSATION-FLOW-ORCHESTRATION.md)    | End-to-end pipeline coordination (Audio → ASR → RAG → LLM → TTS → Lip-sync) |
 | [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)                | Event bus and event sourcing                                                |
@@ -137,9 +138,10 @@ Complete documentation for the DigiTwin Live platform.
 
 ### "I want to understand the architecture"
 
-1. [Design Document](../.kiro/specs/real-time-digitwinlive/design.md)
-2. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md)
-3. [Database Architecture](./DATABASE-ARCHITECTURE.md)
+1. [Services Overview](./SERVICES-OVERVIEW.md) - All services and their purposes
+2. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
+3. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
+4. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
 
 ### "I'm having issues"
 
@@ -177,11 +179,12 @@ Complete documentation for the DigiTwin Live platform.
 
 ### "I want to understand the architecture"
 
-1. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
-2. [Conversation Flow Orchestration](./CONVERSATION-FLOW-ORCHESTRATION.md) - Pipeline coordination
-3. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
-4. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
-5. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
+1. [Services Overview](./SERVICES-OVERVIEW.md) - All services and their purposes
+2. [Design Document](../.kiro/specs/real-time-conversational-clone/design.md) - System design
+3. [Conversation Flow Orchestration](./CONVERSATION-FLOW-ORCHESTRATION.md) - Pipeline coordination
+4. [Event-Driven Architecture](./EVENT-DRIVEN-ARCHITECTURE.md) - Event bus
+5. [Database Architecture](./DATABASE-ARCHITECTURE.md) - Schema and patterns
+6. [Caching Architecture](./CACHING-ARCHITECTURE.md) - PostgreSQL caching
 
 ### "I want to set up voice synthesis"
 
@@ -213,10 +216,10 @@ Complete documentation for the DigiTwin Live platform.
 
 ## 📊 Documentation Stats
 
-- **Total Documents**: 23+
+- **Total Documents**: 24+
 - **Setup Guides**: 4
 - **GCP Guides**: 7
-- **Architecture Docs**: 6
+- **Architecture Docs**: 7
 - **Development & Quality Docs**: 5
 - **Security Docs**: 3
 

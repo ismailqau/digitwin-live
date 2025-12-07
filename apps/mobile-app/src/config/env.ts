@@ -10,14 +10,27 @@ import Constants from 'expo-constants';
 const expoConfig = Constants.expoConfig;
 const extra = expoConfig?.extra || {};
 
+// Socket.IO expects https:// and handles WebSocket upgrade internally
+const getWebSocketUrl = () => {
+  return (
+    extra.WEBSOCKET_URL ||
+    process.env.WEBSOCKET_URL ||
+    'https://websocket-server-yrzc7r3fcq-uc.a.run.app'
+  );
+};
+
 export const ENV = {
-  API_URL: extra.API_URL || process.env.API_URL || 'http://localhost:3000',
-  WEBSOCKET_URL: extra.WEBSOCKET_URL || process.env.WEBSOCKET_URL || 'http://localhost:3001',
+  API_URL: extra.API_URL || process.env.API_URL || 'https://api-gateway-yrzc7r3fcq-uc.a.run.app',
+  WEBSOCKET_URL: getWebSocketUrl(),
   FACE_PROCESSING_URL:
-    extra.FACE_PROCESSING_URL || process.env.FACE_PROCESSING_URL || 'http://localhost:3002',
+    extra.FACE_PROCESSING_URL ||
+    process.env.FACE_PROCESSING_URL ||
+    'https://face-processing-service-yrzc7r3fcq-uc.a.run.app',
   LIPSYNC_SERVICE_URL:
-    extra.LIPSYNC_SERVICE_URL || process.env.LIPSYNC_SERVICE_URL || 'http://localhost:3003',
-  ENVIRONMENT: extra.ENVIRONMENT || process.env.ENVIRONMENT || 'development',
+    extra.LIPSYNC_SERVICE_URL ||
+    process.env.LIPSYNC_SERVICE_URL ||
+    'https://face-processing-service-yrzc7r3fcq-uc.a.run.app',
+  ENVIRONMENT: extra.ENVIRONMENT || process.env.ENVIRONMENT || 'production',
   DEBUG: extra.DEBUG === 'true' || process.env.DEBUG === 'true' || false,
 };
 
@@ -28,6 +41,11 @@ if (__DEV__) {
     WEBSOCKET_URL: ENV.WEBSOCKET_URL,
     ENVIRONMENT: ENV.ENVIRONMENT,
     DEBUG: ENV.DEBUG,
+  });
+  console.log('[ENV] Raw sources:', {
+    'extra.WEBSOCKET_URL': extra.WEBSOCKET_URL,
+    'process.env.WEBSOCKET_URL': process.env.WEBSOCKET_URL,
+    'Constants.expoConfig': Constants.expoConfig?.extra,
   });
 }
 

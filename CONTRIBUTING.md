@@ -270,26 +270,175 @@ pnpm test:coverage
 ```
 digitwinlive/
 ├── apps/                      # Deployable applications
-│   ├── mobile-app/           # React Native app
-│   ├── api-gateway/          # REST API
-│   └── websocket-server/     # WebSocket server
+│   ├── mobile-app/           # React Native app (iOS/Android)
+│   ├── api-gateway/          # REST API with OpenAPI docs
+│   └── websocket-server/     # Real-time WebSocket server
 ├── services/                  # Backend microservices
-│   ├── asr-service/          # Speech recognition
-│   ├── rag-service/          # RAG pipeline
-│   ├── llm-service/          # LLM integration
-│   ├── tts-service/          # Text-to-speech
-│   ├── lipsync-service/      # Lip-sync generation
-│   └── face-processing-service/  # Face processing
-├── packages/                  # Shared libraries
-│   ├── shared-types/         # TypeScript types
-│   ├── database/             # Database layer
-│   ├── logger/               # Logging
-│   ├── config/               # Configuration
-│   └── ...                   # Other shared packages
+│   ├── asr-service/          # Automatic Speech Recognition (Google Chirp)
+│   ├── rag-service/          # RAG pipeline with pgvector
+│   ├── llm-service/          # Multi-provider LLM (Gemini, OpenAI, Groq)
+│   ├── tts-service/          # Text-to-Speech orchestration
+│   ├── xtts-service/         # XTTS-v2 Docker inference server
+│   ├── lipsync-service/      # Lip-sync video generation
+│   └── face-processing-service/  # Face detection and models
+├── packages/                  # Shared libraries (@clone/* scope)
+│   ├── shared-types/         # TypeScript interfaces and types
+│   ├── database/             # Prisma ORM with repository pattern
+│   ├── validation/           # Zod validation schemas
+│   ├── logger/               # Winston structured logging
+│   ├── errors/               # Custom error classes
+│   ├── config/               # Environment configuration
+│   ├── security/             # Access control and audit logging
+│   ├── api-client/           # REST and WebSocket client
+│   ├── utils/                # Common utilities
+│   └── constants/            # Shared constants
 ├── docs/                      # Documentation
 ├── scripts/                   # Automation scripts
 └── infrastructure/            # Terraform configs
 ```
+
+### Service Details
+
+#### Core Applications
+
+**API Gateway** (`apps/api-gateway`)
+
+- REST API with OpenAPI 3.0 documentation
+- Request validation and sanitization
+- Rate limiting per endpoint
+- JWT authentication middleware
+- CORS configuration
+- Correlation ID tracking
+
+**WebSocket Server** (`apps/websocket-server`)
+
+- Real-time bidirectional communication
+- Audio streaming (chunked)
+- Session management
+- Connection pooling
+- Authentication via JWT
+- Event-driven architecture
+
+**Mobile App** (`apps/mobile-app`)
+
+- React Native (iOS/Android)
+- Audio recording and playback
+- WebSocket client integration
+- Video player for lip-sync
+- Offline support
+- Push notifications
+
+#### Backend Services
+
+**ASR Service** (`services/asr-service`)
+
+- Google Cloud Speech-to-Text (Chirp model)
+- Streaming transcription
+- Automatic punctuation
+- Multi-language support
+- Confidence scoring
+- Custom vocabulary
+
+**RAG Service** (`services/rag-service`)
+
+- Document processing (PDF, DOCX, TXT, HTML, MD)
+- Text chunking and embedding
+- Vector search with pgvector
+- Context assembly
+- Knowledge base management
+- Source tracking
+
+**LLM Service** (`services/llm-service`)
+
+- Multi-provider support (Gemini, OpenAI, Groq)
+- Streaming responses
+- Context management
+- Token counting
+- Rate limiting
+- Fallback handling
+
+**TTS Service** (`services/tts-service`)
+
+- Multi-provider orchestration
+- Voice cloning with XTTS-v2
+- Google Cloud TTS
+- OpenAI TTS
+- Audio format conversion
+- Caching
+
+**XTTS Service** (`services/xtts-service`)
+
+- Docker-based inference server
+- XTTS-v2 model
+- Voice cloning from samples
+- GPU acceleration
+- Batch processing
+- Health monitoring
+
+**Face Processing Service** (`services/face-processing-service`)
+
+- Face detection
+- Face embedding generation
+- Face model creation
+- Multi-face handling
+- Quality assessment
+- GCS storage integration
+
+**Lip-sync Service** (`services/lipsync-service`)
+
+- Video generation
+- Lip movement synchronization
+- Audio-video alignment
+- Frame interpolation
+- Quality optimization
+- Batch processing
+
+#### Shared Packages
+
+**@clone/shared-types** - TypeScript definitions for all services  
+**@clone/database** - Prisma ORM, repository pattern, migrations  
+**@clone/validation** - Zod schemas for input validation  
+**@clone/logger** - Winston structured logging with correlation IDs  
+**@clone/errors** - Custom error classes and error handling  
+**@clone/config** - Environment configuration management  
+**@clone/security** - Access control, audit logging, RBAC  
+**@clone/api-client** - REST and WebSocket client libraries  
+**@clone/utils** - Common utility functions  
+**@clone/constants** - Shared constants and enums
+
+### Working with Services
+
+Each service is independently deployable and follows these patterns:
+
+**Service Structure:**
+
+```
+services/my-service/
+├── src/
+│   ├── index.ts           # Entry point
+│   ├── service.ts         # Main service class
+│   ├── handlers/          # Request handlers
+│   ├── providers/         # External provider integrations
+│   └── utils/             # Service-specific utilities
+├── jest.config.js
+├── package.json
+└── tsconfig.json
+```
+
+**Running a Service Locally:**
+
+```bash
+pnpm --filter @clone/asr-service dev
+pnpm --filter @clone/rag-service test
+pnpm --filter @clone/llm-service build
+```
+
+**Service Dependencies:**
+
+- All services use `@clone/*` shared packages
+- Services communicate via gRPC (internal) or REST/WebSocket (external)
+- Each service has health check endpoints
+- Structured logging with correlation IDs
 
 ### Adding New Packages
 
@@ -299,6 +448,24 @@ digitwinlive/
 4. Add build configuration
 5. Add tests
 6. Update documentation
+
+**Example package.json:**
+
+```json
+{
+  "name": "@clone/my-package",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@clone/shared-types": "workspace:*"
+  }
+}
+```
 
 ## 🐛 Reporting Bugs
 

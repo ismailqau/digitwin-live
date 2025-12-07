@@ -14,12 +14,12 @@ import { io, Socket } from 'socket.io-client';
 import ENV from '../config/env';
 
 import { SecureStorage } from './SecureStorage';
+import WebSocketMonitor from './WebSocketMonitor';
 
 // WebSocket server configuration
 const WEBSOCKET_URL = ENV.WEBSOCKET_URL;
 const RECONNECTION_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000]; // Exponential backoff
-const CONNECTION_TIMEOUT = 8000; // 30 seconds
-const HEARTBEAT_INTERVAL = 4000; // 15 seconds
+const HEARTBEAT_INTERVAL = 10000; // 15 seconds
 
 export enum ConnectionState {
   CONNECTING = 'connecting',
@@ -51,6 +51,8 @@ export class WebSocketClient {
   private lastPingTime: number = 0;
   private latency: number = 0;
   private authToken: string | null = null;
+  private connectionStartTime: number = 0;
+  private connectionId: number = 0;
 
   /**
    * Set authentication token
@@ -64,12 +66,15 @@ export class WebSocketClient {
    */
   async connect(): Promise<void> {
     if (this.socket?.connected) {
-      console.log('[WebSocketClient] Already connected');
+      WebSocketMonitor.info('connection', 'Already connected');
       return;
     }
 
     try {
       this.setConnectionState(ConnectionState.CONNECTING);
+      WebSocketMonitor.info('connection', `Connecting to ${WEBSOCKET_URL}...`, {
+        url: WEBSOCKET_URL,
+      });
 
       // Use stored auth token or try to get from SecureStorage
       let accessToken: string | null = this.authToken;
@@ -78,46 +83,105 @@ export class WebSocketClient {
         try {
           accessToken = await SecureStorage.getAccessToken();
         } catch {
-          console.warn('[WebSocketClient] Could not get access token from storage');
+          WebSocketMonitor.warn('connection', 'Could not get access token from storage');
         }
       }
 
+      // If still no token, use guest token as fallback
       if (!accessToken) {
-        console.warn('[WebSocketClient] No auth token available, connecting without auth');
+        accessToken = 'mock-guest-token';
+        WebSocketMonitor.info('connection', 'Using guest token');
       } else {
-        console.log('[WebSocketClient] Using auth token:', accessToken.substring(0, 20) + '...');
+        WebSocketMonitor.debug('connection', 'Token available', {
+          type: accessToken.startsWith('eyJ') ? 'JWT' : 'Guest',
+        });
       }
 
-      console.log('[WebSocketClient] Connecting to:', WEBSOCKET_URL);
-      console.log('[WebSocketClient] Connection timeout:', CONNECTION_TIMEOUT);
+      // Initialize connection tracking
+      this.connectionId++;
+      this.connectionStartTime = Date.now();
 
-      // Test basic HTTP connectivity first
-      try {
-        console.log('[WebSocketClient] Testing HTTP connectivity...');
-        const testResponse = await fetch(`${WEBSOCKET_URL}/health`);
-        const testData = await testResponse.json();
-        console.log('[WebSocketClient] ✅ HTTP test successful:', testData);
-      } catch {
-        console.error('[WebSocketClient] ❌ HTTP test failed');
-        throw new Error(`Cannot reach server at ${WEBSOCKET_URL}`);
+      // Quick health check (non-blocking) - just for monitoring
+      this.checkHealth().catch(() => {});
+
+      // Always ensure we start with a clean state if not connected
+      if (this.socket && this.socket.disconnected) {
+        WebSocketMonitor.info('connection', 'Cleaning up disconnected socket before reconnecting');
+        this.socket.removeAllListeners();
+        this.socket.close();
+        this.socket = null;
       }
 
       // Create socket connection with auth
-      // Try polling first, then upgrade to websocket
-      this.socket = io(WEBSOCKET_URL, {
-        auth: accessToken ? { token: accessToken } : {},
-        transports: ['polling', 'websocket'],
-        reconnection: false, // We handle reconnection manually
-        timeout: CONNECTION_TIMEOUT,
-        forceNew: true,
+      if (!this.socket) {
+        WebSocketMonitor.info('connection', 'Initializing new socket instance');
+
+        this.socket = io(WEBSOCKET_URL, {
+          auth: accessToken ? { token: accessToken } : {},
+          transports: ['websocket', 'polling'],
+          reconnection: false, // We handle reconnection manually
+          timeout: 20000,
+          forceNew: true, // Ensure a new Manager provider
+        });
+
+        this.setupEventListeners();
+      } else {
+        WebSocketMonitor.info('connection', 'Reusing active socket instance');
+      }
+
+      WebSocketMonitor.info('connection', 'Connecting socket...');
+      this.startHeartbeat();
+
+      // Monitor socket internal events for debugging
+      if (this.socket.io) {
+        this.socket.io.on('packet', (packet) => {
+          WebSocketMonitor.debug('connection', `Packet received: ${packet.type}`);
+        });
+        this.socket.io.on('close', (reason) => {
+          WebSocketMonitor.info('connection', `Transport closed: ${reason}`);
+        });
+        this.socket.io.on('error', (err) => {
+          WebSocketMonitor.error('connection', `Transport error: ${err}`);
+        });
+        this.socket.io.on('reconnect_attempt', (attempt) => {
+          WebSocketMonitor.info('connection', `Reconnect attempt: ${attempt}`);
+        });
+      }
+
+      // Wait for connection to be established
+      await new Promise<void>((resolve, reject) => {
+        if (!this.socket) return reject(new Error('Socket not initialized'));
+
+        const onConnect = () => {
+          cleanup();
+          resolve();
+        };
+
+        const onConnectError = (err: Error) => {
+          cleanup();
+          reject(err);
+        };
+
+        const cleanup = () => {
+          this.socket?.off('connect', onConnect);
+          this.socket?.off('connect_error', onConnectError);
+        };
+
+        this.socket.once('connect', onConnect);
+        this.socket.once('connect_error', onConnectError);
       });
 
-      console.log('[WebSocketClient] Socket.IO client created');
+      WebSocketMonitor.info('connection', 'Connection established successfully');
 
-      this.setupEventListeners();
-      this.startHeartbeat();
+      // Verify bidirectional communication
+      this.socket.emit('client_ready', { timestamp: Date.now() });
     } catch (error) {
-      console.error('[WebSocketClient] Connection error:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      WebSocketMonitor.error('connection', `Connection setup error: ${msg}`, error);
+
+      // Force cleanup on error
+      this.disconnect();
+
       this.setConnectionState(ConnectionState.ERROR);
       this.scheduleReconnect();
     }
@@ -127,7 +191,7 @@ export class WebSocketClient {
    * Disconnect from WebSocket server
    */
   disconnect(): void {
-    console.log('[WebSocketClient] Disconnecting...');
+    WebSocketMonitor.info('lifecycle', 'Disconnecting...');
 
     this.stopHeartbeat();
     this.clearReconnectTimer();
@@ -148,10 +212,15 @@ export class WebSocketClient {
    */
   send(message: WebSocketMessage): void {
     if (this.socket?.connected) {
+      WebSocketMonitor.debug('message', `Sending message: ${message.type}`, {
+        type: message.type,
+      });
       this.socket.emit(message.type, message.data);
     } else {
       // Queue message for later if disconnected
-      console.log('[WebSocketClient] Queueing message (disconnected):', message.type);
+      WebSocketMonitor.info('message', `Queueing message: ${message.type}`, {
+        type: message.type,
+      });
       this.messageQueue.push(message);
     }
   }
@@ -209,16 +278,15 @@ export class WebSocketClient {
    * Setup socket event listeners
    */
   private setupEventListeners(): void {
-    if (!this.socket) {
-      console.error('[WebSocketClient] Cannot setup listeners - socket is null');
-      return;
-    }
-
-    console.log('[WebSocketClient] Setting up event listeners');
+    if (!this.socket) return;
 
     // Connection established
     this.socket.on('connect', () => {
-      console.log('[WebSocketClient] ✅ Connected successfully!');
+      const ms = Date.now() - this.connectionStartTime;
+      WebSocketMonitor.info('connection', `Connected (${ms}ms)`, {
+        socketId: this.socket?.id,
+        duration: ms,
+      });
       this.setConnectionState(ConnectionState.CONNECTED);
       this.reconnectAttempts = 0;
       this.processMessageQueue();
@@ -226,10 +294,8 @@ export class WebSocketClient {
 
     // Connection lost
     this.socket.on('disconnect', (reason) => {
-      console.log('[WebSocketClient] Disconnected:', reason);
+      WebSocketMonitor.warn('connection', `Disconnected: ${reason}`);
       this.setConnectionState(ConnectionState.DISCONNECTED);
-
-      // Attempt reconnection unless manually disconnected
       if (reason !== 'io client disconnect') {
         this.scheduleReconnect();
       }
@@ -237,40 +303,51 @@ export class WebSocketClient {
 
     // Connection error
     this.socket.on('connect_error', (error) => {
-      console.error('[WebSocketClient] ❌ Connection error:', error.message);
-      console.error('[WebSocketClient] Error details:', JSON.stringify(error, null, 2));
+      // If we are already connected, this might be a spurious timeout from an old attempt
+      if (this.connectionState === ConnectionState.CONNECTED) {
+        WebSocketMonitor.warn('connection', 'Ignored connect_error while connected', error);
+        return;
+      }
+      const msg = error instanceof Error ? error.message : String(error);
+      WebSocketMonitor.error('connection', `Connection error: ${msg}`, error);
       this.setConnectionState(ConnectionState.ERROR);
       this.scheduleReconnect();
     });
 
-    // Authentication successful
+    // Session created
+    this.socket.on('session_created', (data) => {
+      WebSocketMonitor.info('lifecycle', `Session created: ${data?.sessionId}`, data);
+      this.emit('session_created', data);
+    });
+
+    // Auth events
     this.socket.on('authenticated', (data) => {
-      console.log('[WebSocketClient] Authenticated:', data);
+      WebSocketMonitor.info('connection', 'Authenticated');
       this.emit('authenticated', data);
     });
 
-    // Authentication failed
     this.socket.on('auth_error', (error) => {
-      console.error('[WebSocketClient] Authentication failed:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      WebSocketMonitor.error('connection', `Auth failed: ${msg}`, error);
       this.emit('auth_error', error);
       this.disconnect();
     });
 
-    // Pong response (for latency measurement)
+    // Latency
     this.socket.on('pong', () => {
       this.latency = Date.now() - this.lastPingTime;
-      console.log('[WebSocketClient] Latency:', this.latency, 'ms');
     });
 
-    // Generic error handler
+    // Errors
     this.socket.on('error', (error) => {
-      console.error('[WebSocketClient] Socket error:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      WebSocketMonitor.error('error', `Socket error: ${msg}`, error);
       this.emit('error', error);
     });
 
-    // Forward all other events to handlers
-    this.socket.onAny((event, data) => {
-      this.emit(event, data);
+    // Forward events
+    this.socket.onAny((event, ...args) => {
+      this.emit(event, args[0]);
     });
   }
 
@@ -285,7 +362,7 @@ export class WebSocketClient {
         try {
           handler(data);
         } catch (error) {
-          console.error(`[WebSocketClient] Error in event handler for ${event}:`, error);
+          WebSocketMonitor.error('error', `Error in event handler for ${event}`, error);
         }
       });
     }
@@ -297,13 +374,13 @@ export class WebSocketClient {
   private setConnectionState(state: ConnectionState): void {
     if (this.connectionState !== state) {
       this.connectionState = state;
-      console.log('[WebSocketClient] State changed:', state);
+      WebSocketMonitor.debug('lifecycle', `State changed: ${state}`);
 
       this.stateHandlers.forEach((handler) => {
         try {
           handler(state);
         } catch (error) {
-          console.error('[WebSocketClient] Error in state handler:', error);
+          WebSocketMonitor.error('error', 'Error in state handler', error);
         }
       });
     }
@@ -318,8 +395,9 @@ export class WebSocketClient {
     const delayIndex = Math.min(this.reconnectAttempts, RECONNECTION_DELAYS.length - 1);
     const delay = RECONNECTION_DELAYS[delayIndex];
 
-    console.log(
-      `[WebSocketClient] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts + 1})`
+    WebSocketMonitor.info(
+      'connection',
+      `Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts + 1})`
     );
 
     this.setConnectionState(ConnectionState.RECONNECTING);
@@ -373,6 +451,7 @@ export class WebSocketClient {
     }
 
     console.log(`[WebSocketClient] Processing ${this.messageQueue.length} queued messages`);
+    WebSocketMonitor.info('lifecycle', `Processing ${this.messageQueue.length} queued messages`);
 
     const messages = [...this.messageQueue];
     this.messageQueue = [];
@@ -380,6 +459,26 @@ export class WebSocketClient {
     messages.forEach((message) => {
       this.send(message);
     });
+  }
+
+  /**
+   * Perform a non-blocking health check
+   */
+  private async checkHealth(): Promise<void> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const resp = await fetch(`${WEBSOCKET_URL}/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      WebSocketMonitor.debug('connection', `Health check: ${resp.status}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'unknown';
+      WebSocketMonitor.warn('connection', `Health check failed: ${msg}`);
+    }
   }
 }
 

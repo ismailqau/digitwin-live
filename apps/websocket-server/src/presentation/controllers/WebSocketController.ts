@@ -6,6 +6,7 @@ import { ConnectionService } from '../../application/services/ConnectionService'
 import { MessageRouterService } from '../../application/services/MessageRouterService';
 import { SessionService } from '../../application/services/SessionService';
 import { ClientMessage } from '../../domain/models/Message';
+import logger from '../../infrastructure/logging/logger';
 import { WebSocketErrorHandler } from '../../utils/errorHandler';
 
 @injectable()
@@ -41,8 +42,13 @@ export class WebSocketController {
         userId: session.userId,
       });
 
-      console.log(
-        `Client connected: ${socket.id}, Session: ${session.id}, User: ${payload.userId}`
+      logger.info(
+        `[WebSocketController] Client connected: ${socket.id}, Session: ${session.id}, User: ${payload.userId}`,
+        {
+          socketId: socket.id,
+          sessionId: session.id,
+          userId: payload.userId,
+        }
       );
 
       // Set up message handlers
@@ -51,7 +57,7 @@ export class WebSocketController {
       // Handle disconnection
       socket.on('disconnect', () => this.handleDisconnection(session.id, socket.id));
     } catch (error) {
-      console.error('Connection error:', error);
+      logger.error(`[WebSocketController] Connection error: ${error}`, { error });
       WebSocketErrorHandler.sendError(
         socket,
         error instanceof Error ? error : new Error('Authentication failed')
@@ -82,7 +88,10 @@ export class WebSocketController {
   }
 
   private async handleDisconnection(sessionId: string, socketId: string): Promise<void> {
-    console.log(`Client disconnected: ${socketId}, Session: ${sessionId}`);
+    logger.info(`[WebSocketController] Client disconnected: ${socketId}, Session: ${sessionId}`, {
+      socketId,
+      sessionId,
+    });
 
     this.connectionService.unregisterConnection(sessionId);
 

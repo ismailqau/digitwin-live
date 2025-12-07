@@ -19,7 +19,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 
 import { useConversation } from '../hooks/useConversation';
@@ -54,23 +53,10 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   });
 
   const handleConnect = async () => {
-    Alert.alert('Debug', 'Connect button pressed!');
-    console.log('[ConversationScreen] Connect button pressed');
-    console.log('[ConversationScreen] WebSocket URL:', websocketUrl);
-    console.log('[ConversationScreen] Token length:', authToken?.length);
-
     try {
       await connect();
-      console.log('[ConversationScreen] Connected successfully!');
-      Alert.alert('Success', 'Connected to server!');
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error('[ConversationScreen] Connection failed:', errorMsg);
-      Alert.alert(
-        'Connection Failed',
-        `Could not connect to server:\n\n${errorMsg}\n\nURL: ${websocketUrl}`,
-        [{ text: 'OK' }]
-      );
+    } catch {
+      // Errors are handled by the useConversation hook's error state
     }
   };
 

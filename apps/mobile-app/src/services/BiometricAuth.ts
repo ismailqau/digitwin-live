@@ -1,17 +1,13 @@
 /**
  * Biometric Authentication Service
  *
- * Handles Face ID/Touch ID authentication using react-native-biometrics.
+ * Handles Face ID/Touch ID authentication using expo-local-authentication.
  * - Checks biometric availability
  * - Prompts for biometric authentication
- * - Handles fallback to password
+ * - Handles fallback to passcode/pin where applicable via system fallback
  */
 
-import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
-
-const rnBiometrics = new ReactNativeBiometrics({
-  allowDeviceCredentials: true,
-});
+import * as LocalAuthentication from 'expo-local-authentication';
 
 export class BiometricAuth {
   /**
@@ -19,13 +15,15 @@ export class BiometricAuth {
    */
   static async isBiometricAvailable(): Promise<boolean> {
     try {
-      const { available, biometryType } = await rnBiometrics.isSensorAvailable();
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-      if (available) {
-        console.log('[BiometricAuth] Biometric type available:', biometryType);
+      if (hasHardware && isEnrolled) {
+        console.log('[BiometricAuth] Biometric hardware available and enrolled.');
         return true;
       }
 
+      console.log('[BiometricAuth] Biometrics unavailable:', { hasHardware, isEnrolled });
       return false;
     } catch (error) {
       console.error('[BiometricAuth] Error checking biometric availability:', error);
@@ -36,17 +34,10 @@ export class BiometricAuth {
   /**
    * Get the type of biometric authentication available
    */
-  static async getBiometricType(): Promise<
-    (typeof BiometryTypes)[keyof typeof BiometryTypes] | null
-  > {
+  static async getBiometricType(): Promise<LocalAuthentication.AuthenticationType[] | null> {
     try {
-      const { available, biometryType } = await rnBiometrics.isSensorAvailable();
-
-      if (available && biometryType) {
-        return biometryType;
-      }
-
-      return null;
+      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      return types.length > 0 ? types : null;
     } catch (error) {
       console.error('[BiometricAuth] Error getting biometric type:', error);
       return null;
@@ -58,12 +49,19 @@ export class BiometricAuth {
    */
   static async authenticate(promptMessage: string = 'Authenticate'): Promise<boolean> {
     try {
-      const { success } = await rnBiometrics.simplePrompt({
+      const result = await LocalAuthentication.authenticateAsync({
         promptMessage,
-        cancelButtonText: 'Cancel',
+        fallbackLabel: 'Use Passcode',
+        disableDeviceFallback: false,
+        cancelLabel: 'Cancel',
       });
 
-      return success;
+      if (result.success) {
+        return true;
+      }
+
+      console.warn('[BiometricAuth] Authentication failed or cancelled', result);
+      return false;
     } catch (error) {
       console.error('[BiometricAuth] Authentication error:', error);
       return false;
@@ -74,17 +72,22 @@ export class BiometricAuth {
    * Get user-friendly biometric type name
    */
   static async getBiometricTypeName(): Promise<string> {
-    const biometryType = await BiometricAuth.getBiometricType();
+    const types = await BiometricAuth.getBiometricType();
 
-    switch (biometryType) {
-      case BiometryTypes.FaceID:
-        return 'Face ID';
-      case BiometryTypes.TouchID:
-        return 'Touch ID';
-      case BiometryTypes.Biometrics:
-        return 'Biometrics';
-      default:
-        return 'Biometric Authentication';
+    if (!types || types.length === 0) {
+      return 'Biometric Authentication';
     }
+
+    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+      return 'Face ID';
+    }
+    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+      return 'Touch ID';
+    }
+    if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
+      return 'Iris Scan';
+    }
+
+    return 'Biometric Authentication';
   }
 }

@@ -12,17 +12,34 @@ export class PostgresSessionRepository implements ISessionRepository {
   private readonly SESSION_TTL_HOURS = 2;
 
   constructor() {
+    // Support Cloud SQL socket path or direct connection
+    const cloudSqlConnection = process.env.CLOUD_SQL_CONNECTION_NAME;
+    const socketPath = cloudSqlConnection ? `/cloudsql/${cloudSqlConnection}` : undefined;
+
     this.pool = new Pool({
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432'),
-      database: process.env.POSTGRES_DB || 'digitwinline',
-      user: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
+      // Use DATABASE_* vars (Cloud Run) or POSTGRES_* vars (local) or defaults
+      host: socketPath
+        ? undefined
+        : process.env.DATABASE_HOST || process.env.POSTGRES_HOST || 'localhost',
+      port: socketPath
+        ? undefined
+        : parseInt(process.env.DATABASE_PORT || process.env.POSTGRES_PORT || '5432'),
+      database: process.env.DATABASE_NAME || process.env.POSTGRES_DB || 'digitwinlive',
+      user: process.env.DATABASE_USER || process.env.POSTGRES_USER || 'postgres',
+      password: process.env.DATABASE_PASSWORD || process.env.POSTGRES_PASSWORD || 'postgres',
+      // Cloud SQL uses Unix socket
+      ...(socketPath && { host: socketPath }),
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 5000,
     });
-    // Schema is managed by Prisma migrations - see packages/database/prisma/schema.prisma
+
+    console.log('[PostgresSessionRepository] Pool configured:', {
+      host: socketPath || process.env.DATABASE_HOST || 'localhost',
+      database: process.env.DATABASE_NAME || 'digitwinlive',
+      user: process.env.DATABASE_USER || 'postgres',
+      hasCloudSql: !!cloudSqlConnection,
+    });
   }
 
   async create(userId: string, connectionId: string): Promise<Session> {

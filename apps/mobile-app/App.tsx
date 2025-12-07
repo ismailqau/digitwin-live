@@ -7,8 +7,9 @@
  */
 
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import React, { useEffect } from 'react';
-import { StatusBar, useColorScheme } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useCallback } from 'react';
+import { StatusBar, useColorScheme, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -16,25 +17,101 @@ import { RootNavigator } from './src/navigation';
 import { useUIStore, useAuthStore } from './src/store';
 import { lightTheme, darkTheme } from './src/theme';
 
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might trigger some race conditions, ignore them */
+});
+
+// Simple Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <SafeAreaProvider>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 20,
+              backgroundColor: 'white',
+            }}
+          >
+            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, color: 'red' }}>
+              Something went wrong
+            </Text>
+            <Text style={{ color: 'black', textAlign: 'center' }}>{this.state.error?.message}</Text>
+          </View>
+        </SafeAreaProvider>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const APP_VERSION = '1.0.0';
 
 export default function App() {
   const systemColorScheme = useColorScheme();
   const { themeMode, setDarkMode } = useUIStore();
   const { setLoading } = useAuthStore();
+  const [appIsReady, setAppIsReady] = React.useState(false);
 
   // Determine if dark mode should be active
   const isDarkMode = Boolean(
     themeMode === 'dark' || (themeMode === 'system' && systemColorScheme === 'dark')
   );
 
-  // Initialize app - set loading to false immediately
+  // Initialize app
   useEffect(() => {
-    console.log('[App] Initializing...');
+    async function prepare() {
+      try {
+        console.log('[App] Initializing full app...');
+        // Pre-load logic here if needed
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Short delay for smooth splash transition
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setLoading(false);
+        setAppIsReady(true);
+        console.log('[App] Ready');
+      }
+    }
+
+    prepare();
+  }, [setLoading]);
+
+  // Update theme when it changes
+  useEffect(() => {
     setDarkMode(isDarkMode);
-    setLoading(false);
-    console.log('[App] Ready');
-  }, [isDarkMode, setDarkMode, setLoading]);
+  }, [isDarkMode, setDarkMode]);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      console.log('[App] Hiding splash screen');
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    return null;
+  }
 
   const theme = isDarkMode ? darkTheme : lightTheme;
   const baseTheme = isDarkMode ? DarkTheme : DefaultTheme;
@@ -53,16 +130,18 @@ export default function App() {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <NavigationContainer theme={navigationTheme}>
-          <StatusBar
-            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor={theme.colors.background}
-          />
-          <RootNavigator />
-        </NavigationContainer>
-      </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+          <NavigationContainer theme={navigationTheme}>
+            <StatusBar
+              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+              backgroundColor={theme.colors.background}
+            />
+            <RootNavigator />
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

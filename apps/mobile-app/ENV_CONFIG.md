@@ -17,8 +17,8 @@ The mobile app supports multiple environment configurations for different deploy
 
 ### WebSocket Server
 
-- **URL**: `https://websocket-server-yrzc7r3fcq-uc.a.run.app`
-- **Alternative**: `https://websocket-server-854120816323.us-central1.run.app`
+- **URL**: `wss://websocket-server-yrzc7r3fcq-uc.a.run.app`
+- **Alternative**: `wss://websocket-server-854120816323.us-central1.run.app`
 
 ### Face Processing Service
 
@@ -85,7 +85,7 @@ pnpm start
 | Variable              | Description                      | Example                                                   |
 | --------------------- | -------------------------------- | --------------------------------------------------------- |
 | `API_URL`             | REST API endpoint                | `https://api-gateway-yrzc7r3fcq-uc.a.run.app`             |
-| `WEBSOCKET_URL`       | WebSocket server endpoint        | `https://websocket-server-yrzc7r3fcq-uc.a.run.app`        |
+| `WEBSOCKET_URL`       | WebSocket server endpoint        | `wss://websocket-server-yrzc7r3fcq-uc.a.run.app`          |
 | `FACE_PROCESSING_URL` | Face processing service endpoint | `https://face-processing-service-yrzc7r3fcq-uc.a.run.app` |
 | `LIPSYNC_SERVICE_URL` | Lipsync service endpoint         | `https://face-processing-service-yrzc7r3fcq-uc.a.run.app` |
 | `ENVIRONMENT`         | Environment name                 | `development` or `production`                             |
