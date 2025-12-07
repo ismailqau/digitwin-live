@@ -131,5 +131,5 @@
   - Align heartbeat intervals (client and server both use 25 seconds)
   - _Requirements: 1.1, 5.5_
 
-- [ ] 13. Checkpoint - Ensure all tests pass
+- [x] 13. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.

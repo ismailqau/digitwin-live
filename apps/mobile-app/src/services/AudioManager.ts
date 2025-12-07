@@ -83,7 +83,7 @@ export class AudioManager {
   async checkPermissions(): Promise<boolean> {
     try {
       const response = await (ExpoAV.Audio as any).getPermissionsAsync();
-      return response.status === 'granted';
+      return response?.status === 'granted';
     } catch (error) {
       this.handleError(new Error(`Permission check failed: ${error}`));
       return false;
@@ -225,6 +225,19 @@ export class AudioManager {
     this.callbacks = { ...this.callbacks, ...callbacks };
   }
 
+  validateAudioFormat(): boolean {
+    // Validate that the audio configuration is supported
+    const validSampleRates = [8000, 16000, 22050, 44100, 48000];
+    const validChannels = [1, 2];
+    const validBitDepths = [8, 16, 24, 32];
+
+    return (
+      validSampleRates.includes(this.config.sampleRate) &&
+      validChannels.includes(this.config.channels) &&
+      validBitDepths.includes(this.config.bitDepth)
+    );
+  }
+
   private setState(state: AudioRecordingState): void {
     this.state = state;
     this.callbacks.onStateChange?.(state);
@@ -242,6 +255,7 @@ export class AudioManager {
         await this.recording.stopAndUnloadAsync();
         this.recording = null;
       }
+      this.setState(AudioRecordingState.IDLE);
     } catch (error) {
       console.error('Error during cleanup:', error);
     }

@@ -3,8 +3,13 @@
  * Tests for audio recording and streaming functionality
  */
 
+// Mock expo-av and expo-file-system
+jest.mock('expo-av');
+jest.mock('expo-file-system');
+
 import { check, request } from 'react-native-permissions';
 
+import { mockAudio, mockRecordingInstance } from '../__mocks__/expo-av';
 import { AudioManager, AudioRecordingState } from '../services/AudioManager';
 
 const mockCheck = check as jest.MockedFunction<typeof check>;
@@ -21,11 +26,26 @@ describe('AudioManager', () => {
   };
 
   beforeEach(() => {
+    // Clear all mocks
+    jest.clearAllMocks();
+
     // Clear and set up permission mocks
     mockCheck.mockClear();
     mockRequest.mockClear();
     mockCheck.mockResolvedValue('granted');
     mockRequest.mockResolvedValue('granted');
+
+    // Reset expo-av mocks to default values
+    mockAudio.getPermissionsAsync.mockResolvedValue({ status: 'granted' });
+    mockAudio.requestPermissionsAsync.mockResolvedValue({ status: 'granted' });
+    mockAudio.setAudioModeAsync.mockResolvedValue(undefined);
+    mockAudio.Recording.mockImplementation(() => mockRecordingInstance);
+
+    mockRecordingInstance.prepareToRecordAsync.mockResolvedValue(undefined);
+    mockRecordingInstance.startAsync.mockResolvedValue(undefined);
+    mockRecordingInstance.stopAndUnloadAsync.mockResolvedValue({ uri: 'file://test' });
+    mockRecordingInstance.pauseAsync.mockResolvedValue(undefined);
+    mockRecordingInstance.getURI.mockReturnValue('file://test');
 
     mockCallbacks = {
       onChunk: jest.fn(),
@@ -67,8 +87,9 @@ describe('AudioManager', () => {
   describe('Permissions', () => {
     it('should check microphone permissions', async () => {
       const hasPermission = await audioManager.checkPermissions();
-      // Note: Current implementation is a placeholder that always returns true
-      // In production, this would use expo-av's Audio.Recording.getPermissionsAsync()
+
+      // Verify the mock was called
+      expect(mockAudio.getPermissionsAsync).toHaveBeenCalled();
       expect(hasPermission).toBe(true);
     });
 
