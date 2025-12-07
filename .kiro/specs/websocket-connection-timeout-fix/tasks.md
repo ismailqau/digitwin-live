@@ -60,7 +60,7 @@
   - **Property 5: Connection timeout handling**
   - **Validates: Requirements 5.5**
 
-- [ ] 6. Add auth_error event handling to WebSocketClient
+- [x] 6. Add auth_error event handling to WebSocketClient
   - Listen for `auth_error` event from server
   - Log error with full context (error code, message, token type)
   - On AUTH_EXPIRED, attempt token refresh before reconnecting
@@ -68,11 +68,11 @@
   - Transition to ERROR state and schedule reconnection
   - _Requirements: 2.2, 5.4_
 
-- [ ] 6.1 Write property test for error message completeness
+- [x] 6.1 Write property test for error message completeness
   - **Property 3: Error message completeness**
   - **Validates: Requirements 2.1, 2.3, 2.4, 2.5**
 
-- [ ] 6.2 Write unit tests for auth_error handling
+- [x] 6.2 Write unit tests for auth_error handling
   - Test AUTH_EXPIRED triggers token refresh
   - Test AUTH_REQUIRED falls back to guest token
   - Test AUTH_INVALID falls back to guest token

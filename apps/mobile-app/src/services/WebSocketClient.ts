@@ -12,6 +12,7 @@
 import { io, Socket } from 'socket.io-client';
 
 import ENV from '../config/env';
+import { generateGuestToken, isGuestToken } from '../utils/guestToken';
 
 import { SecureStorage } from './SecureStorage';
 import WebSocketMonitor from './WebSocketMonitor';
@@ -281,6 +282,90 @@ export class WebSocketClient {
   }
 
   /**
+   * Handle authentication error from server
+   */
+  private async handleAuthError(error: unknown): Promise<void> {
+    // Extract error details
+    const errorData =
+      error && typeof error === 'object'
+        ? (error as { code?: string; message?: string; timestamp?: number })
+        : {};
+
+    const errorCode = errorData.code || 'UNKNOWN';
+    const errorMessage = errorData.message || String(error);
+    const tokenType = this.authToken ? (isGuestToken(this.authToken) ? 'Guest' : 'JWT') : 'None';
+
+    // Log error with full context
+    WebSocketMonitor.error('connection', `Auth failed: ${errorMessage}`, {
+      code: errorCode,
+      message: errorMessage,
+      tokenType,
+      timestamp: errorData.timestamp || Date.now(),
+    });
+
+    // Clear the session_created timeout
+    this.clearSessionCreatedTimeout();
+
+    // Emit auth_error event to listeners
+    this.emit('auth_error', error);
+
+    // Handle different error codes
+    if (errorCode === 'AUTH_EXPIRED') {
+      // Attempt token refresh before reconnecting
+      WebSocketMonitor.info('connection', 'Token expired, attempting refresh...');
+
+      try {
+        const refreshToken = await SecureStorage.getRefreshToken();
+
+        if (refreshToken) {
+          // TODO: Implement token refresh API call
+          // For now, we'll fall back to guest token
+          WebSocketMonitor.warn('connection', 'Token refresh not implemented, using guest token');
+          await this.useGuestToken();
+        } else {
+          WebSocketMonitor.warn('connection', 'No refresh token available, using guest token');
+          await this.useGuestToken();
+        }
+      } catch (err) {
+        WebSocketMonitor.error('connection', 'Token refresh failed, using guest token', err);
+        await this.useGuestToken();
+      }
+    } else if (errorCode === 'AUTH_REQUIRED' || errorCode === 'AUTH_INVALID') {
+      // Fall back to guest token
+      WebSocketMonitor.info('connection', `${errorCode}, falling back to guest token`);
+      await this.useGuestToken();
+    } else {
+      // Unknown error, use guest token as fallback
+      WebSocketMonitor.warn('connection', `Unknown auth error: ${errorCode}, using guest token`);
+      await this.useGuestToken();
+    }
+
+    // Transition to ERROR state
+    this.setConnectionState(ConnectionState.ERROR);
+
+    // Disconnect and schedule reconnection
+    this.disconnect();
+    this.scheduleReconnect();
+  }
+
+  /**
+   * Use guest token for authentication
+   */
+  private async useGuestToken(): Promise<void> {
+    try {
+      const guestToken = generateGuestToken();
+      await SecureStorage.setAccessToken(guestToken);
+      this.authToken = guestToken;
+
+      WebSocketMonitor.info('connection', 'Generated and stored guest token', {
+        tokenType: 'Guest',
+      });
+    } catch (err) {
+      WebSocketMonitor.error('connection', 'Failed to generate guest token', err);
+    }
+  }
+
+  /**
    * Setup socket event listeners
    */
   private setupEventListeners(): void {
@@ -349,16 +434,7 @@ export class WebSocketClient {
     });
 
     this.socket.on('auth_error', (error) => {
-      const msg = error instanceof Error ? error.message : String(error);
-      WebSocketMonitor.error('connection', `Auth failed: ${msg}`, error);
-
-      // Clear the session_created timeout
-      this.clearSessionCreatedTimeout();
-
-      this.emit('auth_error', error);
-      this.setConnectionState(ConnectionState.ERROR);
-      this.disconnect();
-      this.scheduleReconnect();
+      this.handleAuthError(error);
     });
 
     // Latency
