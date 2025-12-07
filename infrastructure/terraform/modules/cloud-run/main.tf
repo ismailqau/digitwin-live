@@ -8,17 +8,18 @@ resource "google_cloud_run_service" "websocket_server" {
   template {
     metadata {
       annotations = {
-        "autoscaling.knative.dev/minScale"      = var.min_instances
+        "autoscaling.knative.dev/minScale"      = "1"  # Set to 1 to reduce cold starts
         "autoscaling.knative.dev/maxScale"      = var.max_instances
         "run.googleapis.com/vpc-access-connector" = var.vpc_connector_id
         "run.googleapis.com/vpc-access-egress"    = "private-ranges-only"
-        "run.googleapis.com/cpu-throttling"       = "false"
+        "run.googleapis.com/cpu-throttling"       = "false"  # CPU always allocated for consistent WebSocket performance
+        "run.googleapis.com/session-affinity"     = "true"   # Enable session affinity for sticky sessions
       }
     }
     
     spec {
       container_concurrency = var.concurrency
-      timeout_seconds       = 300
+      timeout_seconds       = 3600  # 1 hour for long-lived WebSocket connections
       
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.environment}/websocket-server:latest"

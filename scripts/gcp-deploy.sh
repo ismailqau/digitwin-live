@@ -322,6 +322,12 @@ EOF
 # =============================================================================
 # Deploy Service to Cloud Run (Requirements 4.1-4.10)
 # Property 15-24: Various deployment configurations
+#
+# WebSocket-Specific Configuration (Requirements 1.1, 5.5):
+# - min-instances=1: Keep one instance warm to reduce cold starts
+# - timeout=3600: Allow 1-hour connections for long conversations
+# - cpu-throttling disabled: Ensure consistent WebSocket performance
+# - session-affinity enabled: Route clients to same instance (sticky sessions)
 # =============================================================================
 deploy_service() {
     local service=$1
@@ -396,7 +402,7 @@ deploy_service() {
         echo "$key: '$value'" >> "$env_file"
     done
     
-    # Build gcloud command
+    # Build gcloud command with service-specific configurations
     local deploy_cmd=(
         gcloud run deploy "$service"
         --image="$image"
@@ -405,12 +411,31 @@ deploy_service() {
         --allow-unauthenticated
         --memory=512Mi
         --cpu=1
-        --min-instances=0
-        --max-instances=10
-        --timeout=300
         --quiet
         --env-vars-file="$env_file"
     )
+    
+    # WebSocket-specific configuration (Requirements 1.1, 5.5)
+    if [ "$service" = "websocket-server" ]; then
+        deploy_cmd+=(
+            --min-instances=1                    # Keep 1 instance warm to reduce cold starts
+            --max-instances=10
+            --timeout=3600                       # 1 hour for long-lived WebSocket connections
+            --no-cpu-throttling                  # Disable CPU throttling for consistent performance
+            --session-affinity                   # Enable session affinity for sticky sessions
+        )
+        log_info "WebSocket-specific configuration applied:"
+        echo "  Min instances: 1 (reduced cold starts)"
+        echo "  Timeout: 3600s (1 hour for long connections)"
+        echo "  CPU throttling: disabled (consistent performance)"
+        echo "  Session affinity: enabled (sticky sessions)"
+    else
+        deploy_cmd+=(
+            --min-instances=0                    # Scale-to-zero for non-WebSocket services
+            --max-instances=10
+            --timeout=300                        # Standard 5-minute timeout
+        )
+    fi
     
     # Add secrets from Secret Manager (Requirement 4.3, Property 17)
     deploy_cmd+=(
@@ -423,12 +448,10 @@ deploy_service() {
     fi
     
     log_info "Deploying to Cloud Run..."
-    log_info "Configuration:"
+    log_info "Base Configuration:"
     echo "  Memory: 512Mi"
     echo "  CPU: 1"
-    echo "  Min instances: 0 (scale-to-zero)"
     echo "  Max instances: 10"
-    echo "  Timeout: 300s"
     echo "  Authentication: Public (unauthenticated)"
     
     # Execute deployment (Property 24: exit on failure)

@@ -40,6 +40,19 @@ jest.mock('../application/services/MessageRouterService', () => ({
   })),
 }));
 
+jest.mock('../application/services/MetricsService', () => ({
+  MetricsService: jest.fn().mockImplementation(() => ({
+    recordConnectionAttempt: jest.fn(),
+    recordConnectionSuccess: jest.fn(),
+    recordConnectionFailure: jest.fn(),
+    recordConnectionTimeout: jest.fn(),
+    recordDisconnection: jest.fn(),
+    getMetricsSummary: jest.fn(),
+    getAlertStatus: jest.fn(),
+    setActiveConnections: jest.fn(),
+  })),
+}));
+
 const mockLogger = {
   info: jest.fn(),
   error: jest.fn(),
@@ -127,6 +140,14 @@ describe('WebSocketController', () => {
     routeClientMessage: jest.Mock;
   };
 
+  let mockMetricsService: {
+    recordConnectionAttempt: jest.Mock;
+    recordConnectionSuccess: jest.Mock;
+    recordConnectionFailure: jest.Mock;
+    recordConnectionTimeout: jest.Mock;
+    recordDisconnection: jest.Mock;
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -156,6 +177,14 @@ describe('WebSocketController', () => {
       routeClientMessage: jest.fn(),
     };
 
+    mockMetricsService = {
+      recordConnectionAttempt: jest.fn(),
+      recordConnectionSuccess: jest.fn(),
+      recordConnectionFailure: jest.fn(),
+      recordConnectionTimeout: jest.fn(),
+      recordDisconnection: jest.fn(),
+    };
+
     // Use real AuthService for accurate token validation
     authService = new AuthService();
 
@@ -167,7 +196,9 @@ describe('WebSocketController', () => {
       mockConnectionService as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockMessageRouter as any,
-      authService
+      authService,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockMetricsService as any
     );
   });
 

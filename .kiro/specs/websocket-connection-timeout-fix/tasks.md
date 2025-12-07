@@ -122,7 +122,7 @@
   - Add troubleshooting guide for connection issues
   - _Requirements: 2.1, 2.2, 3.1_
 
-- [ ] 12. Update Cloud Run configuration for WebSocket support
+- [x] 12. Update Cloud Run configuration for WebSocket support
   - Enable session affinity for sticky sessions
   - Set minimum instances to 1 to reduce cold starts
   - Increase request timeout to 3600 seconds for long-lived connections

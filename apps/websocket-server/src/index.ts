@@ -125,15 +125,17 @@ async function bootstrap() {
   // Create HTTP server
   const httpServer = createServer(app);
 
-  // Create Socket.IO server
+  // Create Socket.IO server with Cloud Run optimized settings
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: CORS_ORIGIN,
       credentials: true,
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'], // Polling first for Cloud Run compatibility
     pingTimeout: 60000,
-    pingInterval: 25000,
+    pingInterval: 25000, // Aligned with client heartbeat interval
+    allowUpgrades: true, // Allow upgrade to websocket after polling connects
+    perMessageDeflate: false, // Disable compression for lower latency
   });
 
   // Get WebSocket controller and metrics service from DI container

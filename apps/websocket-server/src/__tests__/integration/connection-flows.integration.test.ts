@@ -127,7 +127,7 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
         origin: '*',
         credentials: true,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'], // Match production config
       pingTimeout: 60000,
       pingInterval: 25000,
     });
@@ -139,12 +139,25 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
     const connectionService = new ConnectionService();
     const messageRouter = new MockMessageRouterService(connectionService, sessionService);
 
+    // Create mock MetricsService
+    const mockMetricsService = {
+      recordConnectionAttempt: jest.fn(),
+      recordConnectionSuccess: jest.fn(),
+      recordConnectionFailure: jest.fn(),
+      recordConnectionTimeout: jest.fn(),
+      recordDisconnection: jest.fn(),
+      getMetricsSummary: jest.fn(),
+      getAlertStatus: jest.fn(),
+      setActiveConnections: jest.fn(),
+    };
+
     // Create WebSocket controller
     const wsController = new WebSocketController(
       sessionService,
       connectionService,
       messageRouter as any, // Cast to avoid type mismatch in integration test
-      authService
+      authService,
+      mockMetricsService as any
     );
 
     // Handle WebSocket connections
