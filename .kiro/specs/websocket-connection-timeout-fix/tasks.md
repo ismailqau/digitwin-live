@@ -6,14 +6,14 @@
   - Add guest token validation helper
   - _Requirements: 3.1, 3.2_
 
-- [ ] 2. Update AuthService on server to support guest tokens
+- [x] 2. Update AuthService on server to support guest tokens
   - Add `verifyGuestToken()` method to validate guest token format
   - Update `verifyToken()` to detect and handle guest tokens
   - Return `isGuest: true` in token payload for guest tokens
   - Add specific error codes: AUTH_REQUIRED, AUTH_INVALID, AUTH_EXPIRED
   - _Requirements: 2.3, 2.4, 2.5, 3.2_
 
-- [ ] 2.1 Write property test for guest token validation
+- [x] 2.1 Write property test for guest token validation
   - **Property 4: Guest session creation**
   - **Validates: Requirements 3.1, 3.2, 3.3**
 

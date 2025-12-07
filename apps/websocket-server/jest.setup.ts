@@ -1,4 +1,5 @@
 // WebSocket Server test setup
+import 'reflect-metadata';
 import '../../jest.setup.base';
 
 // Mock environment variables
