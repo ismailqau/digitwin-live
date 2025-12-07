@@ -19,7 +19,9 @@ import WebSocketMonitor from './WebSocketMonitor';
 // WebSocket server configuration
 const WEBSOCKET_URL = ENV.WEBSOCKET_URL;
 const RECONNECTION_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000]; // Exponential backoff
-const HEARTBEAT_INTERVAL = 10000; // 15 seconds
+const HEARTBEAT_INTERVAL = 25000; // 25 seconds (match server pingInterval)
+const SESSION_CREATED_TIMEOUT = 10000; // 10 seconds to wait for session_created (Cloud Run cold start)
+const CONNECT_TIMEOUT = 30000; // 30 seconds for Socket.IO connection (Cloud Run cold start)
 
 export enum ConnectionState {
   CONNECTING = 'connecting',
@@ -54,6 +56,7 @@ export class WebSocketClient {
   private authToken: string | null = null;
   private connectionStartTime: number = 0;
   private connectionId: number = 0;
+  private sessionCreatedTimer: NodeJS.Timeout | null = null;
 
   /**
    * Set authentication token
@@ -119,9 +122,10 @@ export class WebSocketClient {
 
         this.socket = io(WEBSOCKET_URL, {
           auth: accessToken ? { token: accessToken } : {},
-          transports: ['websocket', 'polling'],
+          transports: ['polling', 'websocket'], // Polling first for Cloud Run compatibility
           reconnection: false, // We handle reconnection manually
-          timeout: 20000,
+          timeout: CONNECT_TIMEOUT, // Increased for Cloud Run cold start
+          upgrade: true, // Allow upgrade to websocket after polling connects
           forceNew: true, // Ensure a new Manager provider
         });
 
@@ -196,6 +200,7 @@ export class WebSocketClient {
 
     this.stopHeartbeat();
     this.clearReconnectTimer();
+    this.clearSessionCreatedTimeout();
 
     if (this.socket) {
       this.socket.removeAllListeners();
@@ -293,7 +298,9 @@ export class WebSocketClient {
         }
       );
       this.setConnectionState(ConnectionState.AUTHENTICATING);
-      // Note: Will transition to CONNECTED when session_created is received
+
+      // Start timeout for session_created event (accounts for Cloud Run cold start)
+      this.startSessionCreatedTimeout();
     });
 
     // Connection lost
@@ -325,6 +332,10 @@ export class WebSocketClient {
         ...data,
         totalDuration: ms,
       });
+
+      // Clear the session_created timeout
+      this.clearSessionCreatedTimeout();
+
       this.setConnectionState(ConnectionState.CONNECTED);
       this.reconnectAttempts = 0;
       this.processMessageQueue();
@@ -340,8 +351,14 @@ export class WebSocketClient {
     this.socket.on('auth_error', (error) => {
       const msg = error instanceof Error ? error.message : String(error);
       WebSocketMonitor.error('connection', `Auth failed: ${msg}`, error);
+
+      // Clear the session_created timeout
+      this.clearSessionCreatedTimeout();
+
       this.emit('auth_error', error);
+      this.setConnectionState(ConnectionState.ERROR);
       this.disconnect();
+      this.scheduleReconnect();
     });
 
     // Latency
@@ -434,6 +451,39 @@ export class WebSocketClient {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+  }
+
+  /**
+   * Start timeout for session_created event
+   */
+  private startSessionCreatedTimeout(): void {
+    this.clearSessionCreatedTimeout();
+
+    WebSocketMonitor.info(
+      'connection',
+      `Starting session_created timeout (${SESSION_CREATED_TIMEOUT}ms)`
+    );
+
+    this.sessionCreatedTimer = setTimeout(() => {
+      WebSocketMonitor.error(
+        'connection',
+        `Timeout waiting for session_created after ${SESSION_CREATED_TIMEOUT}ms`
+      );
+
+      this.setConnectionState(ConnectionState.ERROR);
+      this.disconnect();
+      this.scheduleReconnect();
+    }, SESSION_CREATED_TIMEOUT);
+  }
+
+  /**
+   * Clear session_created timeout
+   */
+  private clearSessionCreatedTimeout(): void {
+    if (this.sessionCreatedTimer) {
+      clearTimeout(this.sessionCreatedTimer);
+      this.sessionCreatedTimer = null;
     }
   }
 

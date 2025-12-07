@@ -47,7 +47,7 @@
   - **Property 2: Client state consistency**
   - **Validates: Requirements 5.1, 5.2, 5.3**
 
-- [ ] 5. Update WebSocketClient connection flow
+- [x] 5. Update WebSocketClient connection flow
   - After Socket.IO `connect` event, transition to AUTHENTICATING state
   - Wait for `session_created` event before transitioning to CONNECTED
   - Add 10-second timeout for waiting for `session_created` (accounts for Cloud Run cold start)
@@ -56,7 +56,7 @@
   - On timeout, transition to ERROR and schedule reconnection
   - _Requirements: 5.2, 5.3, 5.5_
 
-- [ ] 5.1 Write property test for connection timeout handling
+- [x] 5.1 Write property test for connection timeout handling
   - **Property 5: Connection timeout handling**
   - **Validates: Requirements 5.5**
 
