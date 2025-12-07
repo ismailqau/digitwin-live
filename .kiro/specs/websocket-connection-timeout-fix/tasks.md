@@ -114,7 +114,7 @@
   - Set up alerts for average connection time > 3 seconds
   - _Requirements: 4.1, 4.2, 4.3_
 
-- [ ] 11. Update documentation
+- [x] 11. Update documentation
   - Document guest token format and generation
   - Document new AUTHENTICATING state in client
   - Document auth_error event format

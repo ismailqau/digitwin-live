@@ -464,14 +464,22 @@ API_GATEWAY_PORT=3001
 
 ```bash
 WebSocket connection failed: Error during WebSocket handshake
+Connection timeout waiting for session_created
+Authentication errors on connection
 ```
 
 **Solution:**
+
+For detailed WebSocket troubleshooting, see the [WebSocket Connection Guide](./WEBSOCKET-CONNECTION.md#troubleshooting).
+
+Quick checks:
 
 1. Check WebSocket server is running
 2. Verify CORS settings
 3. Check firewall rules
 4. Verify WebSocket URL in client
+5. Check authentication token validity
+6. Review connection state transitions
 
 ```bash
 # Test WebSocket server
@@ -479,6 +487,13 @@ curl -i -N -H "Connection: Upgrade" \
   -H "Upgrade: websocket" \
   http://localhost:3001
 ```
+
+**Common Issues:**
+
+- **Connection Timeout**: See [Connection Timeout](./WEBSOCKET-CONNECTION.md#connection-timeout)
+- **Authentication Failures**: See [Authentication Failures](./WEBSOCKET-CONNECTION.md#authentication-failures)
+- **Guest Mode Issues**: See [Guest Mode Not Working](./WEBSOCKET-CONNECTION.md#guest-mode-not-working)
+- **Cloud Run Cold Starts**: See [Cloud Run Cold Start Issues](./WEBSOCKET-CONNECTION.md#cloud-run-cold-start-issues)
 
 ## Testing Issues
 

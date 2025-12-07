@@ -81,6 +81,12 @@ Complete documentation for the DigiTwin Live platform.
 | [Monorepo Development](./MONOREPO-DEVELOPMENT.md) | Turborepo & pnpm guide             |
 | [Scripts Documentation](../scripts/README.md)     | Utility scripts reference          |
 
+### 🔌 Real-Time Communication
+
+| Document                                          | Description                                   |
+| ------------------------------------------------- | --------------------------------------------- |
+| [WebSocket Connection](./WEBSOCKET-CONNECTION.md) | WebSocket connection flow and troubleshooting |
+
 ### 🎤 Audio & Speech Processing
 
 | Document                                              | Description                                   |
@@ -206,22 +212,30 @@ Complete documentation for the DigiTwin Live platform.
 2. [Face Processing](./FACE-PROCESSING.md) - Face model creation
 3. [Audio Processing](./AUDIO-PROCESSING.md) - Audio feature extraction
 
+### "I want to set up WebSocket connections"
+
+1. [WebSocket Connection](./WEBSOCKET-CONNECTION.md) - Connection flow and authentication
+2. [Services Overview](./SERVICES-OVERVIEW.md) - WebSocket server details
+3. [Troubleshooting](./TROUBLESHOOTING.md) - Connection issues
+
 ### "I'm having issues"
 
 1. [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
-2. [ENV Quick Reference](./ENV-QUICK-REFERENCE.md) - Environment variables
-3. Run `node scripts/validate-env.js` - Validate configuration
+2. [WebSocket Connection](./WEBSOCKET-CONNECTION.md) - WebSocket troubleshooting
+3. [ENV Quick Reference](./ENV-QUICK-REFERENCE.md) - Environment variables
+4. Run `node scripts/validate-env.js` - Validate configuration
 
 ---
 
 ## 📊 Documentation Stats
 
-- **Total Documents**: 24+
+- **Total Documents**: 25+
 - **Setup Guides**: 4
 - **GCP Guides**: 7
 - **Architecture Docs**: 7
 - **Development & Quality Docs**: 5
 - **Security Docs**: 3
+- **Real-Time Communication**: 1
 
 ---
 
