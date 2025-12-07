@@ -23,6 +23,14 @@ jest.mock('react-native', () => ({
     addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
     currentState: 'active',
   },
+  StyleSheet: {
+    create: (styles: any) => styles,
+  },
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  ScrollView: 'ScrollView',
+  ActivityIndicator: 'ActivityIndicator',
 }));
 
 // Note: react-native-audio-recorder-player mock is in __mocks__/react-native-audio-recorder-player.js

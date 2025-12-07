@@ -11,6 +11,7 @@
  * - Interrupt functionality
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import {
   View,
@@ -23,6 +24,9 @@ import {
 
 import { useConversation } from '../hooks/useConversation';
 import { ConversationState } from '../services/ConversationManager';
+import { useAuthStore } from '../store/authStore';
+
+import GuestModeBanner from './GuestModeBanner';
 
 interface ConversationScreenProps {
   websocketUrl: string;
@@ -33,6 +37,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   websocketUrl,
   authToken,
 }) => {
+  const navigation = useNavigation();
+  const { isGuest } = useAuthStore();
+
   const {
     state,
     isConnected,
@@ -58,6 +65,12 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     } catch {
       // Errors are handled by the useConversation hook's error state
     }
+  };
+
+  const handleSignInPress = () => {
+    // Navigate to auth screen
+    // @ts-expect-error - Navigation types need to be updated
+    navigation.navigate('Auth');
   };
 
   const getStateColor = () => {
@@ -103,6 +116,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Guest Mode Banner */}
+      {isGuest && <GuestModeBanner onSignInPress={handleSignInPress} />}
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>AI Clone Conversation</Text>

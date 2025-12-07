@@ -79,7 +79,7 @@
   - Test error logging includes full context
   - _Requirements: 2.2, 5.4_
 
-- [ ] 7. Add guest mode UI indicators to mobile app
+- [-] 7. Add guest mode UI indicators to mobile app
   - Display "Guest Mode" badge when `isGuest: true` in session
   - Show "Sign in to save your data" prompt for guest users
   - Add "Sign In" button in guest mode UI

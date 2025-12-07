@@ -118,6 +118,18 @@ export class ConversationManager {
    * Setup WebSocket message handlers
    */
   private setupWebSocketHandlers(): void {
+    // Handle session creation
+    this.wsClient.on('session_created', (data: unknown) => {
+      const sessionData = data as { sessionId: string; userId: string; isGuest: boolean };
+      this.sessionId = sessionData.sessionId;
+
+      // Update auth store with guest status
+      if (sessionData.isGuest !== undefined) {
+        const { useAuthStore } = require('../store/authStore');
+        useAuthStore.getState().setIsGuest(sessionData.isGuest);
+      }
+    });
+
     this.wsClient.on('transcript', (message: unknown) => {
       const msg = message as TranscriptMessage;
       this.callbacks.onTranscript?.(msg.transcript, msg.isFinal, msg.confidence);
