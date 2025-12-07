@@ -17,6 +17,7 @@ describe('AuthStore', () => {
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      isGuest: false,
       isOnboarded: false,
       isLoading: true,
       error: null,
@@ -27,6 +28,7 @@ describe('AuthStore', () => {
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
+    expect(state.isGuest).toBe(false);
     expect(state.isOnboarded).toBe(false);
     expect(state.isLoading).toBe(true);
   });
@@ -46,6 +48,26 @@ describe('AuthStore', () => {
     expect(state.accessToken).toBe('access-token');
     expect(state.refreshToken).toBe('refresh-token');
     expect(state.isAuthenticated).toBe(true);
+    expect(state.isGuest).toBe(false);
+  });
+
+  it('should login as guest', () => {
+    const mockGuestUser = {
+      id: 'guest-123',
+      email: 'guest@digitwin.local',
+      name: 'Guest User',
+      createdAt: new Date().toISOString(),
+    };
+
+    const guestToken = 'guest_550e8400-e29b-41d4-a716-446655440000_1733547600000';
+    useAuthStore.getState().loginAsGuest(mockGuestUser, guestToken);
+
+    const state = useAuthStore.getState();
+    expect(state.user).toEqual(mockGuestUser);
+    expect(state.accessToken).toBe(guestToken);
+    expect(state.refreshToken).toBe(guestToken);
+    expect(state.isAuthenticated).toBe(true);
+    expect(state.isGuest).toBe(true);
   });
 
   it('should logout user', () => {
@@ -63,6 +85,25 @@ describe('AuthStore', () => {
     expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
     expect(state.isAuthenticated).toBe(false);
+    expect(state.isGuest).toBe(false);
+  });
+
+  it('should logout guest user', () => {
+    const mockGuestUser = {
+      id: 'guest-123',
+      email: 'guest@digitwin.local',
+      name: 'Guest User',
+      createdAt: new Date().toISOString(),
+    };
+
+    useAuthStore.getState().loginAsGuest(mockGuestUser, 'guest-token');
+    useAuthStore.getState().logout();
+
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isGuest).toBe(false);
   });
 
   it('should set onboarded status', () => {
@@ -76,6 +117,14 @@ describe('AuthStore', () => {
 
     useAuthStore.getState().clearError();
     expect(useAuthStore.getState().error).toBeNull();
+  });
+
+  it('should set isGuest status', () => {
+    useAuthStore.getState().setIsGuest(true);
+    expect(useAuthStore.getState().isGuest).toBe(true);
+
+    useAuthStore.getState().setIsGuest(false);
+    expect(useAuthStore.getState().isGuest).toBe(false);
   });
 });
 

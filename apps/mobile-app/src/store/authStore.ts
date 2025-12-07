@@ -21,6 +21,7 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isGuest: boolean;
   isOnboarded: boolean;
   isLoading: boolean;
   error: string | null;
@@ -31,7 +32,9 @@ export interface AuthState {
   setOnboarded: (isOnboarded: boolean) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  setIsGuest: (isGuest: boolean) => void;
   login: (user: User, accessToken: string, refreshToken: string) => void;
+  loginAsGuest: (user: User, guestToken: string) => void;
   logout: () => void;
   clearError: () => void;
 }
@@ -59,6 +62,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      isGuest: false,
       isOnboarded: false,
       isLoading: false,
       error: null,
@@ -91,12 +95,28 @@ export const useAuthStore = create<AuthState>()(
           error,
         }),
 
+      setIsGuest: (isGuest) =>
+        set({
+          isGuest,
+        }),
+
       login: (user, accessToken, refreshToken) =>
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
+          isGuest: false,
+          error: null,
+        }),
+
+      loginAsGuest: (user, guestToken) =>
+        set({
+          user,
+          accessToken: guestToken,
+          refreshToken: guestToken,
+          isAuthenticated: true,
+          isGuest: true,
           error: null,
         }),
 
@@ -106,6 +126,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
+          isGuest: false,
           isOnboarded: false,
           error: null,
         }),
@@ -123,6 +144,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+        isGuest: state.isGuest,
         isOnboarded: state.isOnboarded,
       }),
     }

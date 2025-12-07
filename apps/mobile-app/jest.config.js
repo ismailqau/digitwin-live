@@ -15,6 +15,8 @@ module.exports = {
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     'react-native-permissions': '<rootDir>/src/__mocks__/react-native-permissions.ts',
+    'react-native-audio-recorder-player':
+      '<rootDir>/__mocks__/react-native-audio-recorder-player.js',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx|js)'],

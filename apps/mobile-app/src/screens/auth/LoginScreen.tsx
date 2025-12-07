@@ -28,6 +28,7 @@ import { BiometricAuth } from '../../services/BiometricAuth';
 import { SecureStorage } from '../../services/SecureStorage';
 import { useAuthStore } from '../../store/authStore';
 import type { AuthStackParamList } from '../../types/navigation';
+import { generateGuestToken } from '../../utils/guestToken';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -39,7 +40,7 @@ const loginSchema = z.object({
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { login } = useAuthStore();
+  const { login, loginAsGuest } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -158,23 +159,36 @@ export default function LoginScreen() {
     );
   };
 
-  const handleSkip = () => {
-    // Skip authentication for development/testing
-    const mockUser = {
-      id: 'guest-user',
+  const handleSkip = async () => {
+    // Generate guest token for WebSocket authentication
+    const guestToken = generateGuestToken();
+
+    // Create guest user with unique ID from token
+    const tokenParts = guestToken.split('_');
+    const guestUuid = tokenParts.slice(1, -1).join('_'); // Extract UUID from token
+
+    const guestUser = {
+      id: `guest-${guestUuid}`,
       email: 'guest@digitwin.local',
       name: 'Guest User',
       createdAt: new Date().toISOString(),
     };
 
-    const mockAccessToken = 'mock-guest-token';
-    const mockRefreshToken = 'mock-guest-refresh';
+    try {
+      // Store guest token in SecureStorage for WebSocket connection
+      await SecureStorage.setAccessToken(guestToken);
 
-    // Set authenticated - this will take you to onboarding flow
-    login(mockUser, mockAccessToken, mockRefreshToken);
+      // Set authenticated as guest - this will take you to onboarding flow
+      loginAsGuest(guestUser, guestToken);
 
-    // If you want to skip onboarding too, uncomment the next line:
-    // useAuthStore.getState().setOnboarded(true);
+      console.log(
+        '[LoginScreen] Guest session created with token:',
+        guestToken.substring(0, 20) + '...'
+      );
+    } catch (error) {
+      console.error('[LoginScreen] Error creating guest session:', error);
+      Alert.alert('Error', 'Failed to create guest session. Please try again.');
+    }
   };
 
   return (
