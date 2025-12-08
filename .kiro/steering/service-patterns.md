@@ -6,18 +6,7 @@ inclusion: always
 
 ## Microservice Architecture
 
-This project uses a microservices architecture with the following services:
-
-| Service                 | Purpose                           | Port |
-| ----------------------- | --------------------------------- | ---- |
-| api-gateway             | REST API with OpenAPI docs        | 3000 |
-| websocket-server        | Real-time WebSocket communication | 3001 |
-| asr-service             | Automatic Speech Recognition      | -    |
-| rag-service             | Retrieval-Augmented Generation    | -    |
-| llm-service             | LLM integration (multi-provider)  | -    |
-| tts-service             | Text-to-Speech with voice cloning | -    |
-| lipsync-service         | Lip-sync video generation         | -    |
-| face-processing-service | Face detection and models         | -    |
+See `project-overview.md` for the full list of services and monorepo structure.
 
 ## Service Structure
 
@@ -52,37 +41,9 @@ Services use shared packages:
 }
 ```
 
-## Logging
+## Logging & Error Handling
 
-All services use structured logging:
-
-```typescript
-import { createLogger } from '@clone/logger';
-
-const logger = createLogger('my-service');
-
-logger.info('Processing request', { requestId, userId });
-logger.error('Failed to process', { error: err.message, stack: err.stack });
-```
-
-## Error Handling
-
-Services use centralized error handling:
-
-```typescript
-import { AppError, NotFoundError } from '@clone/errors';
-
-// Throw specific errors
-throw new NotFoundError('Resource not found');
-
-// Handle errors in handlers
-try {
-  await processRequest();
-} catch (error) {
-  logger.error('Request failed', { error: error.message });
-  throw error;
-}
-```
+See `error-handling.md` for error handling patterns and logging guidelines.
 
 ## Configuration
 

@@ -95,33 +95,7 @@ const authMiddleware = async (req, res, next) => {
 
 ## Error Handling Middleware
 
-```typescript
-import { AppError } from '@clone/errors';
-import { logger } from '@clone/logger';
-
-const errorHandler = (err, req, res, next) => {
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: {
-        code: err.code,
-        message: err.message,
-        timestamp: new Date().toISOString(),
-        requestId: req.id,
-      },
-    });
-  }
-
-  logger.error('Unhandled error', { error: err.message, stack: err.stack });
-  return res.status(500).json({
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: 'Internal server error',
-      timestamp: new Date().toISOString(),
-      requestId: req.id,
-    },
-  });
-};
-```
+See `error-handling.md` for error codes, response formats, and handling patterns.
 
 ## Rate Limiting
 

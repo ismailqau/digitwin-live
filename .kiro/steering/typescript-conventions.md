@@ -88,50 +88,13 @@ export const getUserById = async (id: any) => {
 };
 ```
 
-## Error Handling
+## Cross-Cutting Concerns
 
-Use custom error classes from `@clone/errors`:
+For detailed patterns, see:
 
-```typescript
-import { AppError, NotFoundError, ValidationError } from '@clone/errors';
-
-// Throw specific errors
-throw new NotFoundError('User not found');
-throw new ValidationError('Invalid email format');
-throw new AppError('Something went wrong', 500);
-```
-
-## Logging
-
-Use structured logging from `@clone/logger`:
-
-```typescript
-import { logger } from '@clone/logger';
-
-// ✅ Good - structured logging
-logger.info('Processing request', { userId: '123', action: 'create' });
-logger.error('Failed to process', { error: err.message, stack: err.stack });
-
-// ❌ Bad - console.log
-console.log('Processing request for user 123');
-```
-
-## Validation
-
-Use Zod schemas from `@clone/validation`:
-
-```typescript
-import { z } from 'zod';
-
-const userSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1).max(255),
-  age: z.number().min(0).max(150),
-});
-
-// Validate input
-const data = userSchema.parse(input);
-```
+- **Error Handling**: See `error-handling.md`
+- **Logging**: See `error-handling.md` (Logging Errors section)
+- **Validation**: See `validation-patterns.md`
 
 ## Async/Await
 

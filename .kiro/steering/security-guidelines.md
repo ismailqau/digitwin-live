@@ -6,10 +6,10 @@ inclusion: always
 
 ## Core Principles
 
-1. **User Data Isolation**: All queries filter by `userId`
+1. **User Data Isolation**: All queries filter by `userId` (see `database-patterns.md`)
 2. **Audit Logging**: All sensitive operations are logged
-3. **Input Validation**: All input is validated with Zod
-4. **Soft Deletes**: User data uses soft deletes for recovery
+3. **Input Validation**: All input is validated with Zod (see `validation-patterns.md`)
+4. **Soft Deletes**: User data uses soft deletes for recovery (see `database-patterns.md`)
 
 ## Access Control
 
@@ -75,18 +75,7 @@ const user = await prisma.user.findUnique({
 
 ## Input Validation
 
-Validate all input before processing:
-
-```typescript
-import { z } from 'zod';
-
-const schema = z.object({
-  documentId: z.string().uuid(),
-  action: z.enum(['view', 'edit', 'delete']),
-});
-
-const { documentId, action } = schema.parse(req.params);
-```
+See `validation-patterns.md` for detailed Zod validation patterns.
 
 ## Authentication
 
@@ -116,17 +105,7 @@ const rateLimits = {
 
 ## Content Safety
 
-Check user-generated content for policy violations:
-
-```typescript
-import { checkContentSafety } from '@clone/validation';
-
-const result = await checkContentSafety(userContent);
-if (!result.safe) {
-  await auditLogger.logContentPolicyViolation(userId, userContent, result.reason);
-  throw new ValidationError('Content violates policy');
-}
-```
+See `validation-patterns.md` for content safety checking patterns.
 
 ## Data Retention
 
