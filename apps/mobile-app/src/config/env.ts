@@ -10,7 +10,7 @@ import Constants from 'expo-constants';
 const expoConfig = Constants.expoConfig;
 const extra = expoConfig?.extra || {};
 
-// Socket.IO expects https:// and handles WebSocket upgrade internally
+// Native WebSocket uses wss:// for secure connections
 const getWebSocketUrl = () => {
   return (
     extra.WEBSOCKET_URL ||

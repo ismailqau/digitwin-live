@@ -13,7 +13,7 @@ import {
   getWebSocketClient,
   ConnectionState,
   type WebSocketMessage,
-} from '../services/WebSocketClient';
+} from '../services/NativeWebSocketClient';
 
 /**
  * Hook to access WebSocket client instance

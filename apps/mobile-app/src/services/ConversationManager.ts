@@ -31,7 +31,11 @@ import AudioPlaybackManager, {
   type AudioChunkData,
   type PlaybackConfig,
 } from './AudioPlaybackManager';
-import { getWebSocketClient, ConnectionState, type WebSocketClient } from './WebSocketClient';
+import {
+  getWebSocketClient,
+  ConnectionState,
+  type NativeWebSocketClient,
+} from './NativeWebSocketClient';
 
 export enum ConversationState {
   IDLE = 'idle',
@@ -68,7 +72,7 @@ export interface ConversationCallbacks {
 }
 
 export class ConversationManager {
-  private wsClient: WebSocketClient;
+  private wsClient: NativeWebSocketClient;
   private audioManager: AudioManager;
   private playbackManager: AudioPlaybackManager;
   private callbacks: ConversationCallbacks;

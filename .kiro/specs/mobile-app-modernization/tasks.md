@@ -8,7 +8,7 @@
   - Remove `socket.io` dependency
   - _Requirements: 1.1, 1.3, 2.1, 2.2, 3.1, 3.2, 3.4, 3.5_
 
-- [ ] 2. Migrate mobile app from Socket.IO client to native WebSocket
+- [x] 2. Migrate mobile app from Socket.IO client to native WebSocket
   - Replace Socket.IO client with React Native built-in WebSocket
   - Implement connection state management and reconnection with exponential backoff
   - Implement message queuing for offline scenarios

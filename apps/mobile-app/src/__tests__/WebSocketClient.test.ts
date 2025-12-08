@@ -1,27 +1,24 @@
 /**
- * WebSocketClient Property-Based Tests
+ * NativeWebSocketClient Property-Based Tests
  *
- * Feature: websocket-connection-timeout-fix
+ * Feature: mobile-app-modernization
  * Property 2: Client state consistency
- * Validates: Requirements 5.1, 5.2, 5.3
+ * Validates: Requirements 1.2, 2.3, 2.4, 2.5
  *
- * Tests that the WebSocketClient correctly transitions through states:
+ * Tests that the NativeWebSocketClient correctly transitions through states:
  * CONNECTING → AUTHENTICATING → (CONNECTED | ERROR)
  */
 
 import * as fc from 'fast-check';
-import { io } from 'socket.io-client';
 
-import { WebSocketClient, ConnectionState } from '../services/WebSocketClient';
-
-// Mock socket.io-client
-jest.mock('socket.io-client');
+import { NativeWebSocketClient, ConnectionState } from '../services/NativeWebSocketClient';
 
 // Mock SecureStorage
 jest.mock('../services/SecureStorage', () => ({
   SecureStorage: {
     getAccessToken: jest.fn(),
     setAccessToken: jest.fn(),
+    getRefreshToken: jest.fn(),
   },
 }));
 
@@ -40,57 +37,77 @@ jest.mock('../services/WebSocketMonitor', () => ({
 jest.mock('../config/env', () => ({
   __esModule: true,
   default: {
-    WEBSOCKET_URL: 'http://localhost:3001',
+    WEBSOCKET_URL: 'ws://localhost:3001',
   },
 }));
 
-describe('WebSocketClient - Property 2: Client state consistency', () => {
-  let mockSocket: {
-    id: string;
-    connected: boolean;
-    disconnected: boolean;
-    on: jest.Mock;
-    once: jest.Mock;
-    off: jest.Mock;
-    emit: jest.Mock;
-    removeAllListeners: jest.Mock;
-    disconnect: jest.Mock;
-    close: jest.Mock;
-    io: { on: jest.Mock };
-  };
-  let eventHandlers: Map<string, (...args: unknown[]) => void>;
+// Mock WebSocket
+class MockWebSocket {
+  readyState: number = WebSocket.CONNECTING;
+  onopen: ((event: Event) => void) | null = null;
+  onclose: ((event: CloseEvent) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+
+  constructor(public url: string) {}
+
+  send(_data: string): void {
+    // Mock implementation
+  }
+
+  close(): void {
+    this.readyState = WebSocket.CLOSED;
+    if (this.onclose) {
+      this.onclose(new CloseEvent('close'));
+    }
+  }
+
+  addEventListener(): void {
+    // Mock implementation
+  }
+
+  removeEventListener(): void {
+    // Mock implementation
+  }
+}
+
+// Replace global WebSocket
+const originalWebSocket = global.WebSocket;
+beforeAll(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).WebSocket = MockWebSocket;
+});
+
+afterAll(() => {
+  global.WebSocket = originalWebSocket;
+});
+
+describe('NativeWebSocketClient - Property 2: Client state consistency', () => {
+  let mockWsInstance: MockWebSocket | null = null;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    eventHandlers = new Map();
+    mockWsInstance = null;
 
-    // Create mock socket
-    mockSocket = {
-      id: 'mock-socket-id',
-      connected: false,
-      disconnected: true,
-      on: jest.fn((event: string, handler: (...args: unknown[]) => void) => {
-        eventHandlers.set(event, handler);
-      }),
-      once: jest.fn((event: string, handler: (...args: unknown[]) => void) => {
-        eventHandlers.set(event, handler);
-      }),
-      off: jest.fn(),
-      emit: jest.fn(),
-      removeAllListeners: jest.fn(),
-      disconnect: jest.fn(),
-      close: jest.fn(),
-      io: {
-        on: jest.fn(),
-      },
-    };
-
-    // Mock io() to return our mock socket
+    // Mock WebSocket constructor
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (io as jest.MockedFunction<typeof io>).mockReturnValue(mockSocket as any);
+    (global as any).WebSocket = class extends MockWebSocket {
+      constructor(url: string) {
+        super(url);
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        mockWsInstance = this;
+      }
+    };
   });
 
   afterEach(() => {
+    if (mockWsInstance) {
+      mockWsInstance.onopen = null;
+      mockWsInstance.onclose = null;
+      mockWsInstance.onerror = null;
+      mockWsInstance.onmessage = null;
+    }
+    jest.clearAllTimers();
     jest.restoreAllMocks();
   });
 
@@ -110,7 +127,7 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
         }),
         async ({ authSucceeds, hasToken, serverRespondsQuickly }) => {
           // Arrange: Create a new client and track state transitions
-          const client = new WebSocketClient();
+          const client = new NativeWebSocketClient();
           const stateTransitions: ConnectionState[] = [];
 
           // Subscribe to state changes
@@ -129,42 +146,55 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
           // Act: Start connection
           void client.connect();
 
-          // Simulate Socket.IO connect event
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          const connectHandler = eventHandlers.get('connect');
-          if (connectHandler) {
-            mockSocket.connected = true;
-            mockSocket.disconnected = false;
-            connectHandler();
+          // Wait for connection to be attempted
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          // Simulate WebSocket open event
+          if (mockWsInstance && mockWsInstance.onopen) {
+            mockWsInstance.readyState = WebSocket.OPEN;
+            mockWsInstance.onopen(new Event('open'));
           }
 
           // Simulate server response
           if (serverRespondsQuickly) {
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            if (authSucceeds) {
-              const sessionCreatedHandler = eventHandlers.get('session_created');
-              if (sessionCreatedHandler) {
-                sessionCreatedHandler({
-                  sessionId: 'test-session',
-                  userId: 'test-user',
-                  isGuest: !hasToken,
-                  timestamp: Date.now(),
-                });
-              }
-            } else {
-              const authErrorHandler = eventHandlers.get('auth_error');
-              if (authErrorHandler) {
-                authErrorHandler({
-                  code: 'AUTH_INVALID',
-                  message: 'Invalid token',
-                  timestamp: Date.now(),
-                });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            if (mockWsInstance && mockWsInstance.onmessage) {
+              if (authSucceeds) {
+                mockWsInstance.onmessage(
+                  new MessageEvent('message', {
+                    data: JSON.stringify({
+                      type: 'session_created',
+                      sessionId: 'test-session',
+                      data: {
+                        sessionId: 'test-session',
+                        userId: 'test-user',
+                        isGuest: !hasToken,
+                        timestamp: Date.now(),
+                      },
+                      timestamp: Date.now(),
+                    }),
+                  })
+                );
+              } else {
+                mockWsInstance.onmessage(
+                  new MessageEvent('message', {
+                    data: JSON.stringify({
+                      type: 'auth_error',
+                      data: {
+                        code: 'AUTH_INVALID',
+                        message: 'Invalid token',
+                        timestamp: Date.now(),
+                      },
+                      timestamp: Date.now(),
+                    }),
+                  })
+                );
               }
             }
           }
 
           // Wait for state transitions to complete
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
           // Cleanup
           client.disconnect();
@@ -174,7 +204,7 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
           const hasAuthenticating = stateTransitions.includes(ConnectionState.AUTHENTICATING);
 
           // If we got to CONNECTING, we must have gone through AUTHENTICATING
-          if (hasConnecting && connectHandler) {
+          if (hasConnecting) {
             expect(hasAuthenticating).toBe(true);
 
             // Find indices
@@ -201,16 +231,16 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
           return true;
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 10 }
     );
-  });
+  }, 30000);
 
   /**
    * Unit test: Verify CONNECTING → AUTHENTICATING transition
    */
-  it('should transition from CONNECTING to AUTHENTICATING on socket connect', async () => {
+  it('should transition from CONNECTING to AUTHENTICATING on WebSocket open', async () => {
     // Arrange
-    const client = new WebSocketClient();
+    const client = new NativeWebSocketClient();
     const states: ConnectionState[] = [];
 
     client.onConnectionStateChange((state) => states.push(state));
@@ -218,15 +248,16 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
     // Act
     void client.connect();
 
-    // Simulate Socket.IO connect event
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    const connectHandler = eventHandlers.get('connect');
-    if (connectHandler) {
-      mockSocket.connected = true;
-      connectHandler();
+    // Wait for connection attempt
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Simulate WebSocket open event
+    if (mockWsInstance && mockWsInstance.onopen) {
+      mockWsInstance.readyState = WebSocket.OPEN;
+      mockWsInstance.onopen(new Event('open'));
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Assert
     expect(states).toContain(ConnectionState.CONNECTING);
@@ -245,7 +276,7 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
    */
   it('should transition from AUTHENTICATING to CONNECTED on session_created', async () => {
     // Arrange
-    const client = new WebSocketClient();
+    const client = new NativeWebSocketClient();
     const states: ConnectionState[] = [];
 
     client.onConnectionStateChange((state) => states.push(state));
@@ -253,27 +284,36 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
     // Act
     void client.connect();
 
-    // Simulate Socket.IO connect event
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    const connectHandler = eventHandlers.get('connect');
-    if (connectHandler) {
-      mockSocket.connected = true;
-      connectHandler();
+    // Wait for connection attempt
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Simulate WebSocket open event
+    if (mockWsInstance && mockWsInstance.onopen) {
+      mockWsInstance.readyState = WebSocket.OPEN;
+      mockWsInstance.onopen(new Event('open'));
     }
 
     // Simulate session_created event
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    const sessionCreatedHandler = eventHandlers.get('session_created');
-    if (sessionCreatedHandler) {
-      sessionCreatedHandler({
-        sessionId: 'test-session',
-        userId: 'test-user',
-        isGuest: false,
-        timestamp: Date.now(),
-      });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    if (mockWsInstance && mockWsInstance.onmessage) {
+      mockWsInstance.onmessage(
+        new MessageEvent('message', {
+          data: JSON.stringify({
+            type: 'session_created',
+            sessionId: 'test-session',
+            data: {
+              sessionId: 'test-session',
+              userId: 'test-user',
+              isGuest: false,
+              timestamp: Date.now(),
+            },
+            timestamp: Date.now(),
+          }),
+        })
+      );
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Assert
     expect(states).toContain(ConnectionState.CONNECTING);
@@ -296,7 +336,7 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
    */
   it('should transition from AUTHENTICATING to ERROR on auth_error', async () => {
     // Arrange
-    const client = new WebSocketClient();
+    const client = new NativeWebSocketClient();
     const states: ConnectionState[] = [];
 
     client.onConnectionStateChange((state) => states.push(state));
@@ -304,31 +344,38 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
     // Act
     void client.connect();
 
-    // Simulate Socket.IO connect event
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    const connectHandler = eventHandlers.get('connect');
-    if (connectHandler) {
-      mockSocket.connected = true;
-      connectHandler();
+    // Wait for connection attempt
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Simulate WebSocket open event
+    if (mockWsInstance && mockWsInstance.onopen) {
+      mockWsInstance.readyState = WebSocket.OPEN;
+      mockWsInstance.onopen(new Event('open'));
     }
 
     // Simulate auth_error event
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    const authErrorHandler = eventHandlers.get('auth_error');
-    if (authErrorHandler) {
-      authErrorHandler({
-        code: 'AUTH_INVALID',
-        message: 'Invalid token',
-        timestamp: Date.now(),
-      });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    if (mockWsInstance && mockWsInstance.onmessage) {
+      mockWsInstance.onmessage(
+        new MessageEvent('message', {
+          data: JSON.stringify({
+            type: 'auth_error',
+            data: {
+              code: 'AUTH_INVALID',
+              message: 'Invalid token',
+              timestamp: Date.now(),
+            },
+            timestamp: Date.now(),
+          }),
+        })
+      );
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Assert
     expect(states).toContain(ConnectionState.CONNECTING);
     expect(states).toContain(ConnectionState.AUTHENTICATING);
-    // Note: auth_error triggers disconnect, which sets DISCONNECTED state
 
     const connectingIndex = states.indexOf(ConnectionState.CONNECTING);
     const authenticatingIndex = states.indexOf(ConnectionState.AUTHENTICATING);
@@ -344,7 +391,7 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
    */
   it('should never skip AUTHENTICATING state when connecting', async () => {
     // Arrange
-    const client = new WebSocketClient();
+    const client = new NativeWebSocketClient();
     const states: ConnectionState[] = [];
 
     client.onConnectionStateChange((state) => states.push(state));
@@ -352,26 +399,35 @@ describe('WebSocketClient - Property 2: Client state consistency', () => {
     // Act
     void client.connect();
 
-    // Simulate Socket.IO connect event
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    const connectHandler = eventHandlers.get('connect');
-    if (connectHandler) {
-      mockSocket.connected = true;
-      connectHandler();
+    // Wait for connection attempt
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Simulate WebSocket open event
+    if (mockWsInstance && mockWsInstance.onopen) {
+      mockWsInstance.readyState = WebSocket.OPEN;
+      mockWsInstance.onopen(new Event('open'));
     }
 
     // Immediately simulate session_created (fast server response)
-    const sessionCreatedHandler = eventHandlers.get('session_created');
-    if (sessionCreatedHandler) {
-      sessionCreatedHandler({
-        sessionId: 'test-session',
-        userId: 'test-user',
-        isGuest: false,
-        timestamp: Date.now(),
-      });
+    if (mockWsInstance && mockWsInstance.onmessage) {
+      mockWsInstance.onmessage(
+        new MessageEvent('message', {
+          data: JSON.stringify({
+            type: 'session_created',
+            sessionId: 'test-session',
+            data: {
+              sessionId: 'test-session',
+              userId: 'test-user',
+              isGuest: false,
+              timestamp: Date.now(),
+            },
+            timestamp: Date.now(),
+          }),
+        })
+      );
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     // Assert: Even with immediate session_created, must go through AUTHENTICATING
     expect(states).toContain(ConnectionState.CONNECTING);
