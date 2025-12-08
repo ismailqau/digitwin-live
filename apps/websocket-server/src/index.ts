@@ -6,20 +6,23 @@ import { DatabaseConnection } from '@clone/database';
 import cors from 'cors';
 import { config } from 'dotenv';
 import express from 'express';
-import { Server as SocketIOServer } from 'socket.io';
 
 // Load environment variables from root .env file
 config({ path: resolve(__dirname, '../../../.env') });
 
+import { AuthService } from './application/services/AuthService';
 import { getHealthService } from './application/services/health.service';
+import { MetricsService } from './application/services/MetricsService';
+import { SessionService } from './application/services/SessionService';
 import { setupContainer, container } from './infrastructure/config/container';
 import logger from './infrastructure/logging/logger';
+import { NativeWebSocketServer } from './infrastructure/websocket/NativeWebSocketServer';
 import { WebSocketController } from './presentation/controllers/WebSocketController';
 
 const PORT = parseInt(process.env.WEBSOCKET_PORT || '8080', 10);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   // Debug environment variables
   logger.info('[websocket-server] Environment check:', {
     hasDatabaseUrl: !!process.env.DATABASE_URL,
@@ -52,6 +55,12 @@ async function bootstrap() {
 
   // Health check endpoints
   const healthService = getHealthService();
+
+  // Get services from DI container
+  const metricsService = container.resolve(MetricsService);
+  const authService = container.resolve(AuthService);
+  const sessionService = container.resolve(SessionService);
+  const wsController = container.resolve(WebSocketController);
 
   // Full health check with dependency status
   app.get('/health', async (_req, res) => {
@@ -111,6 +120,7 @@ async function bootstrap() {
         timestamp: new Date().toISOString(),
         metrics,
         alerts,
+        activeConnections: wsServer.getActiveConnectionCount(),
       });
     } catch (error) {
       logger.error('[websocket-server] Failed to get metrics', { error });
@@ -125,86 +135,109 @@ async function bootstrap() {
   // Create HTTP server
   const httpServer = createServer(app);
 
-  // Create Socket.IO server with Cloud Run optimized settings
-  const io = new SocketIOServer(httpServer, {
-    cors: {
-      origin: CORS_ORIGIN,
-      credentials: true,
-    },
-    transports: ['polling', 'websocket'], // Polling first for Cloud Run compatibility
-    pingTimeout: 60000,
-    pingInterval: 25000, // Aligned with client heartbeat interval
-    allowUpgrades: true, // Allow upgrade to websocket after polling connects
-    perMessageDeflate: false, // Disable compression for lower latency
-  });
+  // Create native WebSocket server
+  const wsServer = new NativeWebSocketServer(
+    httpServer,
+    authService,
+    sessionService,
+    metricsService
+  );
 
-  // Get WebSocket controller and metrics service from DI container
-  const wsController = container.resolve(WebSocketController);
-  const { MetricsService } = await import('./application/services/MetricsService');
-  const metricsService = container.resolve(MetricsService);
-
-  // Handle WebSocket connections and track connection count
-  io.on('connection', (socket) => {
-    const connectionTime = Date.now();
-
-    // Log connection attempt with context (Requirement 4.1)
-    logger.info('[WebSocket] New connection established', {
-      socketId: socket.id,
-      timestamp: connectionTime,
-      clientIp: socket.handshake.address,
-      transport: socket.conn.transport.name,
-      activeConnections: io.engine.clientsCount,
-      event: 'connection',
-    });
-
-    wsController.handleConnection(socket);
-
-    // Update health service and metrics with connection count
-    healthService.setActiveConnections(io.engine.clientsCount);
-    metricsService.setActiveConnections(io.engine.clientsCount);
-
-    socket.on('disconnect', () => {
-      // Log disconnection at transport level (Requirement 4.4)
-      logger.info('[WebSocket] Transport disconnected', {
-        socketId: socket.id,
-        timestamp: Date.now(),
-        activeConnections: io.engine.clientsCount - 1,
-        event: 'transport_disconnect',
-      });
-      healthService.setActiveConnections(io.engine.clientsCount);
-      metricsService.setActiveConnections(io.engine.clientsCount);
-    });
-  });
-
-  // Log connection errors with full context (Requirement 4.5)
-  io.engine.on('connection_error', (err) => {
-    logger.error('[WebSocket] Connection error', {
-      message: err.message,
-      code: err.code,
-      context: err.context,
-      stack: err.stack,
+  // Register connection handler
+  wsServer.onConnection((connectionId, connection) => {
+    logger.info('[websocket-server] New connection', {
+      connectionId,
+      sessionId: connection.sessionId,
+      userId: connection.userId,
       timestamp: Date.now(),
-      event: 'connection_error',
     });
+
+    // Notify WebSocketController
+    wsController.handleConnection(connectionId, connection);
+
+    // Update health service with connection count
+    healthService.setActiveConnections(wsServer.getActiveConnectionCount());
   });
 
-  // Start server - bind to 0.0.0.0 to accept connections from network
+  // Register disconnection handler
+  wsServer.onDisconnection((connectionId, code, reason) => {
+    logger.info('[websocket-server] Connection closed', {
+      connectionId,
+      code,
+      reason,
+      timestamp: Date.now(),
+    });
+
+    // Notify WebSocketController
+    wsController.handleDisconnection(connectionId, code, reason);
+
+    // Update health service with connection count
+    healthService.setActiveConnections(wsServer.getActiveConnectionCount());
+  });
+
+  // Register message handlers for client messages
+  wsServer.onMessage('message', async (connectionId, message) => {
+    const connection = wsServer.getConnectionManager().getConnection(connectionId);
+    if (connection?.sessionId) {
+      await wsController.handleMessage(connectionId, message, connection.sessionId);
+    }
+  });
+
+  wsServer.onMessage('audio_chunk', async (connectionId, message) => {
+    const connection = wsServer.getConnectionManager().getConnection(connectionId);
+    if (connection?.sessionId) {
+      await wsController.handleMessage(connectionId, message, connection.sessionId);
+    }
+  });
+
+  wsServer.onMessage('interruption', async (connectionId, message) => {
+    const connection = wsServer.getConnectionManager().getConnection(connectionId);
+    if (connection?.sessionId) {
+      await wsController.handleMessage(connectionId, message, connection.sessionId);
+    }
+  });
+
+  wsServer.onMessage('end_utterance', async (connectionId, message) => {
+    const connection = wsServer.getConnectionManager().getConnection(connectionId);
+    if (connection?.sessionId) {
+      await wsController.handleMessage(connectionId, message, connection.sessionId);
+    }
+  });
+
+  wsServer.onMessage('retry_asr', async (connectionId, message) => {
+    const connection = wsServer.getConnectionManager().getConnection(connectionId);
+    if (connection?.sessionId) {
+      await wsController.handleMessage(connectionId, message, connection.sessionId);
+    }
+  });
+
+  // Start the WebSocket server
+  wsServer.start();
+
+  // Start HTTP server - bind to 0.0.0.0 to accept connections from network
   httpServer.listen(Number(PORT), '0.0.0.0', () => {
     logger.info(`WebSocket server listening on port ${PORT} (0.0.0.0)`);
     logger.info(`CORS origin: ${CORS_ORIGIN}`);
+    logger.info('Using native WebSocket (ws library)');
   });
 
   // Graceful shutdown
-  const shutdown = (signal: string) => {
+  const shutdown = async (signal: string): Promise<void> => {
     logger.info(`[websocket-server] ${signal} received, shutting down...`);
-    io.close();
+
+    // Close WebSocket server
+    await wsServer.close();
+    logger.info('[websocket-server] WebSocket server closed');
+
+    // Close HTTP server
     httpServer.close(() => {
-      logger.info('[websocket-server] Server closed');
+      logger.info('[websocket-server] HTTP server closed');
       DatabaseConnection.disconnect().then(() => {
         logger.info('[websocket-server] Database connection closed');
         process.exit(0);
       });
     });
+
     // Force exit after 3 seconds
     setTimeout(() => process.exit(0), 3000);
   };

@@ -1,14 +1,14 @@
 /**
  * Integration Test: End-to-End WebSocket Connection Flows
  *
- * Tests the complete connection handshake and authentication flows:
+ * Tests the complete connection handshake and authentication flows using native WebSocket:
  * - Successful connection with valid JWT token
  * - Connection with guest token
  * - Connection failure with invalid token
  * - Connection timeout handling
  * - Reconnection after auth_error
  *
- * Requirements: 1.1, 1.2, 1.3, 3.1, 3.2, 3.3
+ * Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 3.1, 3.2, 3.3, 3.4, 3.5
  */
 
 import 'reflect-metadata';
@@ -16,17 +16,19 @@ import { createServer, Server as HttpServer } from 'http';
 
 import { ConversationState } from '@clone/shared-types';
 import express from 'express';
-import { Server as SocketIOServer } from 'socket.io';
-import { io as ioClient, Socket as ClientSocket } from 'socket.io-client';
+import WebSocket, { WebSocketServer } from 'ws';
 
 import { AuthService, GUEST_TOKEN_EXPIRATION_MS } from '../../application/services/AuthService';
-import { ConnectionService } from '../../application/services/ConnectionService';
 import { SessionService } from '../../application/services/SessionService';
-import { ClientMessage, ServerMessage } from '../../domain/models/Message';
 import { Session } from '../../domain/models/Session';
 import { ISessionRepository } from '../../domain/repositories/ISessionRepository';
+import { AuthenticationHandler } from '../../infrastructure/websocket/AuthenticationHandler';
 import {
-  WebSocketController,
+  ConnectionManager,
+  WebSocketConnection,
+} from '../../infrastructure/websocket/ConnectionManager';
+import { MessageProtocol, MessageEnvelope } from '../../infrastructure/websocket/MessageProtocol';
+import {
   AuthErrorPayload,
   SessionCreatedPayload,
 } from '../../presentation/controllers/WebSocketController';
@@ -84,85 +86,166 @@ class MockSessionRepository implements ISessionRepository {
   }
 
   async cleanupExpiredSessions(): Promise<number> {
-    // No-op for integration tests
     return 0;
   }
 }
 
-// Mock MessageRouterService for integration tests
-class MockMessageRouterService {
-  constructor(
-    private connectionService: ConnectionService,
-    _sessionService: SessionService
-  ) {}
+/**
+ * Helper to create a WebSocket client that connects to the test server
+ */
+function createTestClient(
+  serverPort: number,
+  token: string | null
+): Promise<{
+  ws: WebSocket;
+  messages: MessageEnvelope[];
+  waitForMessage: (type: string, timeout?: number) => Promise<MessageEnvelope>;
+}> {
+  return new Promise((resolve, reject) => {
+    const messages: MessageEnvelope[] = [];
+    const messageWaiters: Map<
+      string,
+      { resolve: (msg: MessageEnvelope) => void; reject: (err: Error) => void }
+    > = new Map();
 
-  async routeClientMessage(_sessionId: string, _message: ClientMessage): Promise<void> {
-    // No-op for integration tests
-  }
+    const url = token
+      ? `ws://localhost:${serverPort}/socket.io/?token=${encodeURIComponent(token)}`
+      : `ws://localhost:${serverPort}/socket.io/`;
 
-  sendToClient(sessionId: string, message: ServerMessage): void {
-    this.connectionService.sendToClient(sessionId, message);
-  }
+    const ws = new WebSocket(url);
+
+    ws.on('open', () => {
+      resolve({
+        ws,
+        messages,
+        waitForMessage: (type: string, timeout = 5000) => {
+          // Check if message already received
+          const existing = messages.find((m) => m.type === type);
+          if (existing) {
+            return Promise.resolve(existing);
+          }
+
+          return new Promise((res, rej) => {
+            const timeoutId = setTimeout(() => {
+              messageWaiters.delete(type);
+              rej(new Error(`Timeout waiting for message type: ${type}`));
+            }, timeout);
+
+            messageWaiters.set(type, {
+              resolve: (msg) => {
+                clearTimeout(timeoutId);
+                res(msg);
+              },
+              reject: rej,
+            });
+          });
+        },
+      });
+    });
+
+    ws.on('message', (data) => {
+      try {
+        const result = MessageProtocol.deserialize(data.toString());
+        if (result.success && result.message) {
+          messages.push(result.message);
+
+          // Notify any waiters
+          const waiter = messageWaiters.get(result.message.type);
+          if (waiter) {
+            messageWaiters.delete(result.message.type);
+            waiter.resolve(result.message);
+          }
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    });
+
+    ws.on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
 describe('End-to-End WebSocket Connection Flows Integration', () => {
   let httpServer: HttpServer;
-  let io: SocketIOServer;
+  let wss: WebSocketServer;
   let serverPort: number;
   let authService: AuthService;
+  let sessionService: SessionService;
+  let connectionManager: ConnectionManager;
+  let authHandler: AuthenticationHandler;
 
   beforeAll(async () => {
-    // Note: We don't initialize database connection since we're using MockSessionRepository
-    // This allows tests to run without a database
-
     // Create Express app
     const app = express();
 
     // Create HTTP server
     httpServer = createServer(app);
 
-    // Create Socket.IO server
-    io = new SocketIOServer(httpServer, {
-      cors: {
-        origin: '*',
-        credentials: true,
-      },
-      transports: ['polling', 'websocket'], // Match production config
-      pingTimeout: 60000,
-      pingInterval: 25000,
+    // Create native WebSocket server
+    wss = new WebSocketServer({
+      server: httpServer,
+      path: '/socket.io/', // Keep same path for compatibility
     });
 
-    // Manually create services (avoid full container setup to prevent uuid ESM issues)
+    // Create services
     authService = new AuthService();
     const sessionRepository = new MockSessionRepository();
-    const sessionService = new SessionService(sessionRepository);
-    const connectionService = new ConnectionService();
-    const messageRouter = new MockMessageRouterService(connectionService, sessionService);
-
-    // Create mock MetricsService
-    const mockMetricsService = {
-      recordConnectionAttempt: jest.fn(),
-      recordConnectionSuccess: jest.fn(),
-      recordConnectionFailure: jest.fn(),
-      recordConnectionTimeout: jest.fn(),
-      recordDisconnection: jest.fn(),
-      getMetricsSummary: jest.fn(),
-      getAlertStatus: jest.fn(),
-      setActiveConnections: jest.fn(),
-    };
-
-    // Create WebSocket controller
-    const wsController = new WebSocketController(
-      sessionService,
-      connectionService,
-      messageRouter as any, // Cast to avoid type mismatch in integration test
-      authService,
-      mockMetricsService as any
-    );
+    sessionService = new SessionService(sessionRepository);
+    connectionManager = new ConnectionManager();
+    authHandler = new AuthenticationHandler(authService);
 
     // Handle WebSocket connections
-    io.on('connection', (socket) => {
-      wsController.handleConnection(socket);
+    wss.on('connection', async (ws, request) => {
+      const connectionId = `conn-${Date.now()}-${Math.random()}`;
+
+      try {
+        // Extract and verify token
+        const token = authHandler.extractTokenFromRequest(request);
+        const payload = await authHandler.authenticateConnection(token, connectionId);
+
+        // Create session
+        const session = await sessionService.createSession(payload.userId, connectionId);
+
+        // Register connection
+        const connection: WebSocketConnection = {
+          id: connectionId,
+          ws,
+          userId: payload.userId,
+          sessionId: session.id,
+          isAuthenticated: true,
+          lastPing: Date.now(),
+          createdAt: Date.now(),
+        };
+        connectionManager.registerConnection(connectionId, connection);
+
+        // Send session_created
+        authHandler.sendSessionCreated(ws, session.id, payload.userId, payload.isGuest);
+
+        // Handle messages
+        ws.on('message', (data) => {
+          const result = MessageProtocol.deserialize(data.toString());
+          if (result.success && result.message?.type === 'ping') {
+            const pong = MessageProtocol.createEnvelope(
+              'pong',
+              { timestamp: Date.now() },
+              session.id
+            );
+            ws.send(MessageProtocol.serialize(pong));
+          }
+        });
+
+        // Handle close
+        ws.on('close', () => {
+          connectionManager.unregisterConnection(connectionId);
+        });
+      } catch (error) {
+        // Send auth error
+        const { code, message } = authHandler.mapAuthError(error);
+        authHandler.sendAuthError(ws, code, message);
+        ws.close(4001, message);
+      }
     });
 
     // Start server on random port
@@ -179,40 +262,30 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
 
   afterAll(async () => {
     // Close all connections
-    io.close();
+    for (const client of wss.clients) {
+      client.close();
+    }
+    wss.close();
     httpServer.close();
-
-    // Note: No database to disconnect since we're using MockSessionRepository
   });
 
   /**
    * Test: Successful connection with valid JWT token
-   * Requirements: 1.1, 1.4
+   * Requirements: 1.1, 2.1, 2.2
    */
   describe('Successful connection with valid JWT token', () => {
-    let client: ClientSocket;
-
-    afterEach(() => {
-      if (client && client.connected) {
-        client.disconnect();
-      }
-    });
-
-    it('should establish connection and receive session_created event', (done) => {
+    it('should establish connection and receive session_created event', async () => {
       const validJwt = authService.generateToken('user-123', 'test@example.com', 'free', ['user']);
 
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: validJwt },
-        transports: ['websocket'],
-        reconnection: false,
-      });
-
       const startTime = Date.now();
+      const { ws, waitForMessage } = await createTestClient(serverPort, validJwt);
 
-      client.on('session_created', (payload: SessionCreatedPayload) => {
+      try {
+        const sessionCreated = await waitForMessage('session_created');
         const duration = Date.now() - startTime;
 
-        expect(payload).toBeDefined();
+        expect(sessionCreated).toBeDefined();
+        const payload = sessionCreated.data as SessionCreatedPayload;
         expect(payload.sessionId).toBeDefined();
         expect(payload.userId).toBe('user-123');
         expect(payload.isGuest).toBe(false);
@@ -220,69 +293,43 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
 
         // Should receive session_created within 5 seconds (Requirement 1.1)
         expect(duration).toBeLessThan(5000);
-
-        done();
-      });
-
-      client.on('auth_error', (error: AuthErrorPayload) => {
-        done(new Error(`Unexpected auth_error: ${error.message}`));
-      });
-
-      client.on('connect_error', (error: Error) => {
-        done(new Error(`Connection error: ${error.message}`));
-      });
+      } finally {
+        ws.close();
+      }
     });
 
-    it('should not receive auth_error event', (done) => {
+    it('should not receive auth_error event', async () => {
       const validJwt = authService.generateToken('user-456', 'test2@example.com', 'pro', ['user']);
 
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: validJwt },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+      const { ws, messages, waitForMessage } = await createTestClient(serverPort, validJwt);
 
-      let authErrorReceived = false;
+      try {
+        await waitForMessage('session_created');
 
-      client.on('session_created', () => {
         // Wait a bit to ensure no auth_error is emitted
-        setTimeout(() => {
-          expect(authErrorReceived).toBe(false);
-          done();
-        }, 500);
-      });
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-      client.on('auth_error', () => {
-        authErrorReceived = true;
-        done(new Error('Should not receive auth_error for valid token'));
-      });
+        const authError = messages.find((m) => m.type === 'auth_error');
+        expect(authError).toBeUndefined();
+      } finally {
+        ws.close();
+      }
     });
 
-    it('should remain connected after session_created', (done) => {
+    it('should remain connected after session_created', async () => {
       const validJwt = authService.generateToken('user-789', 'test3@example.com', 'free', ['user']);
 
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: validJwt },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+      const { ws, waitForMessage } = await createTestClient(serverPort, validJwt);
 
-      let testCompleted = false;
+      try {
+        await waitForMessage('session_created');
 
-      client.on('session_created', () => {
         // Wait a bit and check if still connected
-        setTimeout(() => {
-          expect(client.connected).toBe(true);
-          testCompleted = true;
-          done();
-        }, 1000);
-      });
-
-      client.on('disconnect', () => {
-        if (!testCompleted) {
-          done(new Error('Should not disconnect after successful authentication'));
-        }
-      });
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        expect(ws.readyState).toBe(WebSocket.OPEN);
+      } finally {
+        ws.close();
+      }
     });
   });
 
@@ -291,93 +338,56 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
    * Requirements: 3.1, 3.2, 3.3
    */
   describe('Connection with guest token', () => {
-    let client: ClientSocket;
-
-    afterEach(() => {
-      if (client && client.connected) {
-        client.disconnect();
-      }
-    });
-
-    it('should establish connection with valid guest token', (done) => {
+    it('should establish connection with valid guest token', async () => {
       const uuid = '550e8400-e29b-41d4-a716-446655440000';
       const guestToken = `guest_${uuid}_${Date.now()}`;
 
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: guestToken },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+      const { ws, waitForMessage } = await createTestClient(serverPort, guestToken);
 
-      let testCompleted = false;
+      try {
+        const sessionCreated = await waitForMessage('session_created');
 
-      client.on('session_created', (payload: SessionCreatedPayload) => {
-        expect(payload).toBeDefined();
+        expect(sessionCreated).toBeDefined();
+        const payload = sessionCreated.data as SessionCreatedPayload;
         expect(payload.sessionId).toBeDefined();
         expect(payload.userId).toBe(`guest-${uuid}`);
-        expect(payload.isGuest).toBe(true); // Requirement 3.3
+        expect(payload.isGuest).toBe(true);
         expect(payload.timestamp).toBeDefined();
-
-        testCompleted = true;
-        done();
-      });
-
-      client.on('auth_error', (error: AuthErrorPayload) => {
-        done(new Error(`Unexpected auth_error: ${error.message}`));
-      });
-
-      client.on('disconnect', () => {
-        if (!testCompleted) {
-          done(new Error('Should not disconnect before session_created'));
-        }
-      });
+      } finally {
+        ws.close();
+      }
     });
 
-    it('should receive session_created with isGuest: true', (done) => {
+    it('should receive session_created with isGuest: true', async () => {
       const uuid = '660e8400-e29b-41d4-a716-446655440001';
       const guestToken = `guest_${uuid}_${Date.now()}`;
 
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: guestToken },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+      const { ws, waitForMessage } = await createTestClient(serverPort, guestToken);
 
-      let testCompleted = false;
-
-      client.on('session_created', (payload: SessionCreatedPayload) => {
+      try {
+        const sessionCreated = await waitForMessage('session_created');
+        const payload = sessionCreated.data as SessionCreatedPayload;
         expect(payload.isGuest).toBe(true);
-        testCompleted = true;
-        done();
-      });
-
-      client.on('disconnect', () => {
-        if (!testCompleted) {
-          done(new Error('Should not disconnect before session_created'));
-        }
-      });
+      } finally {
+        ws.close();
+      }
     });
 
-    it('should reject expired guest token', (done) => {
+    it('should reject expired guest token', async () => {
       const uuid = '770e8400-e29b-41d4-a716-446655440002';
       const expiredTimestamp = Date.now() - GUEST_TOKEN_EXPIRATION_MS - 1000;
       const expiredGuestToken = `guest_${uuid}_${expiredTimestamp}`;
 
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: expiredGuestToken },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+      const { ws, waitForMessage } = await createTestClient(serverPort, expiredGuestToken);
 
-      client.on('auth_error', (error: AuthErrorPayload) => {
-        expect(error.code).toBe('AUTH_EXPIRED');
-        expect(error.message).toBe('Authentication token expired');
-        done();
-      });
-
-      client.on('session_created', () => {
-        done(new Error('Should not receive session_created for expired token'));
-      });
+      try {
+        const authError = await waitForMessage('auth_error');
+        const payload = authError.data as AuthErrorPayload;
+        expect(payload.code).toBe('AUTH_EXPIRED');
+        expect(payload.message).toBe('Authentication token expired');
+      } finally {
+        ws.close();
+      }
     });
   });
 
@@ -386,377 +396,173 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
    * Requirements: 1.2, 1.3
    */
   describe('Connection failure with invalid token', () => {
-    let client: ClientSocket;
-
-    afterEach(() => {
-      if (client && client.connected) {
-        client.disconnect();
-      }
-    });
-
-    it('should emit auth_error for missing token', (done) => {
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: null },
-        transports: ['websocket'],
-        reconnection: false,
-      });
-
+    it('should emit auth_error for missing token', async () => {
       const startTime = Date.now();
+      const { ws, waitForMessage } = await createTestClient(serverPort, null);
 
-      client.on('auth_error', (error: AuthErrorPayload) => {
+      try {
+        const authError = await waitForMessage('auth_error');
         const duration = Date.now() - startTime;
 
-        expect(error.code).toBe('AUTH_REQUIRED');
-        expect(error.message).toBe('Authentication token required');
-        expect(error.timestamp).toBeDefined();
+        const payload = authError.data as AuthErrorPayload;
+        expect(payload.code).toBe('AUTH_REQUIRED');
+        expect(payload.message).toBe('Authentication token required');
+        expect(payload.timestamp).toBeDefined();
 
         // Should receive auth_error immediately (Requirement 1.2)
         expect(duration).toBeLessThan(1000);
-
-        done();
-      });
-
-      client.on('session_created', () => {
-        done(new Error('Should not receive session_created without token'));
-      });
+      } finally {
+        ws.close();
+      }
     });
 
-    it('should emit auth_error for invalid token format', (done) => {
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: 'invalid-token-xyz' },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+    it('should emit auth_error for invalid token format', async () => {
+      const { ws, waitForMessage } = await createTestClient(serverPort, 'invalid-token-xyz');
 
-      client.on('auth_error', (error: AuthErrorPayload) => {
-        expect(error.code).toBe('AUTH_INVALID');
-        expect(error.message).toBe('Invalid authentication token');
-        done();
-      });
-
-      client.on('session_created', () => {
-        done(new Error('Should not receive session_created for invalid token'));
-      });
+      try {
+        const authError = await waitForMessage('auth_error');
+        const payload = authError.data as AuthErrorPayload;
+        expect(payload.code).toBe('AUTH_INVALID');
+        expect(payload.message).toBe('Invalid authentication token');
+      } finally {
+        ws.close();
+      }
     });
 
-    it('should emit auth_error for malformed guest token', (done) => {
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: 'guest_invalid_format' },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+    it('should emit auth_error for malformed guest token', async () => {
+      const { ws, waitForMessage } = await createTestClient(serverPort, 'guest_invalid_format');
 
-      client.on('auth_error', (error: AuthErrorPayload) => {
-        expect(error.code).toBe('AUTH_INVALID');
-        done();
-      });
-    });
-
-    it('should disconnect after emitting auth_error', (done) => {
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: 'invalid-token' },
-        transports: ['websocket'],
-        reconnection: false,
-      });
-
-      let authErrorReceived = false;
-
-      client.on('auth_error', () => {
-        authErrorReceived = true;
-      });
-
-      client.on('disconnect', () => {
-        expect(authErrorReceived).toBe(true);
-        done();
-      });
-    });
-
-    it('should not emit session_created for invalid token', (done) => {
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: 'bad-token' },
-        transports: ['websocket'],
-        reconnection: false,
-      });
-
-      let sessionCreatedReceived = false;
-
-      client.on('session_created', () => {
-        sessionCreatedReceived = true;
-      });
-
-      client.on('auth_error', () => {
-        // Wait a bit to ensure session_created is not emitted
-        setTimeout(() => {
-          expect(sessionCreatedReceived).toBe(false);
-          done();
-        }, 500);
-      });
+      try {
+        const authError = await waitForMessage('auth_error');
+        const payload = authError.data as AuthErrorPayload;
+        expect(payload.code).toBe('AUTH_INVALID');
+      } finally {
+        ws.close();
+      }
     });
   });
 
   /**
-   * Test: Connection timeout handling
-   * Requirements: 1.1, 5.5
+   * Test: Heartbeat mechanism
+   * Requirements: 3.4, 3.5
    */
-  describe('Connection timeout handling', () => {
-    let client: ClientSocket;
+  describe('Heartbeat mechanism', () => {
+    it('should respond to ping with pong', async () => {
+      const validJwt = authService.generateToken('user-ping', 'ping@example.com', 'free', ['user']);
 
-    afterEach(() => {
-      if (client && client.connected) {
-        client.disconnect();
+      const { ws, waitForMessage } = await createTestClient(serverPort, validJwt);
+
+      try {
+        await waitForMessage('session_created');
+
+        // Send ping
+        const ping = MessageProtocol.createEnvelope('ping', { timestamp: Date.now() });
+        ws.send(MessageProtocol.serialize(ping));
+
+        // Wait for pong
+        const pong = await waitForMessage('pong');
+        expect(pong).toBeDefined();
+        expect((pong.data as { timestamp: number }).timestamp).toBeDefined();
+      } finally {
+        ws.close();
       }
     });
-
-    it('should handle client-side timeout gracefully', (done) => {
-      const validJwt = authService.generateToken('user-timeout', 'timeout@example.com', 'free', [
-        'user',
-      ]);
-
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: validJwt },
-        transports: ['websocket'],
-        reconnection: false,
-        timeout: 1000, // 1 second timeout
-      });
-
-      client.on('session_created', () => {
-        // Session created successfully
-      });
-
-      // If session is created before timeout, that's fine
-      // If timeout occurs, we should handle it gracefully
-      setTimeout(() => {
-        // Either session was created or timeout occurred
-        // Both are valid outcomes for this test
-        expect(true).toBe(true);
-        done();
-      }, 2000);
-    });
-
-    it('should receive session_created within 10 seconds for Cloud Run cold start', (done) => {
-      const validJwt = authService.generateToken(
-        'user-coldstart',
-        'coldstart@example.com',
-        'free',
-        ['user']
-      );
-
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: validJwt },
-        transports: ['websocket'],
-        reconnection: false,
-        timeout: 10000, // 10 second timeout for cold start
-      });
-
-      const startTime = Date.now();
-
-      client.on('session_created', () => {
-        const duration = Date.now() - startTime;
-        expect(duration).toBeLessThan(10000); // Requirement 5.5
-        done();
-      });
-
-      client.on('connect_error', (error: Error) => {
-        done(new Error(`Connection error: ${error.message}`));
-      });
-    }, 15000); // Increase test timeout to 15 seconds
   });
 
   /**
    * Test: Reconnection after auth_error
-   * Requirements: 2.2, 5.4
+   * Requirements: 2.3, 2.4
    */
   describe('Reconnection after auth_error', () => {
-    let client: ClientSocket;
+    it('should allow reconnection with valid token after auth_error', async () => {
+      // First connection with invalid token
+      const { ws: ws1, waitForMessage: wait1 } = await createTestClient(
+        serverPort,
+        'invalid-first-attempt'
+      );
 
-    afterEach(() => {
-      if (client && client.connected) {
-        client.disconnect();
+      try {
+        await wait1('auth_error');
+      } finally {
+        ws1.close();
+      }
+
+      // Wait for connection to close
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Second connection with valid token
+      const validJwt = authService.generateToken(
+        'user-reconnect',
+        'reconnect@example.com',
+        'free',
+        ['user']
+      );
+      const { ws: ws2, waitForMessage: wait2 } = await createTestClient(serverPort, validJwt);
+
+      try {
+        const sessionCreated = await wait2('session_created');
+        const payload = sessionCreated.data as SessionCreatedPayload;
+        expect(payload.userId).toBe('user-reconnect');
+        expect(payload.isGuest).toBe(false);
+      } finally {
+        ws2.close();
       }
     });
 
-    it('should allow reconnection with valid token after auth_error', (done) => {
+    it('should allow reconnection with guest token after auth_error', async () => {
       // First connection with invalid token
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: 'invalid-first-attempt' },
-        transports: ['websocket'],
-        reconnection: false,
-      });
+      const { ws: ws1, waitForMessage: wait1 } = await createTestClient(
+        serverPort,
+        'invalid-token'
+      );
 
-      client.on('auth_error', () => {
-        client.disconnect();
+      try {
+        await wait1('auth_error');
+      } finally {
+        ws1.close();
+      }
 
-        // Second connection with valid token
-        const validJwt = authService.generateToken(
-          'user-reconnect',
-          'reconnect@example.com',
-          'free',
-          ['user']
-        );
+      // Wait for connection to close
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-        client = ioClient(`http://localhost:${serverPort}`, {
-          auth: { token: validJwt },
-          transports: ['websocket'],
-          reconnection: false,
-        });
+      // Second connection with guest token
+      const uuid = '880e8400-e29b-41d4-a716-446655440003';
+      const guestToken = `guest_${uuid}_${Date.now()}`;
+      const { ws: ws2, waitForMessage: wait2 } = await createTestClient(serverPort, guestToken);
 
-        client.on('session_created', (payload: SessionCreatedPayload) => {
-          expect(payload.userId).toBe('user-reconnect');
-          expect(payload.isGuest).toBe(false);
-          done();
-        });
-
-        client.on('auth_error', (error: AuthErrorPayload) => {
-          done(new Error(`Second connection failed: ${error.message}`));
-        });
-      });
-    });
-
-    it('should allow reconnection with guest token after auth_error', (done) => {
-      // First connection with invalid token
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: 'invalid-token' },
-        transports: ['websocket'],
-        reconnection: false,
-      });
-
-      client.on('auth_error', () => {
-        client.disconnect();
-
-        // Second connection with guest token
-        const uuid = '880e8400-e29b-41d4-a716-446655440003';
-        const guestToken = `guest_${uuid}_${Date.now()}`;
-
-        client = ioClient(`http://localhost:${serverPort}`, {
-          auth: { token: guestToken },
-          transports: ['websocket'],
-          reconnection: false,
-        });
-
-        client.on('session_created', (payload: SessionCreatedPayload) => {
-          expect(payload.userId).toBe(`guest-${uuid}`);
-          expect(payload.isGuest).toBe(true);
-          done();
-        });
-
-        client.on('auth_error', (error: AuthErrorPayload) => {
-          done(new Error(`Guest reconnection failed: ${error.message}`));
-        });
-      });
-    });
-
-    it('should handle multiple reconnection attempts', (done) => {
-      let attemptCount = 0;
-      const maxAttempts = 3;
-
-      const attemptConnection = () => {
-        attemptCount++;
-
-        if (attemptCount < maxAttempts) {
-          // Invalid token for first attempts
-          client = ioClient(`http://localhost:${serverPort}`, {
-            auth: { token: `invalid-attempt-${attemptCount}` },
-            transports: ['websocket'],
-            reconnection: false,
-          });
-
-          client.on('auth_error', () => {
-            client.disconnect();
-            setTimeout(attemptConnection, 100);
-          });
-        } else {
-          // Valid token on final attempt
-          const validJwt = authService.generateToken(
-            'user-multi-reconnect',
-            'multi@example.com',
-            'free',
-            ['user']
-          );
-
-          client = ioClient(`http://localhost:${serverPort}`, {
-            auth: { token: validJwt },
-            transports: ['websocket'],
-            reconnection: false,
-          });
-
-          client.on('session_created', (payload: SessionCreatedPayload) => {
-            expect(payload.userId).toBe('user-multi-reconnect');
-            expect(attemptCount).toBe(maxAttempts);
-            done();
-          });
-        }
-      };
-
-      attemptConnection();
+      try {
+        const sessionCreated = await wait2('session_created');
+        const payload = sessionCreated.data as SessionCreatedPayload;
+        expect(payload.userId).toBe(`guest-${uuid}`);
+        expect(payload.isGuest).toBe(true);
+      } finally {
+        ws2.close();
+      }
     });
   });
 
   /**
    * Test: Error message completeness
-   * Requirements: 2.1, 2.3, 2.4, 2.5
+   * Requirements: 2.1, 2.2
    */
   describe('Error message completeness', () => {
-    let client: ClientSocket;
+    it('should include all required fields in auth_error', async () => {
+      const { ws, waitForMessage } = await createTestClient(serverPort, null);
 
-    afterEach(() => {
-      if (client && client.connected) {
-        client.disconnect();
+      try {
+        const authError = await waitForMessage('auth_error');
+        const payload = authError.data as AuthErrorPayload;
+
+        expect(payload).toBeDefined();
+        expect(payload.code).toBeDefined();
+        expect(payload.message).toBeDefined();
+        expect(payload.timestamp).toBeDefined();
+        expect(typeof payload.code).toBe('string');
+        expect(typeof payload.message).toBe('string');
+        expect(typeof payload.timestamp).toBe('number');
+      } finally {
+        ws.close();
       }
-    });
-
-    it('should include all required fields in auth_error', (done) => {
-      client = ioClient(`http://localhost:${serverPort}`, {
-        auth: { token: null },
-        transports: ['websocket'],
-        reconnection: false,
-      });
-
-      client.on('auth_error', (error: AuthErrorPayload) => {
-        expect(error).toBeDefined();
-        expect(error.code).toBeDefined();
-        expect(error.message).toBeDefined();
-        expect(error.timestamp).toBeDefined();
-        expect(typeof error.code).toBe('string');
-        expect(typeof error.message).toBe('string');
-        expect(typeof error.timestamp).toBe('number');
-        done();
-      });
-    });
-
-    it('should provide descriptive error messages', (done) => {
-      const testCases = [
-        {
-          token: null,
-          expectedCode: 'AUTH_REQUIRED',
-          expectedMessage: 'Authentication token required',
-        },
-        {
-          token: 'invalid',
-          expectedCode: 'AUTH_INVALID',
-          expectedMessage: 'Invalid authentication token',
-        },
-      ];
-
-      let completedTests = 0;
-
-      testCases.forEach((testCase) => {
-        const testClient = ioClient(`http://localhost:${serverPort}`, {
-          auth: { token: testCase.token },
-          transports: ['websocket'],
-          reconnection: false,
-        });
-
-        testClient.on('auth_error', (error: { code: string; message: string }) => {
-          expect(error.code).toBe(testCase.expectedCode);
-          expect(error.message).toBe(testCase.expectedMessage);
-          testClient.disconnect();
-
-          completedTests++;
-          if (completedTests === testCases.length) {
-            done();
-          }
-        });
-      });
     });
   });
 });

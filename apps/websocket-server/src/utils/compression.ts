@@ -36,9 +36,9 @@ export class WebSocketCompression {
   }
 
   /**
-   * Get compression options for Socket.io
+   * Get compression options for native WebSocket (ws library)
    */
-  getSocketIOOptions(): Record<string, unknown> {
+  getWebSocketOptions(): Record<string, unknown> {
     return {
       perMessageDeflate: this.options.enabled
         ? {

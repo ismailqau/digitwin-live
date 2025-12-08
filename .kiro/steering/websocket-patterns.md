@@ -5,161 +5,306 @@ fileMatchPattern: 'apps/websocket-server/**/*'
 
 # WebSocket Server Patterns
 
-## Socket.io Setup
+## Native WebSocket Setup (ws library)
 
-The WebSocket server uses Socket.io for real-time communication:
+The WebSocket server uses the native `ws` library for real-time communication:
 
 ```typescript
-import { Server } from 'socket.io';
-import { createServer } from 'http';
+import { Server as HTTPServer } from 'http';
+import WebSocket, { WebSocketServer } from 'ws';
 
 const httpServer = createServer();
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(','),
-    methods: ['GET', 'POST'],
-  },
+const wss = new WebSocketServer({
+  server: httpServer,
+  path: '/socket.io/', // Maintain compatibility with existing clients
+});
+
+wss.on('connection', async (ws, request) => {
+  // Handle new connection
 });
 ```
 
 ## Authentication
 
-Authenticate connections using JWT:
+Authenticate connections using JWT or guest tokens in the URL query string:
 
 ```typescript
-io.use(async (socket, next) => {
-  const token = socket.handshake.auth.token;
-  if (!token) {
-    return next(new Error('Authentication required'));
-  }
+import { AuthenticationHandler } from './AuthenticationHandler';
+import { AuthService } from '../../application/services/AuthService';
+
+const authService = new AuthService();
+const authHandler = new AuthenticationHandler(authService);
+
+wss.on('connection', async (ws, request) => {
+  const connectionId = uuidv4();
 
   try {
-    const decoded = await verifyToken(token);
-    socket.user = decoded;
-    next();
+    // Extract token from query string: ?token=xxx
+    const token = authHandler.extractTokenFromRequest(request);
+
+    // Verify token (supports JWT and guest tokens)
+    const payload = await authHandler.authenticateConnection(token, connectionId);
+
+    // Create session
+    const session = await sessionService.createSession(payload.userId, connectionId);
+
+    // Send session_created event
+    authHandler.sendSessionCreated(ws, session.id, payload.userId, payload.isGuest);
   } catch (error) {
-    next(new Error('Invalid token'));
+    // Send auth error and close connection
+    const { code, message } = authHandler.mapAuthError(error);
+    authHandler.sendAuthError(ws, code, message);
+    ws.close(4001, message);
   }
 });
 ```
 
-## Event Handlers
+### Guest Token Format
 
-### Client Events (Incoming)
+Guest tokens follow the format: `guest_{uuid}_{timestamp}`
 
 ```typescript
-socket.on('audio-chunk', async (data) => {
-  // Handle audio chunk from client
-  const { sessionId, audioData, sequenceNumber } = data;
-  await processAudioChunk(socket.user.id, sessionId, audioData, sequenceNumber);
-});
+// Generate guest token on client
+const guestToken = `guest_${uuid()}_${Date.now()}`;
 
-socket.on('interruption', async (data) => {
-  // Handle user interruption
-  const { sessionId } = data;
-  await handleInterruption(socket.user.id, sessionId);
-});
+// Guest tokens expire after 24 hours (configurable)
+const GUEST_TOKEN_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+```
 
-socket.on('conversation:start', async (data) => {
-  // Start new conversation session
-  const session = await startConversation(socket.user.id, data);
-  socket.emit('conversation:started', { sessionId: session.id });
-});
+## Message Protocol
 
-socket.on('conversation:end', async (data) => {
-  // End conversation session
-  await endConversation(socket.user.id, data.sessionId);
-  socket.emit('conversation:ended', { sessionId: data.sessionId });
+All messages use a standardized envelope format:
+
+```typescript
+interface MessageEnvelope {
+  type: string; // Message type (e.g., 'audio_chunk', 'transcript')
+  sessionId?: string; // Session identifier
+  data?: unknown; // Message payload
+  timestamp: number; // Unix timestamp in milliseconds
+}
+
+// Create and send messages
+const envelope = MessageProtocol.createEnvelope(
+  'transcript',
+  {
+    text: transcribedText,
+    isFinal: true,
+  },
+  sessionId
+);
+
+ws.send(MessageProtocol.serialize(envelope));
+
+// Parse incoming messages
+const result = MessageProtocol.deserialize(data.toString());
+if (result.success && result.message) {
+  // Handle message
+}
+```
+
+## Event Handlers
+
+### Message Handling
+
+```typescript
+ws.on('message', async (data) => {
+  const result = MessageProtocol.deserialize(data.toString());
+
+  if (!result.success || !result.message) {
+    // Send error response
+    const errorEnvelope = MessageProtocol.createErrorEnvelope(
+      'INVALID_MESSAGE',
+      result.error || 'Invalid message format',
+      sessionId
+    );
+    ws.send(MessageProtocol.serialize(errorEnvelope));
+    return;
+  }
+
+  const message = result.message;
+
+  switch (message.type) {
+    case 'audio_chunk':
+      await handleAudioChunk(connectionId, message);
+      break;
+    case 'ping':
+      const pong = MessageProtocol.createEnvelope('pong', { timestamp: Date.now() }, sessionId);
+      ws.send(MessageProtocol.serialize(pong));
+      break;
+    case 'message':
+      await messageRouter.routeClientMessage(sessionId, message.data);
+      break;
+    default:
+      logger.debug('Unhandled message type', { type: message.type });
+  }
 });
 ```
 
 ### Server Events (Outgoing)
 
 ```typescript
-// Send transcript to client
-socket.emit('transcript', {
-  sessionId,
-  text: transcribedText,
-  isFinal: true,
-  timestamp: Date.now(),
-});
+// Send transcript
+const transcriptEnvelope = MessageProtocol.createEnvelope(
+  'transcript',
+  {
+    text: transcribedText,
+    isFinal: true,
+  },
+  sessionId
+);
+ws.send(MessageProtocol.serialize(transcriptEnvelope));
 
 // Send LLM response
-socket.emit('llm-response', {
-  sessionId,
-  text: responseText,
-  timestamp: Date.now(),
-});
+const responseEnvelope = MessageProtocol.createEnvelope(
+  'llm_response',
+  {
+    text: responseText,
+  },
+  sessionId
+);
+ws.send(MessageProtocol.serialize(responseEnvelope));
 
 // Send audio chunk
-socket.emit('audio-chunk', {
-  sessionId,
-  audioData: base64Audio,
-  sequenceNumber,
-  timestamp: Date.now(),
-});
+const audioEnvelope = MessageProtocol.createEnvelope(
+  'audio_chunk',
+  {
+    audioData: base64Audio,
+    sequenceNumber,
+  },
+  sessionId
+);
+ws.send(MessageProtocol.serialize(audioEnvelope));
 
 // Send error
-socket.emit('error', {
-  sessionId,
-  errorCode: 'ASR_ERROR',
-  errorMessage: 'Technical error',
-  userMessage: 'Could not understand audio. Please try again.',
-  recoverable: true,
-  timestamp: Date.now(),
+const errorEnvelope = MessageProtocol.createErrorEnvelope(
+  'ASR_ERROR',
+  'Could not understand audio. Please try again.',
+  sessionId
+);
+ws.send(MessageProtocol.serialize(errorEnvelope));
+```
+
+## Connection Management
+
+```typescript
+import { ConnectionManager, WebSocketConnection } from './ConnectionManager';
+
+const connectionManager = new ConnectionManager();
+
+// Register connection after authentication
+const connection: WebSocketConnection = {
+  id: connectionId,
+  ws,
+  userId: payload.userId,
+  sessionId: session.id,
+  isAuthenticated: true,
+  lastPing: Date.now(),
+  createdAt: Date.now(),
+};
+connectionManager.registerConnection(connectionId, connection);
+
+// Get connection
+const conn = connectionManager.getConnection(connectionId);
+
+// Get connections by session
+const sessionConnections = connectionManager.getConnectionsBySession(sessionId);
+
+// Unregister on disconnect
+ws.on('close', () => {
+  connectionManager.unregisterConnection(connectionId);
 });
 ```
 
-## Session Management
+## Heartbeat Mechanism
+
+Heartbeat ping every 25 seconds, connection timeout after 60 seconds without pong:
 
 ```typescript
-// Track active sessions per socket
-const activeSessions = new Map<string, Set<string>>();
+const HEARTBEAT_INTERVAL_MS = 25000;
+const CONNECTION_TIMEOUT_MS = 60000;
 
-socket.on('connect', () => {
-  activeSessions.set(socket.id, new Set());
-});
+// Start heartbeat
+const pingInterval = setInterval(() => {
+  const now = Date.now();
+  const connections = connectionManager.getAllConnections();
 
-socket.on('disconnect', async () => {
-  const sessions = activeSessions.get(socket.id);
-  if (sessions) {
-    for (const sessionId of sessions) {
-      await cleanupSession(sessionId);
+  for (const connection of connections) {
+    // Check for timeout
+    if (now - connection.lastPing > CONNECTION_TIMEOUT_MS) {
+      connection.ws.close(4002, 'Connection timeout');
+      continue;
+    }
+
+    // Send ping
+    if (connection.ws.readyState === WebSocket.OPEN) {
+      const pingEnvelope = MessageProtocol.createEnvelope('ping', { timestamp: now });
+      connection.ws.send(MessageProtocol.serialize(pingEnvelope));
     }
   }
-  activeSessions.delete(socket.id);
-});
+}, HEARTBEAT_INTERVAL_MS);
+
+// Handle pong from client
+if (message.type === 'ping') {
+  const pongEnvelope = MessageProtocol.createEnvelope('pong', { timestamp: Date.now() }, sessionId);
+  ws.send(MessageProtocol.serialize(pongEnvelope));
+  connectionManager.updateConnection(connectionId, { lastPing: Date.now() });
+}
 ```
 
 ## Error Handling
 
 ```typescript
-import { WebSocketErrorHandler } from '../utils/errorHandler';
+// Authentication errors
+export enum AuthErrorCode {
+  AUTH_REQUIRED = 'AUTH_REQUIRED',
+  AUTH_INVALID = 'AUTH_INVALID',
+  AUTH_EXPIRED = 'AUTH_EXPIRED',
+  SESSION_CREATE_FAILED = 'SESSION_CREATE_FAILED',
+}
 
-socket.on('audio-chunk', async (data) => {
-  try {
-    await processAudioChunk(data);
-  } catch (error) {
-    if (error.code === 'ASR_ERROR') {
-      WebSocketErrorHandler.sendASRError(socket, data.sessionId);
-    } else if (error.code === 'GPU_UNAVAILABLE') {
-      WebSocketErrorHandler.sendGPUUnavailableError(socket, data.sessionId, 5);
-    } else {
-      WebSocketErrorHandler.sendGenericError(socket, data.sessionId, error.message);
-    }
-  }
-});
+// Send auth error
+authHandler.sendAuthError(ws, AuthErrorCode.AUTH_INVALID, 'Invalid token');
+
+// Send message error
+const errorEnvelope = MessageProtocol.createErrorEnvelope(
+  'PROCESSING_ERROR',
+  'Failed to process request',
+  sessionId
+);
+ws.send(MessageProtocol.serialize(errorEnvelope));
+
+// Close codes
+// 4001 - Authentication failed
+// 4002 - Connection timeout
+// 1001 - Server shutting down
 ```
 
-## Room Management
+## Broadcasting
 
 ```typescript
-// Join user to their room
-socket.join(`user:${socket.user.id}`);
+// Send to specific connection
+sendMessage(connectionId: string, message: MessageEnvelope): boolean {
+  const connection = connectionManager.getConnection(connectionId);
+  if (!connection || connection.ws.readyState !== WebSocket.OPEN) {
+    return false;
+  }
+  connection.ws.send(MessageProtocol.serialize(message));
+  return true;
+}
 
-// Join session room
-socket.join(`session:${sessionId}`);
-
-// Broadcast to session
-io.to(`session:${sessionId}`).emit('event', data);
+// Broadcast to all connections in a session
+broadcast(sessionId: string, message: MessageEnvelope): void {
+  const connections = connectionManager.getConnectionsBySession(sessionId);
+  for (const connection of connections) {
+    sendMessage(connection.id, message);
+  }
+}
 ```
+
+## Key Components
+
+- `NativeWebSocketServer` - Main WebSocket server implementation
+- `ConnectionManager` - Manages active WebSocket connections
+- `AuthenticationHandler` - Handles JWT and guest token authentication
+- `MessageProtocol` - Serialization/deserialization of message envelopes
+- `WebSocketController` - Routes messages to appropriate handlers

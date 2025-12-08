@@ -1,19 +1,12 @@
-import { Socket } from 'socket.io';
 import { injectable, inject } from 'tsyringe';
 
-import {
-  AuthService,
-  AuthError,
-  AuthErrorCode,
-  AUTH_ERROR_MESSAGES,
-} from '../../application/services/AuthService';
+import { AuthService, AuthErrorCode } from '../../application/services/AuthService';
 import { ConnectionService } from '../../application/services/ConnectionService';
 import { MessageRouterService } from '../../application/services/MessageRouterService';
-import { MetricsService } from '../../application/services/MetricsService';
-import { SessionService } from '../../application/services/SessionService';
 import { ClientMessage } from '../../domain/models/Message';
 import logger from '../../infrastructure/logging/logger';
-import { WebSocketErrorHandler } from '../../utils/errorHandler';
+import { WebSocketConnection } from '../../infrastructure/websocket/ConnectionManager';
+import { MessageEnvelope } from '../../infrastructure/websocket/MessageProtocol';
 
 /**
  * Auth error payload sent to client
@@ -34,210 +27,154 @@ export interface SessionCreatedPayload {
   timestamp: number;
 }
 
-/**
- * Session creation timeout in milliseconds
- */
-const SESSION_CREATE_TIMEOUT_MS = 2000;
-
 @injectable()
 export class WebSocketController {
   constructor(
-    @inject(SessionService) private sessionService: SessionService,
     @inject(ConnectionService) private connectionService: ConnectionService,
     @inject(MessageRouterService) private messageRouter: MessageRouterService,
-    @inject(AuthService) private authService: AuthService,
-    @inject(MetricsService) private metricsService: MetricsService
+    @inject(AuthService) private authService: AuthService
   ) {}
 
   /**
-   * Handles a new WebSocket connection
+   * Handles a new authenticated WebSocket connection
+   * Called by NativeWebSocketServer after successful authentication
    *
-   * Always emits either `session_created` or `auth_error` before disconnecting.
-   * This ensures the client always receives feedback about the connection attempt.
-   *
-   * Comprehensive logging covers:
-   * - Connection attempts (Requirement 4.1)
-   * - Session creation (Requirement 4.2)
-   * - Authentication failures (Requirement 4.3)
-   * - Disconnections (Requirement 4.4)
-   * - Connection errors (Requirement 4.5)
+   * @param connectionId - Unique connection identifier
+   * @param connection - WebSocket connection info
    */
-  async handleConnection(socket: Socket): Promise<void> {
-    const connectionStartTime = Date.now();
-    const socketId = socket.id;
+  handleConnection(connectionId: string, connection: WebSocketConnection): void {
+    const { ws, sessionId, userId } = connection;
 
-    // Record connection attempt in metrics
-    this.metricsService.recordConnectionAttempt(socketId);
+    if (!sessionId) {
+      logger.error('[WebSocketController] Connection missing sessionId', { connectionId });
+      return;
+    }
 
-    // Extract token early for logging
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
-    const tokenType = this.getTokenType(token);
+    // Register connection with ConnectionService
+    this.connectionService.registerConnection(sessionId, ws, connectionId);
 
-    // Log connection attempt with all required details (Requirement 4.1)
-    logger.info('[WebSocketController] Connection attempt', {
-      socketId,
-      tokenType,
-      timestamp: connectionStartTime,
-      hasToken: !!token,
-      hasAuthHeader: !!socket.handshake.headers.authorization,
-      clientIp: socket.handshake.address,
-      userAgent: socket.handshake.headers['user-agent'],
+    logger.info('[WebSocketController] Connection registered', {
+      connectionId,
+      sessionId,
+      userId,
+      timestamp: Date.now(),
     });
+  }
 
+  /**
+   * Handles incoming messages from a connection
+   * Called by NativeWebSocketServer when a message is received
+   *
+   * @param connectionId - Connection identifier
+   * @param message - Parsed message envelope
+   * @param sessionId - Session identifier
+   */
+  async handleMessage(
+    connectionId: string,
+    message: MessageEnvelope,
+    sessionId: string
+  ): Promise<void> {
     try {
-      // Verify token (throws AuthError on failure)
-      const payload = this.authService.verifyToken(token);
+      // Handle different message types
+      switch (message.type) {
+        case 'message':
+          // Route client messages to the message router
+          if (message.data) {
+            await this.messageRouter.routeClientMessage(sessionId, message.data as ClientMessage);
+          }
+          break;
 
-      // Log token verification success
-      logger.debug('[WebSocketController] Token verified successfully', {
-        socketId,
-        tokenType,
-        userId: payload.userId,
-        isGuest: payload.isGuest,
-      });
+        case 'audio_chunk':
+        case 'interruption':
+        case 'end_utterance':
+          // Route directly as client message
+          await this.messageRouter.routeClientMessage(sessionId, {
+            type: message.type,
+            sessionId,
+            timestamp: message.timestamp,
+            ...((message.data as object) || {}),
+          } as ClientMessage);
+          break;
 
-      // Create session with timeout
-      const session = await this.createSessionWithTimeout(payload.userId, socketId);
+        case 'retry_asr':
+          // Handle retry requests from mobile app
+          this.sendToClient(sessionId, 'asr_retry_acknowledged', {
+            sessionId,
+            timestamp: Date.now(),
+            message: 'Ready to receive audio. Please speak again.',
+          });
+          break;
 
-      // Register connection
-      this.connectionService.registerConnection(session.id, socket);
-
-      // Emit session_created event with isGuest flag
-      const sessionCreatedPayload: SessionCreatedPayload = {
-        sessionId: session.id,
-        userId: session.userId,
-        isGuest: payload.isGuest,
-        timestamp: Date.now(),
-      };
-
-      socket.emit('session_created', sessionCreatedPayload);
-
-      // Record successful connection in metrics
-      this.metricsService.recordConnectionSuccess(socketId);
-
-      // Log session creation with all required details (Requirement 4.2)
-      const connectionDuration = Date.now() - connectionStartTime;
-      logger.info('[WebSocketController] Session created successfully', {
-        socketId,
-        sessionId: session.id,
-        userId: payload.userId,
-        isGuest: payload.isGuest,
-        tokenType,
-        connectionDurationMs: connectionDuration,
-        timestamp: Date.now(),
-        event: 'session_created',
-      });
-
-      // Set up message handlers
-      this.setupMessageHandlers(socket, session.id);
-
-      // Handle disconnection
-      socket.on('disconnect', (reason) =>
-        this.handleDisconnection(session.id, socketId, connectionStartTime, reason)
-      );
+        default:
+          logger.debug('[WebSocketController] Unhandled message type', {
+            connectionId,
+            type: message.type,
+          });
+      }
     } catch (error) {
-      // Always emit auth_error before disconnecting
-      this.handleConnectionError(socket, error, connectionStartTime);
+      logger.error('[WebSocketController] Message handling error', {
+        connectionId,
+        sessionId,
+        type: message.type,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      // Send error to client
+      this.sendError(
+        sessionId,
+        error instanceof Error ? error : new Error('Message handling failed')
+      );
     }
   }
 
   /**
-   * Creates a session with a timeout to prevent hanging
-   */
-  private async createSessionWithTimeout(
-    userId: string,
-    socketId: string
-  ): Promise<{ id: string; userId: string }> {
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Session creation timeout'));
-      }, SESSION_CREATE_TIMEOUT_MS);
-
-      this.sessionService
-        .createSession(userId, socketId)
-        .then((session) => {
-          clearTimeout(timeoutId);
-          resolve(session);
-        })
-        .catch((error) => {
-          clearTimeout(timeoutId);
-          reject(error);
-        });
-    });
-  }
-
-  /**
-   * Handles connection errors by emitting auth_error and disconnecting
+   * Handles client disconnection
+   * Called by NativeWebSocketServer when a connection closes
    *
-   * Logs authentication failures with full context (Requirement 4.3)
+   * @param connectionId - Connection identifier
+   * @param code - Close code
+   * @param reason - Close reason
    */
-  private handleConnectionError(socket: Socket, error: unknown, connectionStartTime: number): void {
-    const socketId = socket.id;
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
-    const tokenType = this.getTokenType(token);
+  handleDisconnection(connectionId: string, code: number, reason: string): void {
+    logger.info('[WebSocketController] Handling disconnection', {
+      connectionId,
+      code,
+      reason,
+      timestamp: Date.now(),
+      event: 'disconnect',
+    });
 
-    // Determine error code and message
-    let errorCode: AuthErrorCode;
-    let errorMessage: string;
-    let metricsReason: 'AUTH_REQUIRED' | 'AUTH_INVALID' | 'AUTH_EXPIRED' | 'SESSION_CREATE_FAILED';
+    // Note: Connection cleanup is handled by NativeWebSocketServer
+    // Session cleanup can be done here if needed
+  }
 
-    if (error instanceof AuthError) {
-      errorCode = error.code;
-      errorMessage = error.message;
-      metricsReason = errorCode as 'AUTH_REQUIRED' | 'AUTH_INVALID' | 'AUTH_EXPIRED';
-    } else if (error instanceof Error && error.message === 'Session creation timeout') {
-      // Session creation timeout - treat as internal error but report as auth error
-      errorCode = AuthErrorCode.AUTH_INVALID;
-      errorMessage = 'Session creation failed';
-      metricsReason = 'SESSION_CREATE_FAILED';
-    } else {
-      errorCode = AuthErrorCode.AUTH_INVALID;
-      errorMessage = AUTH_ERROR_MESSAGES[AuthErrorCode.AUTH_INVALID];
-      metricsReason = 'AUTH_INVALID';
-    }
+  /**
+   * Sends a message to a client
+   */
+  private sendToClient(sessionId: string, event: string, data: unknown): void {
+    this.connectionService.emit(sessionId, event, data);
+  }
 
-    // Record connection failure in metrics
-    this.metricsService.recordConnectionFailure(socketId, metricsReason);
-
-    // Create auth error payload
-    const authErrorPayload: AuthErrorPayload = {
-      code: errorCode,
-      message: errorMessage,
+  /**
+   * Sends an error to a client
+   */
+  private sendError(sessionId: string, error: Error): void {
+    const errorData = {
+      type: 'error',
+      errorCode: 'INTERNAL_ERROR',
+      errorMessage: error.message,
+      recoverable: true,
       timestamp: Date.now(),
     };
 
-    // Log authentication failure with full context (Requirement 4.3)
-    logger.warn('[WebSocketController] Authentication failed', {
-      socketId,
-      errorCode,
-      errorMessage,
-      tokenType,
-      connectionDurationMs: Date.now() - connectionStartTime,
-      timestamp: Date.now(),
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      clientIp: socket.handshake.address,
-      userAgent: socket.handshake.headers['user-agent'],
-      event: 'auth_error',
-    });
-
-    // Emit auth_error event before disconnecting
-    socket.emit('auth_error', authErrorPayload);
-
-    // Also emit legacy error event for backward compatibility
-    WebSocketErrorHandler.sendError(
-      socket,
-      error instanceof Error ? error : new Error(errorMessage)
-    );
-
-    // Disconnect the socket
-    socket.disconnect();
+    this.connectionService.emit(sessionId, 'error', errorData);
   }
 
   /**
    * Determines the type of token for logging purposes
    */
-  private getTokenType(token: string | null | undefined): string {
+  getTokenType(token: string | null | undefined): string {
     if (!token) {
       return 'none';
     }
@@ -248,60 +185,5 @@ export class WebSocketController {
       return 'mock';
     }
     return 'jwt';
-  }
-
-  private setupMessageHandlers(socket: Socket, sessionId: string): void {
-    socket.on('message', async (message: ClientMessage) => {
-      await WebSocketErrorHandler.wrapHandler(socket, sessionId, async () => {
-        await this.messageRouter.routeClientMessage(sessionId, message);
-      });
-    });
-
-    socket.on('ping', () => {
-      socket.emit('pong', { timestamp: Date.now() });
-    });
-
-    // Handle retry requests from mobile app
-    socket.on('retry_asr', async () => {
-      socket.emit('asr_retry_acknowledged', {
-        sessionId,
-        timestamp: Date.now(),
-        message: 'Ready to receive audio. Please speak again.',
-      });
-    });
-  }
-
-  /**
-   * Handles client disconnection
-   *
-   * Logs disconnections with full context (Requirement 4.4)
-   */
-  private async handleDisconnection(
-    sessionId: string,
-    socketId: string,
-    connectionStartTime: number,
-    reason: string
-  ): Promise<void> {
-    const connectionDuration = Date.now() - connectionStartTime;
-    const disconnectTime = Date.now();
-
-    // Record disconnection in metrics
-    this.metricsService.recordDisconnection(socketId);
-
-    // Log disconnection with all required details (Requirement 4.4)
-    logger.info('[WebSocketController] Client disconnected', {
-      socketId,
-      sessionId,
-      reason,
-      connectionDurationMs: connectionDuration,
-      connectionDurationSeconds: Math.floor(connectionDuration / 1000),
-      timestamp: disconnectTime,
-      event: 'disconnect',
-    });
-
-    this.connectionService.unregisterConnection(sessionId);
-
-    // Optionally end session or keep it for reconnection
-    // await this.sessionService.endSession(sessionId);
   }
 }

@@ -661,7 +661,7 @@ If issues are discovered with Expo SDK 54:
 
 - `expo` ~54.0.0
 - `react-native` 0.81.x (latest stable version)
-- `react` 18.3.x (as specified by Expo SDK 54)
+- `react` 19.1.0 (as specified by Expo SDK 54)
 - `expo-av` ~16.0.0
 - `expo-camera` ~17.0.0
 - `expo-file-system` ~19.0.0
@@ -673,7 +673,7 @@ If issues are discovered with Expo SDK 54:
 - `@react-navigation/native` ^7.1.0
 - `@react-navigation/native-stack` ^7.3.0
 - `@react-navigation/bottom-tabs` ^7.3.0
-- `@types/react` ~18.3.12
+- `@types/react` ~19.1.0
 
 ## Monitoring and Observability
 

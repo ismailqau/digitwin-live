@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Migrate WebSocket server from Socket.IO to native ws library
+- [x] 1. Migrate WebSocket server from Socket.IO to native ws library
   - Install `ws` and `@types/ws` dependencies
   - Replace Socket.IO server with native WebSocket server
   - Maintain authentication, heartbeat, and message handling
@@ -20,7 +20,7 @@
 - [ ] 3. Upgrade Expo SDK from 52 to 54
   - Update `expo` to `~54.0.0`
   - Update `react-native` to `0.81.x`
-  - Update `react` to `18.3.x`
+  - Update `react` to `19.1.0`
   - Update all Expo modules (expo-av, expo-camera, expo-file-system, expo-secure-store, etc.)
   - Update React Navigation packages
   - Update `@expo/metro-runtime` and TypeScript types

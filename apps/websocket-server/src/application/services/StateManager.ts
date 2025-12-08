@@ -1,9 +1,9 @@
 import { ConversationState, StateChangedMessage, StateErrorMessage } from '@clone/shared-types';
-import { Server as SocketIOServer } from 'socket.io';
 import { injectable, inject } from 'tsyringe';
 
 import { ConversationStateMachine } from '../../domain/models/ConversationStateMachine';
 
+import { ConnectionService } from './ConnectionService';
 import { SessionService } from './SessionService';
 
 /**
@@ -13,7 +13,7 @@ import { SessionService } from './SessionService';
 export class StateManager {
   constructor(
     @inject('SessionService') private sessionService: SessionService,
-    @inject('SocketIOServer') private io: SocketIOServer
+    @inject(ConnectionService) private connectionService: ConnectionService
   ) {}
 
   /**
@@ -44,7 +44,7 @@ export class StateManager {
         timestamp: Date.now(),
       };
 
-      this.io.to(session.connectionId).emit('message', errorMsg);
+      this.connectionService.emit(sessionId, 'message', errorMsg);
 
       throw new Error(errorMessage);
     }
@@ -62,7 +62,7 @@ export class StateManager {
         timestamp: Date.now(),
       };
 
-      this.io.to(session.connectionId).emit('message', stateMsg);
+      this.connectionService.emit(sessionId, 'message', stateMsg);
 
       console.log(
         `✅ State transition: ${sessionId} ${result.previousState} → ${result.currentState}`

@@ -4,7 +4,9 @@ import {
   serializeWebSocketError,
   getUserFriendlyMessage,
 } from '@clone/errors';
-import { Socket } from 'socket.io';
+import WebSocket from 'ws';
+
+import { MessageProtocol } from '../infrastructure/websocket/MessageProtocol';
 
 /**
  * Maximum time (in ms) to send error message to client
@@ -20,7 +22,7 @@ export class WebSocketErrorHandler {
    * Sends an error message to the client via WebSocket
    * Ensures the error is sent within the required timeout
    */
-  static sendError(socket: Socket, error: Error | BaseError, sessionId?: string): void {
+  static sendError(ws: WebSocket, error: Error | BaseError, sessionId?: string): void {
     const startTime = Date.now();
 
     try {
@@ -31,15 +33,21 @@ export class WebSocketErrorHandler {
         console.warn(`Error message send timeout exceeded for session ${sessionId}`);
       }, ERROR_SEND_TIMEOUT_MS);
 
-      socket.emit('error', errorMessage, () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        const envelope = MessageProtocol.createEnvelope('error', errorMessage, sessionId);
+        ws.send(MessageProtocol.serialize(envelope), () => {
+          clearTimeout(timeoutId);
+          const elapsed = Date.now() - startTime;
+          if (elapsed > ERROR_SEND_TIMEOUT_MS) {
+            console.warn(
+              `Error message sent after ${elapsed}ms (exceeds ${ERROR_SEND_TIMEOUT_MS}ms requirement)`
+            );
+          }
+        });
+      } else {
         clearTimeout(timeoutId);
-        const elapsed = Date.now() - startTime;
-        if (elapsed > ERROR_SEND_TIMEOUT_MS) {
-          console.warn(
-            `Error message sent after ${elapsed}ms (exceeds ${ERROR_SEND_TIMEOUT_MS}ms requirement)`
-          );
-        }
-      });
+        console.warn('Cannot send error: WebSocket not open');
+      }
     } catch (sendError) {
       console.error('Failed to send error message to client:', sendError);
     }
@@ -48,7 +56,7 @@ export class WebSocketErrorHandler {
   /**
    * Creates and sends an ASR failure error
    */
-  static sendASRError(socket: Socket, sessionId: string, details?: Record<string, unknown>): void {
+  static sendASRError(ws: WebSocket, sessionId: string, details?: Record<string, unknown>): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.ASR_ERROR),
       ErrorCode.ASR_ERROR,
@@ -56,27 +64,27 @@ export class WebSocketErrorHandler {
       true,
       details
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a knowledge base empty error
    */
-  static sendKnowledgeBaseEmptyError(socket: Socket, sessionId: string): void {
+  static sendKnowledgeBaseEmptyError(ws: WebSocket, sessionId: string): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.KNOWLEDGE_BASE_EMPTY),
       ErrorCode.KNOWLEDGE_BASE_EMPTY,
       400,
       false
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a GPU unavailable error with estimated wait time
    */
   static sendGPUUnavailableError(
-    socket: Socket,
+    ws: WebSocket,
     sessionId: string,
     estimatedWaitMinutes?: number
   ): void {
@@ -87,13 +95,13 @@ export class WebSocketErrorHandler {
     const error = new BaseError(message, ErrorCode.GPU_UNAVAILABLE, 503, true, {
       estimatedWaitMinutes,
     });
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a service timeout error
    */
-  static sendTimeoutError(socket: Socket, sessionId: string, serviceName?: string): void {
+  static sendTimeoutError(ws: WebSocket, sessionId: string, serviceName?: string): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.TIMEOUT),
       ErrorCode.TIMEOUT,
@@ -101,13 +109,13 @@ export class WebSocketErrorHandler {
       true,
       { serviceName }
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends an LLM error
    */
-  static sendLLMError(socket: Socket, sessionId: string, details?: Record<string, unknown>): void {
+  static sendLLMError(ws: WebSocket, sessionId: string, details?: Record<string, unknown>): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.LLM_ERROR),
       ErrorCode.LLM_ERROR,
@@ -115,13 +123,13 @@ export class WebSocketErrorHandler {
       true,
       details
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a TTS error
    */
-  static sendTTSError(socket: Socket, sessionId: string, details?: Record<string, unknown>): void {
+  static sendTTSError(ws: WebSocket, sessionId: string, details?: Record<string, unknown>): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.TTS_ERROR),
       ErrorCode.TTS_ERROR,
@@ -129,40 +137,40 @@ export class WebSocketErrorHandler {
       true,
       details
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a voice model not found error
    */
-  static sendVoiceModelNotFoundError(socket: Socket, sessionId: string): void {
+  static sendVoiceModelNotFoundError(ws: WebSocket, sessionId: string): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.VOICE_MODEL_NOT_FOUND),
       ErrorCode.VOICE_MODEL_NOT_FOUND,
       404,
       false
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a face model not found error
    */
-  static sendFaceModelNotFoundError(socket: Socket, sessionId: string): void {
+  static sendFaceModelNotFoundError(ws: WebSocket, sessionId: string): void {
     const error = new BaseError(
       getUserFriendlyMessage(ErrorCode.FACE_MODEL_NOT_FOUND),
       ErrorCode.FACE_MODEL_NOT_FOUND,
       404,
       false
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Creates and sends a connection error
    */
   static sendConnectionError(
-    socket: Socket,
+    ws: WebSocket,
     sessionId: string,
     details?: Record<string, unknown>
   ): void {
@@ -173,20 +181,20 @@ export class WebSocketErrorHandler {
       true,
       details
     );
-    this.sendError(socket, error, sessionId);
+    this.sendError(ws, error, sessionId);
   }
 
   /**
    * Wraps an async handler with error handling
    */
   static wrapHandler<T>(
-    socket: Socket,
+    ws: WebSocket,
     sessionId: string,
     handler: () => Promise<T>
   ): Promise<T | void> {
     return handler().catch((error) => {
       console.error(`Error in WebSocket handler for session ${sessionId}:`, error);
-      this.sendError(socket, error, sessionId);
+      this.sendError(ws, error, sessionId);
     });
   }
 }
