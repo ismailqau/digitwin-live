@@ -162,7 +162,7 @@
   - Implement clean architecture with layers (controllers, services, repositories)
   - Set up dependency injection container (tsyringe)
   - Create domain models and DTOs with validation (class-validator)
-  - Implement WebSocket connection handler with Socket.io
+  - Implement WebSocket connection handler with `ws` (Native WebSocket)
   - Create session management service with PostgreSQL
   - Implement connection pooling and load balancing configuration
   - Set up structured logging with Winston
@@ -276,7 +276,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
 ```
 
 - [x] 3. Implement audio capture and streaming in mobile app
-  - Implement audio recording in React Native using react-native-audio-recorder-player
+  - Implement audio recording in React Native using `expo-audio`
   - Configure audio capture at 16 kHz, mono, 16-bit PCM format
   - Implement Voice Activity Detection (VAD) for speech detection
   - Create audio chunking logic (100ms chunks for low latency)
@@ -293,7 +293,7 @@ Mobile App → WebSocket → Backend → ASR Service → Transcript
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
 - [x] 3.1 Implement audio playback in mobile app
-  - Integrate audio player in React Native using react-native-audio-recorder-player
+  - Integrate audio player in React Native using `expo-audio`
   - Implement audio chunk buffering for smooth playback (200-500ms buffer)
   - Create audio-video synchronization logic (< 50ms offset)
   - Handle audio playback interruptions (phone calls, notifications)
@@ -1734,7 +1734,7 @@ apps/mobile-app/
     - Enhance existing `src/components/VoiceSampleRecording.tsx`
     - Create `src/screens/voice/VoiceRecordingScreen.tsx` wrapper
     - Add guided recording prompts (sentences to read aloud)
-    - Implement real-time waveform visualization using react-native-audio-api
+    - Implement real-time waveform visualization using `expo-audio` analysis
     - Add recording timer with target duration (5 minutes minimum)
     - Show recording progress bar (current/target duration)
     - Implement pause/resume functionality
@@ -1788,7 +1788,7 @@ apps/mobile-app/
 - [ ] 13.4 Implement face model creation UI
   - **13.4.1 Create photo capture screen:**
     - Create `src/screens/face/FaceCaptureScreen.tsx`
-    - Install react-native-camera or expo-camera
+    - Install `react-native-vision-camera` (high performance)
     - Implement camera preview with front camera default
     - Add face detection overlay using react-native-vision-camera
     - Create alignment guide (oval outline for face positioning)
@@ -1887,7 +1887,7 @@ apps/mobile-app/
     - Create floating controls overlay
     - Implement safe area handling for notch/home indicator
   - **13.6.2 Implement video player for clone's face:**
-    - Install react-native-video
+    - Install `expo-av` (Video component)
     - Create `src/components/CloneVideoPlayer.tsx`
     - Implement video frame rendering from WebSocket stream
     - Add video buffering with loading indicator

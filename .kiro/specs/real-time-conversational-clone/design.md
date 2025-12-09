@@ -18,9 +18,9 @@ The Real-Time Conversational Clone System is a distributed, cloud-native applica
 **Frontend:**
 
 - React Native (iOS/Android)
-- WebSocket client (Socket.io)
-- React Native Audio Recorder
-- React Native Video Player
+- WebSocket client (Native)
+- Audio Recorder (expo-audio)
+- Video Player (expo-av)
 
 **Backend (GCP):**
 
@@ -2567,7 +2567,7 @@ CREATE TABLE knowledge_documents (
 
 **Phase 1: Core Infrastructure (Weeks 1-2)**
 
-- WebSocket server setup
+- Implement WebSocket connection handler with `ws` (Native WebSocket)
 - Authentication and session management
 - Basic message routing
 - ASR integration (Chirp)
