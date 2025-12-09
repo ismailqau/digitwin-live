@@ -8,6 +8,8 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import type { VoiceSample } from '../services/VoiceSampleManager';
+
 // Auth Navigator Stack
 export type AuthStackParamList = {
   Splash: undefined;
@@ -24,6 +26,10 @@ export type OnboardingStackParamList = {
   PersonalitySetup: undefined;
   VoiceSetupPrompt: undefined;
   VoiceRecording: undefined;
+  VoiceSampleReview: { samples: VoiceSample[] };
+  VoiceUpload: { samples: VoiceSample[] };
+  VoiceTrainingStatus: { modelId: string };
+  VoicePreview: { modelId: string };
   FaceSetupPrompt: undefined;
   FaceCapture: undefined;
   OnboardingComplete: undefined;

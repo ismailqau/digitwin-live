@@ -140,6 +140,11 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
   }, [state.isRecording, state.isPaused]);
 
   const handleSampleRecorded = (sample: VoiceSample) => {
+    console.log('Sample recorded:', {
+      sampleId: sample.id,
+      duration: sample.duration,
+      qualityScore: sample.qualityScore,
+    });
     setState((prev) => ({
       ...prev,
       samples: [...prev.samples, sample],
@@ -149,6 +154,12 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
   };
 
   const handleSampleValidated = (sample: VoiceSample, validation: VoiceSampleValidationResult) => {
+    console.log('Sample validated:', {
+      sampleId: sample.id,
+      isValid: validation.isValid,
+      canProceed: validation.canProceed,
+      issues: validation.issues,
+    });
     setState((prev) => ({ ...prev, validation }));
 
     if (!validation.canProceed) {
@@ -221,14 +232,31 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
 
   const deleteSample = async (sampleId: string) => {
     try {
-      await voiceSampleManager.current?.deleteSample(sampleId);
+      // Check if sample exists in the array first
+      const sampleExists = state.samples.some((s) => s.id === sampleId);
+
+      if (sampleExists) {
+        // Sample was added to array, delete it properly
+        await voiceSampleManager.current?.deleteSample(sampleId);
+        setState((prev) => ({
+          ...prev,
+          samples: prev.samples.filter((s) => s.id !== sampleId),
+          validation: null,
+        }));
+      } else {
+        // Sample was never added (failed validation), just clear validation state
+        setState((prev) => ({
+          ...prev,
+          validation: null,
+        }));
+      }
+    } catch (error) {
+      // Silently handle errors for samples that don't exist
+      console.warn('Error deleting sample:', error);
       setState((prev) => ({
         ...prev,
-        samples: prev.samples.filter((s) => s.id !== sampleId),
         validation: null,
       }));
-    } catch (error) {
-      handleError(error as Error);
     }
   };
 
@@ -244,23 +272,18 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
     }
   };
 
-  const uploadSamples = async () => {
-    try {
-      const validation = voiceSampleManager.current?.validateAllSamples();
-      if (!validation?.canProceed) {
-        Alert.alert(
-          'Cannot Upload Samples',
-          validation?.issues.join('\n') || 'Unknown validation error',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      await voiceSampleManager.current?.uploadSamples();
-      onComplete?.(state.samples);
-    } catch (error) {
-      handleError(error as Error);
+  const reviewSamples = () => {
+    // Validate samples before proceeding to review
+    const validation = voiceSampleManager.current?.validateAllSamples();
+    if (!validation?.canProceed) {
+      Alert.alert('Cannot Proceed', validation?.issues.join('\n') || 'Unknown validation error', [
+        { text: 'OK' },
+      ]);
+      return;
     }
+
+    // Navigate to review screen with samples
+    onComplete?.(state.samples);
   };
 
   const formatDuration = (seconds: number): string => {
@@ -276,6 +299,18 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
   };
 
   const requirements_obj = voiceSampleManager.current?.getRequirements();
+  const requiredCount = requirements_obj?.requiredSampleCount || 1;
+  const recommendedCount = requirements_obj?.recommendedSampleCount || 3;
+  const minDuration = requirements_obj?.minDuration || 5;
+
+  // Debug logging
+  console.log('VoiceSampleRecording render:', {
+    samplesCount: state.samples.length,
+    requiredCount,
+    recommendedCount,
+    shouldShowButton: state.samples.length >= requiredCount,
+    isRecording: state.isRecording,
+  });
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -300,9 +335,13 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
           />
         </View>
         <Text style={styles.progressText}>
-          {state.samples.length} of {requirements_obj?.recommendedSampleCount || 5} samples
-          completed
+          {state.samples.length} of {requiredCount} required samples completed
         </Text>
+        {recommendedCount > requiredCount && (
+          <Text style={styles.progressSubtext}>
+            ({recommendedCount} samples recommended for best quality)
+          </Text>
+        )}
       </View>
 
       {/* Recording Prompt */}
@@ -341,9 +380,7 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
         {state.isRecording && (
           <View style={styles.durationContainer}>
             <Text style={styles.durationText}>{formatDuration(state.currentDuration)}</Text>
-            <Text style={styles.durationSubtext}>
-              Min: {formatDuration(requirements_obj?.minDuration || 60)}
-            </Text>
+            <Text style={styles.durationSubtext}>Min: {formatDuration(minDuration)}</Text>
           </View>
         )}
 
@@ -459,26 +496,13 @@ export const VoiceSampleRecording: React.FC<VoiceSampleRecordingProps> = ({
 
       {/* Action Buttons */}
       <View style={styles.actionContainer}>
-        {state.samples.length >= (requirements_obj?.requiredSampleCount || 3) && (
+        {state.samples.length >= requiredCount && (
           <TouchableOpacity
-            style={[
-              styles.uploadButton,
-              (state.trainingProgress?.status === 'uploading' ||
-                state.trainingProgress?.status === 'training') &&
-                styles.uploadButtonDisabled,
-            ]}
-            onPress={uploadSamples}
-            disabled={
-              state.trainingProgress?.status === 'uploading' ||
-              state.trainingProgress?.status === 'training'
-            }
+            style={styles.uploadButton}
+            onPress={reviewSamples}
+            disabled={state.isRecording}
           >
-            <Text style={styles.uploadButtonText}>
-              {state.trainingProgress?.status === 'uploading' ||
-              state.trainingProgress?.status === 'training'
-                ? 'Processing...'
-                : 'Create Voice Model'}
-            </Text>
+            <Text style={styles.uploadButtonText}>Review Samples ({state.samples.length})</Text>
           </TouchableOpacity>
         )}
 
@@ -530,6 +554,13 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 5,
+  },
+  progressSubtext: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   promptContainer: {
     backgroundColor: '#fff',

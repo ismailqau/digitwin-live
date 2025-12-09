@@ -28,16 +28,20 @@ export const lightColors = {
   // Surface
   surface: '#FFFFFF',
   surfaceSecondary: '#F2F2F7',
+  surfaceVariant: '#F2F2F7',
 
   // Text
   text: '#000000',
   textSecondary: '#3C3C43',
   textTertiary: '#8E8E93',
   textInverse: '#FFFFFF',
+  onPrimary: '#FFFFFF',
+  onSuccess: '#FFFFFF',
 
   // Border
   border: '#E5E5EA',
   borderSecondary: '#C6C6C8',
+  outline: '#E5E5EA',
 
   // Status
   success: '#34C759',
@@ -81,16 +85,20 @@ export const darkColors = {
   // Surface
   surface: '#1C1C1E',
   surfaceSecondary: '#2C2C2E',
+  surfaceVariant: '#2C2C2E',
 
   // Text
   text: '#FFFFFF',
   textSecondary: '#EBEBF5',
   textTertiary: '#8E8E93',
   textInverse: '#000000',
+  onPrimary: '#000000',
+  onSuccess: '#000000',
 
   // Border
   border: '#38383A',
   borderSecondary: '#48484A',
+  outline: '#38383A',
 
   // Status
   success: '#30D158',

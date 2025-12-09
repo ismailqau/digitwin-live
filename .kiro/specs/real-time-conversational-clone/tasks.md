@@ -1675,7 +1675,7 @@ apps/mobile-app/
   - _Note: WebSocket server runs on port 3001 (apps/websocket-server), ensure mobile app connects to correct endpoint_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 13.2 Implement onboarding flow screens
+- [x] 13.2 Implement onboarding flow screens
   - **13.2.1 Create welcome screen:**
     - Create `src/screens/onboarding/WelcomeScreen.tsx`
     - Implement animated feature carousel (3-4 slides)
@@ -1729,7 +1729,7 @@ apps/mobile-app/
   - _Requirements: 16, 18_
   - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
 
-- [ ] 13.3 Implement voice model creation UI
+- [x] 13.3 Implement voice model creation UI
   - **13.3.1 Enhance voice recording screen:**
     - Enhance existing `src/components/VoiceSampleRecording.tsx`
     - Create `src/screens/voice/VoiceRecordingScreen.tsx` wrapper
