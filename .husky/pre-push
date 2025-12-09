@@ -4,17 +4,13 @@
 # Pre-push hook for comprehensive checks
 echo "🚀 Running pre-push checks..."
 
-# Run type checking
-echo "📝 Type checking..."
-pnpm type-check
-
-# Run all tests
-echo "🧪 Running all tests..."
-pnpm test
-
-# Run build to ensure everything compiles
+# Run build (includes type-check via turbo dependencies)
 echo "🏗️  Building project..."
 pnpm build
+
+# Run all tests (depends on build via turbo)
+echo "🧪 Running all tests..."
+pnpm test
 
 # Run security audit
 echo "🔒 Running security audit..."
