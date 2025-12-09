@@ -7,9 +7,15 @@ process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 
 // Mock uuid to avoid ESM issues
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => '550e8400-e29b-41d4-a716-446655440000'),
-}));
+// Mock uuid to avoid ESM issues
+jest.mock('uuid', () => {
+  const generator = () => `test-uuid-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  return {
+    __esModule: true,
+    v4: jest.fn(generator),
+    default: { v4: jest.fn(generator) },
+  };
+});
 
 // Mock logger
 jest.mock('@clone/logger', () => ({

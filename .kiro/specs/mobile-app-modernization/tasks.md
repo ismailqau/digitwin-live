@@ -17,7 +17,7 @@
   - Remove `socket.io-client` dependency
   - _Requirements: 1.2, 1.3, 2.3, 2.4, 2.5, 3.4, 3.5, 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 3. Upgrade Expo SDK from 52 to 54
+- [x] 3. Upgrade Expo SDK from 52 to 54
   - Update `expo` to `~54.0.0`
   - Update `react-native` to `0.81.x`
   - Update `react` to `19.1.0`
@@ -27,7 +27,7 @@
   - Fix breaking changes and deprecated APIs
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 6.2, 6.3, 6.5_
 
-- [ ] 4. Test end-to-end WebSocket connectivity
+- [x] 4. Test end-to-end WebSocket connectivity
   - Test mobile app connects to server successfully
   - Test JWT authentication and session creation
   - Test bidirectional message flow

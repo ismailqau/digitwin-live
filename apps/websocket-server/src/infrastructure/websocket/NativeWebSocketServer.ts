@@ -11,10 +11,10 @@
  * - 3.5: Connection timeout after 60 seconds without pong
  */
 
+import { randomUUID } from 'crypto';
 import { IncomingMessage } from 'http';
 import { Server as HTTPServer } from 'http';
 
-import { v4 as uuidv4 } from 'uuid';
 import WebSocket, { WebSocketServer } from 'ws';
 
 import { AuthService } from '../../application/services/AuthService';
@@ -115,7 +115,7 @@ export class NativeWebSocketServer {
    * Handles a new WebSocket connection
    */
   async handleConnection(ws: WebSocket, request: IncomingMessage): Promise<void> {
-    const connectionId = uuidv4();
+    const connectionId = randomUUID();
     const connectionStartTime = Date.now();
 
     // Record connection attempt
