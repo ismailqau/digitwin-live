@@ -15,7 +15,7 @@ const getWebSocketUrl = () => {
   return (
     extra.WEBSOCKET_URL ||
     process.env.WEBSOCKET_URL ||
-    'https://websocket-server-yrzc7r3fcq-uc.a.run.app'
+    'wss://websocket-server-yrzc7r3fcq-uc.a.run.app'
   );
 };
 

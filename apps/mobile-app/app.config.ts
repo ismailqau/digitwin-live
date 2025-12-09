@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
     name: config.name || 'DigiTwin Live',
+    plugins: [...(config.plugins || []), 'expo-audio'],
     slug: config.slug || 'digitwin-live',
     extra: {
       ...config.extra,

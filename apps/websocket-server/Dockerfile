@@ -85,13 +85,11 @@ COPY --from=builder /app/apps/websocket-server/dist ./apps/websocket-server/dist
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Generate Prisma client in production stage
-RUN cd packages/database && npx prisma@6 generate
-
-# Create symlink for Prisma client at expected location
-RUN mkdir -p /app/node_modules/.prisma && \
-    mkdir -p /app/node_modules/@prisma && \
-    cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/* /app/node_modules/.prisma/ 2>/dev/null || true && \
-    cp -r /app/node_modules/.pnpm/@prisma+client@*/node_modules/@prisma/client /app/node_modules/@prisma/ 2>/dev/null || true
+# Install prisma CLI globally (avoids workspace: protocol issues), generate, then clean up
+RUN npm install -g prisma@6 && \
+    cd packages/database && \
+    prisma generate && \
+    npm uninstall -g prisma
 
 # Copy entrypoint script
 COPY scripts/docker-entrypoint.sh /usr/local/bin/

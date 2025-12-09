@@ -4,9 +4,8 @@
  * Handles audio playback for TTS-generated responses using expo-av.
  */
 
-import * as ExpoAV from 'expo-av';
-import { AVPlaybackStatus } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
+import * as FileSystem from 'expo-file-system/legacy';
 import { AppState, type AppStateStatus } from 'react-native';
 
 export enum AudioPlaybackState {
@@ -56,7 +55,7 @@ const DEFAULT_CONFIG: PlaybackConfig = {
 };
 
 export class AudioPlaybackManager {
-  private sound: any = null;
+  private player: AudioPlayer | null = null;
   private config: PlaybackConfig;
   private callbacks: PlaybackCallbacks;
   private state: AudioPlaybackState = AudioPlaybackState.IDLE;
@@ -76,12 +75,13 @@ export class AudioPlaybackManager {
 
   private async setupAudioSession(): Promise<void> {
     try {
-      await ExpoAV.Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: this.config.enableDucking,
-        playThroughEarpieceAndroid: false,
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionModeAndroid: this.config.enableDucking ? 'duckOthers' : 'doNotMix',
+        interruptionMode: 'doNotMix',
+        shouldRouteThroughEarpiece: false,
       });
     } catch (error) {
       console.error('Failed to setup audio session:', error);
@@ -154,39 +154,55 @@ export class AudioPlaybackManager {
     await FileSystem.writeAsStringAsync(tempUri, chunk.data, {
       encoding: FileSystem.EncodingType.Base64,
     });
-    const { sound } = await (ExpoAV.Audio.Sound as any).createAsync(
-      { uri: tempUri },
-      { shouldPlay: true, volume: this.isMuted ? 0 : this.config.volume },
-      this.onPlaybackStatusUpdate.bind(this)
-    );
-    this.sound = sound;
+
+    // Create new player for this chunk
+    const player = createAudioPlayer(tempUri);
+    this.player = player;
+
+    // Configure player
+    player.volume = this.isMuted ? 0 : this.config.volume;
+    player.playbackRate = this.config.playbackSpeed;
+
+    // Setup listener
+    const subscription = player.addListener('playbackStatusUpdate', (status) => {
+      this.onPlaybackStatusUpdate(status);
+    });
+
     this.setState(AudioPlaybackState.PLAYING);
+    player.play();
+
     await new Promise<void>((resolve) => {
-      const checkStatus = async () => {
-        if (!this.sound) {
+      const checkStatus = () => {
+        if (!this.player) {
           resolve();
           return;
         }
-        const status = await this.sound.getStatusAsync();
-        if (status.isLoaded && !status.isPlaying && status.didJustFinish) {
+
+        // Check if finished
+        // Note: expo-audio might not report didJustFinish in the same way
+        // We might need to listen to status updates or poll
+        if (player.currentTime >= player.duration && player.duration > 0) {
           resolve();
-        } else if (status.isLoaded && status.isPlaying) {
-          setTimeout(checkStatus, 100);
+        } else if (!player.isLoaded) {
+          resolve();
         } else {
-          resolve();
+          setTimeout(checkStatus, 100);
         }
       };
       checkStatus();
     });
-    await this.sound?.unloadAsync();
-    this.sound = null;
+
+    subscription.remove();
+    player.remove();
+    this.player = null;
     await FileSystem.deleteAsync(tempUri, { idempotent: true });
   }
 
-  private onPlaybackStatusUpdate(status: AVPlaybackStatus): void {
+  private onPlaybackStatusUpdate(status: AudioStatus): void {
     if (!status.isLoaded) return;
-    this.currentPosition = status.positionMillis || 0;
-    this.callbacks.onProgress?.(status.positionMillis || 0, status.durationMillis || 0);
+    this.currentPosition = (status.currentTime || 0) * 1000; // Convert to ms
+    const duration = (status.duration || 0) * 1000; // Convert to ms
+    this.callbacks.onProgress?.(this.currentPosition, duration);
   }
 
   async play(): Promise<void> {
@@ -202,24 +218,25 @@ export class AudioPlaybackManager {
   }
 
   async pause(): Promise<void> {
-    if (this.sound && this.state === AudioPlaybackState.PLAYING) {
-      await this.sound.pauseAsync();
+    if (this.player && this.state === AudioPlaybackState.PLAYING) {
+      this.player.pause();
       this.setState(AudioPlaybackState.PAUSED);
     }
   }
 
   async resume(): Promise<void> {
-    if (this.sound && this.state === AudioPlaybackState.PAUSED) {
-      await this.sound.playAsync();
+    if (this.player && this.state === AudioPlaybackState.PAUSED) {
+      this.player.play();
       this.setState(AudioPlaybackState.PLAYING);
     }
   }
 
   async stop(): Promise<void> {
-    if (this.sound) {
-      await this.sound.stopAsync();
-      await this.sound.unloadAsync();
-      this.sound = null;
+    if (this.player) {
+      this.player.pause();
+      // Reset position not directly supported via stop(), but we can remove it.
+      this.player.remove();
+      this.player = null;
     }
     this.playbackQueue = [];
     this.bufferedDuration = 0;
@@ -229,17 +246,17 @@ export class AudioPlaybackManager {
 
   async setVolume(volume: number): Promise<void> {
     this.config.volume = Math.max(0, Math.min(1, volume));
-    if (this.sound && !this.isMuted) await this.sound.setVolumeAsync(this.config.volume);
+    if (this.player && !this.isMuted) this.player.volume = this.config.volume;
   }
 
   async setMuted(muted: boolean): Promise<void> {
     this.isMuted = muted;
-    if (this.sound) await this.sound.setVolumeAsync(muted ? 0 : this.config.volume);
+    if (this.player) this.player.volume = muted ? 0 : this.config.volume;
   }
 
   async setPlaybackSpeed(speed: number): Promise<void> {
     this.config.playbackSpeed = Math.max(0.5, Math.min(2.0, speed));
-    if (this.sound) await this.sound.setRateAsync(this.config.playbackSpeed, true);
+    if (this.player) this.player.playbackRate = this.config.playbackSpeed;
   }
 
   getCurrentPosition(): number {

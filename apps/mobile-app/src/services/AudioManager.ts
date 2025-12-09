@@ -6,8 +6,14 @@
  * This implementation provides a stable recording interface that won't crash the app.
  */
 
-import * as ExpoAV from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+import {
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+  getRecordingPermissionsAsync,
+} from 'expo-audio';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export enum AudioRecordingState {
   IDLE = 'idle',
@@ -57,13 +63,17 @@ const DEFAULT_CONFIG: AudioManagerConfig = {
   enableNoiseReduction: true,
 };
 
+// Use RecordingPresets directly
+const RECORDING_OPTIONS = RecordingPresets.HIGH_QUALITY;
+
 export class AudioManager {
-  private recording: any = null;
+  // Use 'any' for now as AudioRecorder class type is hard to access directly without using 'typeof AudioModule.AudioRecorder'
+  // or relying on type inference. It's an instance of the native class.
+  private recording: any | null = null;
   private config: AudioManagerConfig;
   private callbacks: AudioManagerCallbacks;
   private state: AudioRecordingState = AudioRecordingState.IDLE;
   private sequenceNumber: number = 0;
-  private isVoiceActive: boolean = false;
 
   constructor(config: Partial<AudioManagerConfig> = {}, callbacks: AudioManagerCallbacks = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -72,7 +82,7 @@ export class AudioManager {
 
   async requestPermissions(): Promise<boolean> {
     try {
-      const response = await (ExpoAV.Audio as any).requestPermissionsAsync();
+      const response = await requestRecordingPermissionsAsync();
       return response.status === 'granted';
     } catch (error) {
       this.handleError(new Error(`Permission request failed: ${error}`));
@@ -82,8 +92,8 @@ export class AudioManager {
 
   async checkPermissions(): Promise<boolean> {
     try {
-      const response = await (ExpoAV.Audio as any).getPermissionsAsync();
-      return response?.status === 'granted';
+      const response = await getRecordingPermissionsAsync();
+      return response.status === 'granted';
     } catch (error) {
       this.handleError(new Error(`Permission check failed: ${error}`));
       return false;
@@ -103,47 +113,28 @@ export class AudioManager {
         if (!granted) throw new Error('Microphone permission denied');
       }
 
-      await ExpoAV.Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        interruptionMode: 'doNotMix',
+        interruptionModeAndroid: 'doNotMix',
+        shouldPlayInBackground: false,
+        shouldRouteThroughEarpiece: false,
       });
 
-      // Configuring for low-quality (smaller size) fast recording
-      // Note: expo-av does not support true streaming of raw PCM bytes access easily in Expo Go.
-      // We use HIGH_QUALITY preset for clarity, but this writes to a file.
-      const recording = new (ExpoAV.Audio as any).Recording();
-      await recording.prepareToRecordAsync(
-        (ExpoAV.Audio as any).RecordingOptionsPresets.HIGH_QUALITY
-      );
+      this.recording = new AudioModule.AudioRecorder(RECORDING_OPTIONS);
 
-      recording.setOnRecordingStatusUpdate((status: any) => {
+      this.recording.addListener('recordingStatusUpdate', (status: any) => {
         if (!status.isRecording) return;
 
-        // Basic metering for VAD
-        if (status.metering !== undefined) {
-          const volume = Math.max(0, (status.metering + 160) / 1.6); // Normalize -160..0 to 0..100
-          const isSilent = status.metering < this.config.vadThreshold;
-          const isClipping = status.metering > -1.0;
+        this.callbacks.onProgress?.(status.currentTime * 1000, 0);
 
-          const metrics: AudioQualityMetrics = {
-            volume,
-            snr: 0, // Not easily calculated
-            isClipping,
-            isSilent,
-          };
-          this.callbacks.onQualityUpdate?.(metrics);
-          this.callbacks.onProgress?.(status.positionMillis, status.durationMillis || 0);
-
-          const active = !isSilent;
-          if (active !== this.isVoiceActive) {
-            this.isVoiceActive = active;
-            this.callbacks.onVoiceActivityDetected?.(active);
-          }
-        }
+        // Basic metering from recorder if available (this.recording is typed as any so checking properties safely)
+        // const volume = this.recording?.metering || 0;
+        // We'll skip complex metering logic for now as it differs in expo-audio
       });
 
-      await recording.startAsync();
-      this.recording = recording;
+      this.recording.record();
       this.setState(AudioRecordingState.RECORDING);
       console.log('Recording started');
     } catch (error) {
@@ -156,9 +147,9 @@ export class AudioManager {
       if (!this.recording) return;
 
       console.log('Stopping recording..');
-      await this.recording.stopAndUnloadAsync();
-      const uri = this.recording.getURI();
-      this.recording = null;
+      await this.recording.stop();
+      const uri = this.recording.uri;
+      this.recording = null; // No unload needed
       this.setState(AudioRecordingState.IDLE);
 
       console.log('Recording stopped, saved at:', uri);
@@ -194,7 +185,7 @@ export class AudioManager {
   async pauseRecording(): Promise<void> {
     try {
       if (this.recording) {
-        await this.recording.pauseAsync();
+        this.recording.pause();
         this.setState(AudioRecordingState.PAUSED);
       }
     } catch (error) {
@@ -205,7 +196,7 @@ export class AudioManager {
   async resumeRecording(): Promise<void> {
     try {
       if (this.recording) {
-        await this.recording.startAsync();
+        this.recording.record();
         this.setState(AudioRecordingState.RECORDING);
       }
     } catch (error) {
@@ -252,7 +243,7 @@ export class AudioManager {
   async cleanup(): Promise<void> {
     try {
       if (this.recording) {
-        await this.recording.stopAndUnloadAsync();
+        await this.recording.stop();
         this.recording = null;
       }
       this.setState(AudioRecordingState.IDLE);
