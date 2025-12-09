@@ -109,8 +109,8 @@ function createTestClient(
     > = new Map();
 
     const url = token
-      ? `ws://localhost:${serverPort}/socket.io/?token=${encodeURIComponent(token)}`
-      : `ws://localhost:${serverPort}/socket.io/`;
+      ? `ws://localhost:${serverPort}/?token=${encodeURIComponent(token)}`
+      : `ws://localhost:${serverPort}/`;
 
     const ws = new WebSocket(url);
 
@@ -186,7 +186,7 @@ describe('End-to-End WebSocket Connection Flows Integration', () => {
     // Create native WebSocket server
     wss = new WebSocketServer({
       server: httpServer,
-      path: '/socket.io/', // Keep same path for compatibility
+      path: '/', // Accept connections on root path (native WebSocket)
     });
 
     // Create services

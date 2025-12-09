@@ -10,14 +10,16 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.config.js' }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-native/.*|@react-navigation|expo|@expo|@unimodules|unimodules|react-native-audio-recorder-player|react-native-permissions|expo-av|expo-file-system)/)',
+    'node_modules/(?!(react-native|@react-native|@react-native/.*|@react-navigation|expo|@expo|@unimodules|unimodules|react-native-audio-recorder-player|react-native-permissions|expo-av|expo-audio|expo-file-system)/)',
   ],
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     'react-native-permissions': '<rootDir>/src/__mocks__/react-native-permissions.ts',
     'react-native-audio-recorder-player':
       '<rootDir>/__mocks__/react-native-audio-recorder-player.js',
+    'expo-file-system/legacy': '<rootDir>/__mocks__/expo-file-system.js',
     'expo-file-system': '<rootDir>/__mocks__/expo-file-system.js',
+    'expo-audio': '<rootDir>/src/__mocks__/expo-audio.ts',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx|js)'],

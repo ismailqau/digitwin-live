@@ -52,6 +52,7 @@ export interface AudioManagerCallbacks {
   onError?: (error: Error) => void;
   onVoiceActivityDetected?: (isActive: boolean) => void;
   onProgress?: (position: number, duration: number) => void;
+  onRecordingComplete?: (uri: string, durationMs: number) => void;
 }
 
 const DEFAULT_CONFIG: AudioManagerConfig = {
@@ -74,6 +75,7 @@ export class AudioManager {
   private callbacks: AudioManagerCallbacks;
   private state: AudioRecordingState = AudioRecordingState.IDLE;
   private sequenceNumber: number = 0;
+  private recordingStartTime: number = 0;
 
   constructor(config: Partial<AudioManagerConfig> = {}, callbacks: AudioManagerCallbacks = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -134,6 +136,9 @@ export class AudioManager {
         // We'll skip complex metering logic for now as it differs in expo-audio
       });
 
+      // IMPORTANT: Must prepare before recording to set up file path
+      await this.recording.prepareToRecordAsync();
+      this.recordingStartTime = Date.now();
       this.recording.record();
       this.setState(AudioRecordingState.RECORDING);
       console.log('Recording started');
@@ -144,29 +149,66 @@ export class AudioManager {
 
   async stopRecording(): Promise<void> {
     try {
-      if (!this.recording) return;
+      if (!this.recording) {
+        this.setState(AudioRecordingState.IDLE);
+        return;
+      }
 
       console.log('Stopping recording..');
       await this.recording.stop();
       const uri = this.recording.uri;
+      const durationMs = Date.now() - this.recordingStartTime;
       this.recording = null; // No unload needed
       this.setState(AudioRecordingState.IDLE);
 
-      console.log('Recording stopped, saved at:', uri);
+      console.log('Recording stopped, saved at:', uri, 'duration:', durationMs, 'ms');
 
-      // In a real implementation, we would now read the file and emit it
-      // Since this is a replacement for streaming, we will emit one large chunk for now
-      // or implement a file watcher if strictly needed.
+      // Notify about recording completion with URI for saving
       if (uri) {
-        this.emitFinalChunk(uri);
+        try {
+          // Wait for file to be written before notifying
+          await this.waitForFile(uri);
+          this.callbacks.onRecordingComplete?.(uri, durationMs);
+          // Also emit the chunk for WebSocket streaming
+          await this.emitFinalChunk(uri);
+        } catch (fileError) {
+          console.error('Error processing recording file:', fileError);
+          // Don't transition to error state - recording was stopped successfully
+        }
       }
     } catch (error) {
       this.handleError(new Error(`Failed to stop recording: ${error}`));
     }
   }
 
-  private async emitFinalChunk(uri: string) {
+  private async waitForFile(uri: string): Promise<boolean> {
+    let fileExists = false;
+    let retries = 0;
+    const maxRetries = 10;
+    const retryDelayMs = 100;
+
+    while (!fileExists && retries < maxRetries) {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (fileInfo.exists && fileInfo.size && fileInfo.size > 0) {
+        fileExists = true;
+      } else {
+        retries++;
+        console.log(`Waiting for recording file... (attempt ${retries}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+    return fileExists;
+  }
+
+  private async emitFinalChunk(uri: string): Promise<void> {
     try {
+      // File existence already verified, but double-check
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) {
+        console.warn('Recording file does not exist:', uri);
+        return;
+      }
+
       const base64Data = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
@@ -177,8 +219,11 @@ export class AudioManager {
         duration: 0, // Unknown without analysis
       };
       this.callbacks.onChunk?.(chunk);
+
+      // NOTE: We don't delete the file here anymore because onRecordingComplete
+      // might need it for saving to history
     } catch (e) {
-      console.error('Error creating chunk from file', e);
+      console.error('Error creating chunk from file:', uri, e);
     }
   }
 

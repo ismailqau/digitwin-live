@@ -79,7 +79,7 @@ export class NativeWebSocketServer {
   ) {
     this.wss = new WebSocketServer({
       server: httpServer,
-      path: '/socket.io/', // Keep same path for compatibility
+      path: '/', // Accept connections on root path (native WebSocket)
     });
 
     this.connectionManager = new ConnectionManager();

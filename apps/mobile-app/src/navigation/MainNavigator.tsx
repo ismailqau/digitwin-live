@@ -6,25 +6,27 @@
  */
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 import ConversationScreen from '../components/ConversationScreen';
 import ENV from '../config/env';
 import type { MainTabParamList } from '../types/navigation';
+import { generateGuestToken } from '../utils/guestToken';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // Configuration
 const WEBSOCKET_URL = ENV.WEBSOCKET_URL;
-// Valid JWT token for development (expires in 24h) - Generated with correct JWT_SECRET
-const AUTH_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItMTIzIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwic3Vic2NyaXB0aW9uVGllciI6ImZyZWUiLCJwZXJtaXNzaW9ucyI6WyJjb252ZXJzYXRpb246Y3JlYXRlIiwiY29udmVyc2F0aW9uOnJlYWQiLCJrbm93bGVkZ2U6cmVhZCJdLCJyb2xlcyI6WyJ1c2VyIl0sImlhdCI6MTc2NDg3OTc0MywiZXhwIjoxNzY0OTY2MTQzfQ.jzP1gS00_aGB8KhTpuowS2AOp4aVmKJ-niwpVXQwPrU';
 
 // Wrapper for existing ConversationScreen
-const ConversationTab = () => (
-  <ConversationScreen websocketUrl={WEBSOCKET_URL} authToken={AUTH_TOKEN} />
-);
+const ConversationTab = () => {
+  // Generate a guest token for development/testing
+  // In production, this would use a real JWT from authentication
+  const authToken = useMemo(() => generateGuestToken(), []);
+
+  return <ConversationScreen websocketUrl={WEBSOCKET_URL} authToken={authToken} />;
+};
 
 // Placeholder screens - will be replaced with actual implementations
 const HistoryScreen = () => (

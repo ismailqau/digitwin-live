@@ -20,6 +20,8 @@ import type {
   ErrorMessage,
 } from '@clone/shared-types';
 
+import { recordingStore } from '../store/recordingStore';
+
 import AudioManager, {
   AudioRecordingState,
   type AudioChunk,
@@ -83,6 +85,7 @@ export class ConversationManager {
   private turnIndex: number = 0;
   private isMonitoringForInterruption: boolean = false;
   private interruptionDetectionTimer: NodeJS.Timeout | null = null;
+  private recordingStartTime: number = 0;
   private readonly INTERRUPTION_THRESHOLD_MS = 200; // 200ms of continuous speech to trigger interruption
 
   constructor(config: ConversationManagerConfig, callbacks: ConversationCallbacks = {}) {
@@ -103,6 +106,7 @@ export class ConversationManager {
       onStateChange: this.handleAudioStateChange.bind(this),
       onError: this.handleAudioError.bind(this),
       onVoiceActivityDetected: this.handleVoiceActivity.bind(this),
+      onRecordingComplete: this.handleRecordingComplete.bind(this),
     });
 
     // Initialize Audio Playback Manager
@@ -238,22 +242,43 @@ export class ConversationManager {
    */
   async startListening(): Promise<void> {
     try {
-      if (this.state !== ConversationState.CONNECTED && this.state !== ConversationState.IDLE) {
-        throw new Error(`Cannot start listening in state: ${this.state}`);
-      }
+      // Allow starting from more states for better recovery
+      const validStates = [
+        ConversationState.CONNECTED,
+        ConversationState.IDLE,
+        ConversationState.PROCESSING,
+        ConversationState.INTERRUPTED,
+        ConversationState.ERROR,
+      ];
 
-      // Request microphone permissions
-      const hasPermission = await this.audioManager.checkPermissions();
-      if (!hasPermission) {
-        const granted = await this.audioManager.requestPermissions();
-        if (!granted) {
-          throw new Error('Microphone permission denied');
+      if (!validStates.includes(this.state)) {
+        console.warn(`[ConversationManager] Attempting to start listening in state: ${this.state}`);
+        // If stuck in LISTENING state, try to recover
+        if (this.state === ConversationState.LISTENING) {
+          console.log('[ConversationManager] Already listening, ignoring duplicate request');
+          return;
         }
       }
 
-      // Start recording
+      // Request microphone permissions
+      console.log('[ConversationManager] Checking microphone permissions...');
+      const hasPermission = await this.audioManager.checkPermissions();
+      if (!hasPermission) {
+        console.log('[ConversationManager] Requesting microphone permissions...');
+        const granted = await this.audioManager.requestPermissions();
+        if (!granted) {
+          throw new Error(
+            'Microphone permission denied. Please enable microphone access in settings.'
+          );
+        }
+      }
+      console.log('[ConversationManager] Microphone permissions granted');
+
+      // Start recording and track the start time
+      this.recordingStartTime = Date.now();
       await this.audioManager.startRecording();
       this.setState(ConversationState.LISTENING);
+      console.log('[ConversationManager] Recording started');
     } catch (error) {
       this.handleError(`Failed to start listening: ${error}`, true);
       throw error;
@@ -265,10 +290,23 @@ export class ConversationManager {
    */
   async stopListening(): Promise<void> {
     try {
+      // Calculate recording duration
+      const durationMs = Date.now() - this.recordingStartTime;
+
       await this.audioManager.stopRecording();
       this.sendEndUtterance();
       this.setState(ConversationState.PROCESSING);
+
+      // Save the recording to history if we have a valid duration
+      if (durationMs > 500) {
+        // Get the last recording URI from AudioManager (if available)
+        // For now, we'll create a recording entry with the duration
+        // The actual audio file is handled by AudioManager's onChunk callback
+        console.log(`[ConversationManager] Recording stopped, duration: ${durationMs}ms`);
+      }
     } catch (error) {
+      // Try to recover from stuck state
+      this.setState(ConversationState.CONNECTED);
       this.handleError(`Failed to stop listening: ${error}`, true);
       throw error;
     }
@@ -367,6 +405,34 @@ export class ConversationManager {
     }
     if (metrics.snr < 10) {
       console.warn('Low signal-to-noise ratio - noisy environment');
+    }
+  }
+
+  /**
+   * Handle recording completion - save to history
+   */
+  private async handleRecordingComplete(uri: string, durationMs: number): Promise<void> {
+    try {
+      // Only save recordings longer than 1 second
+      if (durationMs > 1000) {
+        console.log(
+          `[ConversationManager] Saving recording to history: ${uri}, duration: ${durationMs}ms`
+        );
+
+        await recordingStore.addRecording({
+          uri,
+          timestamp: new Date(),
+          durationMs,
+          transcript: undefined, // Will be updated when transcript arrives
+          syncedToServer: false,
+        });
+
+        console.log('[ConversationManager] Recording saved to history');
+      } else {
+        console.log(`[ConversationManager] Skipping short recording: ${durationMs}ms`);
+      }
+    } catch (error) {
+      console.error('[ConversationManager] Failed to save recording:', error);
     }
   }
 

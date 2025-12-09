@@ -3,13 +3,19 @@
  * Tests for audio recording and streaming functionality
  */
 
-// Mock expo-av and expo-file-system
-jest.mock('expo-av');
+// Mock expo-audio and expo-file-system
+jest.mock('expo-audio');
 jest.mock('expo-file-system');
 
 import { check, request } from 'react-native-permissions';
 
-import { mockAudio, mockRecordingInstance } from '../__mocks__/expo-av';
+import {
+  mockAudioRecorder,
+  getRecordingPermissionsAsync,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  AudioModule,
+} from '../__mocks__/expo-audio';
 import { AudioManager, AudioRecordingState } from '../services/AudioManager';
 
 const mockCheck = check as jest.MockedFunction<typeof check>;
@@ -35,17 +41,16 @@ describe('AudioManager', () => {
     mockCheck.mockResolvedValue('granted');
     mockRequest.mockResolvedValue('granted');
 
-    // Reset expo-av mocks to default values
-    mockAudio.getPermissionsAsync.mockResolvedValue({ status: 'granted' });
-    mockAudio.requestPermissionsAsync.mockResolvedValue({ status: 'granted' });
-    mockAudio.setAudioModeAsync.mockResolvedValue(undefined);
-    mockAudio.Recording.mockImplementation(() => mockRecordingInstance);
+    // Reset expo-audio mocks to default values
+    (getRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (requestRecordingPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (setAudioModeAsync as jest.Mock).mockResolvedValue(undefined);
+    (AudioModule.AudioRecorder as jest.Mock).mockImplementation(() => mockAudioRecorder);
 
-    mockRecordingInstance.prepareToRecordAsync.mockResolvedValue(undefined);
-    mockRecordingInstance.startAsync.mockResolvedValue(undefined);
-    mockRecordingInstance.stopAndUnloadAsync.mockResolvedValue({ uri: 'file://test' });
-    mockRecordingInstance.pauseAsync.mockResolvedValue(undefined);
-    mockRecordingInstance.getURI.mockReturnValue('file://test');
+    mockAudioRecorder.prepareToRecordAsync.mockResolvedValue(undefined);
+    mockAudioRecorder.record.mockReturnValue(undefined);
+    mockAudioRecorder.stop.mockResolvedValue(undefined);
+    mockAudioRecorder.pause.mockReturnValue(undefined);
 
     mockCallbacks = {
       onChunk: jest.fn(),
@@ -89,14 +94,14 @@ describe('AudioManager', () => {
       const hasPermission = await audioManager.checkPermissions();
 
       // Verify the mock was called
-      expect(mockAudio.getPermissionsAsync).toHaveBeenCalled();
+      expect(getRecordingPermissionsAsync).toHaveBeenCalled();
       expect(hasPermission).toBe(true);
     });
 
     it('should request microphone permissions', async () => {
       const granted = await audioManager.requestPermissions();
-      // Note: Current implementation is a placeholder that always returns true
-      // In production, this would use expo-av's Audio.Recording.requestPermissionsAsync()
+      // Uses expo-audio's requestRecordingPermissionsAsync
+      expect(requestRecordingPermissionsAsync).toHaveBeenCalled();
       expect(granted).toBe(true);
     });
   });

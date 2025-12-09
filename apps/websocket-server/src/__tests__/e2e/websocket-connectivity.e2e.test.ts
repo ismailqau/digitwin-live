@@ -112,8 +112,8 @@ function createMobileAppClient(
     > = new Map();
 
     const url = token
-      ? `ws://localhost:${serverPort}/socket.io/?token=${encodeURIComponent(token)}`
-      : `ws://localhost:${serverPort}/socket.io/`;
+      ? `ws://localhost:${serverPort}/?token=${encodeURIComponent(token)}`
+      : `ws://localhost:${serverPort}/`;
 
     const ws = new WebSocket(url);
 
