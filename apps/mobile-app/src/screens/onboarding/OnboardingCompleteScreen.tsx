@@ -5,9 +5,11 @@
  * Provides tips for first conversation and navigation to main app
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 
+import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { useAuthStore } from '../../store/authStore';
 import { lightTheme } from '../../theme';
 import type { OnboardingScreenProps } from '../../types/navigation';
@@ -70,13 +72,32 @@ export default function OnboardingCompleteScreen(
     ]).start();
   }, [scaleAnim, opacityAnim]);
 
-  const handleStartConversation = () => {
-    setOnboarded(true);
-    // Navigation will automatically go to main app
+  const handleStartConversation = async () => {
+    try {
+      // Mark onboarding as complete
+      await AsyncStorage.setItem('onboarding_complete', 'true');
+      await AsyncStorage.setItem('onboarding_progress', '6');
+
+      // Update auth store
+      setOnboarded(true);
+
+      // Navigation will automatically go to main app
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      // Still proceed even if storage fails
+      setOnboarded(true);
+    }
   };
 
   return (
     <View style={styles.container}>
+      {/* Progress Indicator */}
+      <OnboardingProgressIndicator
+        currentStep={5}
+        totalSteps={5}
+        stepLabels={['Welcome', 'Personality', 'Voice', 'Face', 'Complete']}
+      />
+
       {/* Header with Success Animation */}
       <View style={styles.header}>
         <Animated.View

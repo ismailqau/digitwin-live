@@ -5,9 +5,12 @@
  * Displays permission status and handles "Don't Allow" scenarios
  */
 
+import { Camera } from 'expo-camera';
+import * as MediaLibrary from 'expo-media-library';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 
+import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { lightTheme } from '../../theme';
 import type { OnboardingScreenProps } from '../../types/navigation';
 
@@ -68,9 +71,45 @@ export default function PermissionsScreen({
   }, [permissions]);
 
   const checkPermissions = async () => {
-    // TODO: Implement actual permission checking using expo-permissions or react-native-permissions
-    // For now, set all permissions to pending
-    setPermissions(PERMISSIONS);
+    try {
+      // Check microphone permission (via Camera API which includes audio)
+      const cameraStatus = await Camera.getCameraPermissionsAsync();
+      const micStatus = cameraStatus.granted
+        ? 'granted'
+        : cameraStatus.canAskAgain
+          ? 'pending'
+          : 'blocked';
+
+      // Check camera permission
+      const camStatus = cameraStatus.granted
+        ? 'granted'
+        : cameraStatus.canAskAgain
+          ? 'pending'
+          : 'blocked';
+
+      // Check photo library permission
+      const mediaStatus = await MediaLibrary.getPermissionsAsync();
+      const photoStatus = mediaStatus.granted
+        ? 'granted'
+        : mediaStatus.canAskAgain
+          ? 'pending'
+          : 'blocked';
+
+      // Notification permission - mark as granted by default (optional feature)
+      const notificationStatus = 'granted';
+
+      setPermissions((prev) =>
+        prev.map((p) => {
+          if (p.id === 'microphone') return { ...p, status: micStatus };
+          if (p.id === 'camera') return { ...p, status: camStatus };
+          if (p.id === 'photoLibrary') return { ...p, status: photoStatus };
+          if (p.id === 'notifications') return { ...p, status: notificationStatus };
+          return p;
+        })
+      );
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+    }
   };
 
   const requestPermission = async (permissionId: string) => {
@@ -78,13 +117,39 @@ export default function PermissionsScreen({
     if (!permission) return;
 
     try {
-      // TODO: Implement actual permission request using expo-permissions or react-native-permissions
-      // For now, simulate granting the permission
-      setPermissions((prev) =>
-        prev.map((p) => (p.id === permissionId ? { ...p, status: 'granted' } : p))
-      );
+      let status: 'granted' | 'denied' | 'blocked' = 'denied';
+
+      if (permissionId === 'microphone') {
+        // Microphone permission is handled via Camera API
+        const result = await Camera.requestCameraPermissionsAsync();
+        status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
+      } else if (permissionId === 'camera') {
+        const result = await Camera.requestCameraPermissionsAsync();
+        status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
+      } else if (permissionId === 'photoLibrary') {
+        const result = await MediaLibrary.requestPermissionsAsync();
+        status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
+      } else if (permissionId === 'notifications') {
+        // Notifications are optional - mark as granted
+        status = 'granted';
+      }
+
+      setPermissions((prev) => prev.map((p) => (p.id === permissionId ? { ...p, status } : p)));
+
+      // Show instructions if permission was blocked
+      if (status === 'blocked') {
+        Alert.alert(
+          'Permission Blocked',
+          `${permission.title} permission was denied. Please enable it in Settings to use this feature.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+      }
     } catch (error) {
       console.error(`Error requesting ${permissionId} permission:`, error);
+      Alert.alert('Error', 'Failed to request permission. Please try again.');
     }
   };
 
@@ -134,6 +199,13 @@ export default function PermissionsScreen({
 
   return (
     <View style={styles.container}>
+      {/* Progress Indicator */}
+      <OnboardingProgressIndicator
+        currentStep={2}
+        totalSteps={6}
+        stepLabels={['Welcome', 'Permissions', 'Personality', 'Voice', 'Face', 'Complete']}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Permissions</Text>

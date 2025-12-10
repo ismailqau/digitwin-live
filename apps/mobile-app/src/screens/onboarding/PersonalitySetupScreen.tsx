@@ -5,6 +5,7 @@
  * Includes preview of how the clone will respond
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import {
   View,
@@ -16,6 +17,7 @@ import {
   Alert,
 } from 'react-native';
 
+import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { lightTheme } from '../../theme';
 import type { OnboardingScreenProps } from '../../types/navigation';
 
@@ -57,12 +59,17 @@ export default function PersonalitySetupScreen({
     }
 
     try {
-      // TODO: Save personality to user profile via API
-      // const response = await api.updateUserProfile({
-      //   personalityTraits: selectedTraits,
-      //   speakingStyle: selectedStyle,
-      //   customDescription,
-      // });
+      // Save personality settings to AsyncStorage
+      const personalityData = {
+        personalityTraits: selectedTraits,
+        speakingStyle: selectedStyle,
+        customDescription,
+      };
+      await AsyncStorage.setItem('onboarding_personality', JSON.stringify(personalityData));
+      await AsyncStorage.setItem('onboarding_progress', '3');
+
+      // TODO: Save personality to user profile via API when backend is ready
+      // const response = await api.updateUserProfile(personalityData);
 
       navigation.navigate('VoiceSetupPrompt');
     } catch (error) {
@@ -79,6 +86,13 @@ export default function PersonalitySetupScreen({
 
   return (
     <View style={styles.container}>
+      {/* Progress Indicator */}
+      <OnboardingProgressIndicator
+        currentStep={2}
+        totalSteps={5}
+        stepLabels={['Welcome', 'Personality', 'Voice', 'Face', 'Complete']}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Personality Setup</Text>

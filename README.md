@@ -139,6 +139,7 @@ Microservices architecture deployed on GCP Cloud Run:
 - [GCP Troubleshooting](./docs/GCP-TROUBLESHOOTING.md) - Common issues
 - [Database Architecture](./docs/DATABASE-ARCHITECTURE.md) - Schema and patterns
 - [Vector Database](./docs/VECTOR-DATABASE.md) - pgvector setup
+- [Mobile App Onboarding](./docs/MOBILE-APP-ONBOARDING.md) - Onboarding flow guide
 
 ### Development
 

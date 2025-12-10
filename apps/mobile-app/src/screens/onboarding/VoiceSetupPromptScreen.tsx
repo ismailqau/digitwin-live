@@ -8,6 +8,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
+import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { lightTheme } from '../../theme';
 import type { OnboardingScreenProps } from '../../types/navigation';
 
@@ -58,6 +59,13 @@ export default function VoiceSetupPromptScreen({
 
   return (
     <View style={styles.container}>
+      {/* Progress Indicator */}
+      <OnboardingProgressIndicator
+        currentStep={3}
+        totalSteps={5}
+        stepLabels={['Welcome', 'Personality', 'Voice', 'Face', 'Complete']}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Voice Cloning</Text>

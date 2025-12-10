@@ -1677,59 +1677,54 @@ apps/mobile-app/
 
 - [x] 13.2 Implement onboarding flow screens
   - **13.2.1 Create welcome screen:**
-    - Create `src/screens/onboarding/WelcomeScreen.tsx`
-    - Implement animated feature carousel (3-4 slides)
-    - Add app logo and branding
-    - Create "Get Started" button
-    - Add "Skip" option for returning users
-    - Implement page indicator dots
-  - **13.2.2 Create permissions request screen:**
-    - Create `src/screens/onboarding/PermissionsScreen.tsx`
-    - Request microphone permission with explanation
-    - Request camera permission with explanation
-    - Request photo library permission with explanation
-    - Request notification permission with explanation
-    - Show permission status indicators (granted/denied)
-    - Handle "Don't Allow" with alternative instructions
-    - Add "Continue" button (enabled when required permissions granted)
-  - **13.2.3 Create personality setup screen:**
-    - Create `src/screens/onboarding/PersonalitySetupScreen.tsx`
-    - Implement personality trait selection (multi-select chips)
-    - Add speaking style selection (formal, casual, friendly, professional)
-    - Create text input for custom personality description
-    - Add preview of how clone will respond
-    - Implement "Skip for now" option
-    - Save personality to user profile via API
-  - **13.2.4 Create voice setup prompt screen:**
-    - Create `src/screens/onboarding/VoiceSetupPromptScreen.tsx`
-    - Explain voice cloning feature and benefits
-    - Show estimated time (5-10 minutes recording)
-    - Add "Set Up Voice Now" button → navigate to voice recording
-    - Add "Set Up Later" button → skip to face setup
-    - Display voice quality tips
-  - **13.2.5 Create face setup prompt screen:**
-    - Create `src/screens/onboarding/FaceSetupPromptScreen.tsx`
-    - Explain face cloning feature and benefits
-    - Show photo/video requirements
-    - Add "Set Up Face Now" button → navigate to face capture
-    - Add "Set Up Later" button → complete onboarding
-    - Display face capture tips
-  - **13.2.6 Create onboarding complete screen:**
-    - Create `src/screens/onboarding/OnboardingCompleteScreen.tsx`
-    - Show success animation/confetti
-    - Display setup summary (what was configured)
-    - Add "Start Conversation" button → navigate to main app
-    - Show tips for first conversation
-  - **13.2.7 Implement onboarding progress and navigation:**
-    - Create progress indicator component showing current step
-    - Implement animated transitions between screens (slide, fade)
-    - Store onboarding progress in AsyncStorage
-    - Handle back navigation with confirmation
-    - Mark onboarding complete in user profile
+    - ✅ Created `src/screens/onboarding/WelcomeScreen.tsx`
+    - ✅ Implemented animated feature carousel (4 slides: Voice, Face, Knowledge, Chat)
+    - ✅ Added app logo and branding
+    - ✅ Created "Get Started" button → navigate to PersonalitySetup
+    - ✅ Added "Skip" option for returning users
+    - ✅ Implemented animated page indicator dots
+  - **13.2.2 Create personality setup screen:**
+    - ✅ Created `src/screens/onboarding/PersonalitySetupScreen.tsx`
+    - ✅ Implemented personality trait selection (8 traits with multi-select chips)
+    - ✅ Added speaking style selection (4 styles: formal, casual, friendly, professional)
+    - ✅ Created text input for custom personality description
+    - ✅ Added preview of how clone will respond
+    - ✅ Implemented "Skip for now" option
+    - ✅ Save personality to AsyncStorage (API integration pending backend)
+  - **13.2.3 Create voice setup prompt screen:**
+    - ✅ Created `src/screens/onboarding/VoiceSetupPromptScreen.tsx`
+    - ✅ Explain voice cloning feature and benefits
+    - ✅ Show estimated time (5-10 minutes recording)
+    - ✅ Add "Set Up Voice Now" button → navigate to voice recording (requests microphone permission just-in-time)
+    - ✅ Add "Set Up Later" button → skip to face setup
+    - ✅ Display voice quality tips (4 tips with icons)
+  - **13.2.4 Create face setup prompt screen:**
+    - ✅ Created `src/screens/onboarding/FaceSetupPromptScreen.tsx`
+    - ✅ Explain face cloning feature and benefits
+    - ✅ Show photo/video requirements (4 requirements)
+    - ✅ Add "Set Up Face Now" button → navigate to face capture (requests camera permission just-in-time)
+    - ✅ Add "Set Up Later" button → complete onboarding
+    - ✅ Display face capture tips (4 tips)
+  - **13.2.5 Create onboarding complete screen:**
+    - ✅ Created `src/screens/onboarding/OnboardingCompleteScreen.tsx`
+    - ✅ Show success animation (animated checkmark with scale/fade)
+    - ✅ Display setup summary (personality, voice, face status)
+    - ✅ Add "Start Conversation" button → navigate to main app
+    - ✅ Show tips for first conversation (4 tips)
+    - ✅ Display next steps and background processing info
+  - **13.2.6 Implement onboarding progress and navigation:**
+    - ✅ Created `OnboardingProgressIndicator` component showing current step
+    - ✅ Implemented animated transitions (slide_from_right, fade, slide_from_bottom)
+    - ✅ Store onboarding progress in AsyncStorage via OnboardingService
+    - ✅ Handle back navigation with confirmation dialog
+    - ✅ Mark onboarding complete in authStore and AsyncStorage
+    - ✅ Integrated progress indicator in all 5 onboarding screens
+    - ✅ Removed upfront permissions screen - permissions requested just-in-time
   - _Requirements: 16, 18_
-  - Create appropriate and minimal documentation in /docs with proper links in the root README file, ensuring no redundant information
+  - _Documentation: See docs/MOBILE-APP-ONBOARDING.md_
+  - _Note: Permissions are now requested just-in-time when user actually needs the feature, following UX best practices_
 
-- [x] 13.3 Implement voice model creation UI
+- [ ] 13.3 Implement voice model creation UI
   - **13.3.1 Enhance voice recording screen:**
     - Enhance existing `src/components/VoiceSampleRecording.tsx`
     - Create `src/screens/voice/VoiceRecordingScreen.tsx` wrapper

@@ -137,8 +137,8 @@ pnpm lint:fix
 
 ## Documentation
 
-- [Onboarding Status](./docs/ONBOARDING-STATUS.md) - Onboarding flow implementation details
-- [Voice Model Creation UI](./docs/VOICE-MODEL-CREATION-UI.md) - Voice model creation flow ✅ NEW
+- [Onboarding Flow](../../docs/MOBILE-APP-ONBOARDING.md) - Complete onboarding flow guide
+- [Voice Model Creation UI](./docs/VOICE-MODEL-CREATION-UI.md) - Voice model creation flow
 
 ## Tech Stack
 

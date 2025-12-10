@@ -68,7 +68,7 @@ export default function WelcomeScreen({
   });
 
   const handleGetStarted = () => {
-    navigation.navigate('Permissions');
+    navigation.navigate('PersonalitySetup');
   };
 
   const handleSkip = () => {
