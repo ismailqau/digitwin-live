@@ -64,18 +64,24 @@ export const VoiceSampleReviewScreen: React.FC = () => {
         // Stop playback
         setPlayingSampleId(null);
         // In real implementation: await audioPlayer.stop();
+        console.log('Stopping playback for sample:', sample.id);
       } else {
         // Start playback
         setPlayingSampleId(sample.id);
-        // In real implementation: await audioPlayer.play(sample.filePath);
+        console.log('Starting playback for sample:', sample.id, 'duration:', sample.duration);
 
-        // Simulate playback duration
+        // In real implementation: await audioPlayer.play(sample.filePath);
+        // For now, simulate playback with more realistic timing
+        const playbackDuration = Math.max(1000, sample.duration * 1000); // At least 1 second
+
         setTimeout(() => {
           setPlayingSampleId(null);
-        }, sample.duration * 1000);
+          console.log('Playback completed for sample:', sample.id);
+        }, playbackDuration);
       }
-    } catch {
-      Alert.alert('Error', 'Failed to play audio sample');
+    } catch (error) {
+      console.error('Playback error:', error);
+      Alert.alert('Playback Error', 'Failed to play audio sample. Please try again.');
       setPlayingSampleId(null);
     }
   };
@@ -147,25 +153,44 @@ export const VoiceSampleReviewScreen: React.FC = () => {
               <Text style={styles.summaryValue}>
                 {samples.length} / {minSamplesRequired}
               </Text>
+              <Text style={styles.summarySubtext}>
+                {samples.length >= minSamplesRequired ? '✓ Complete' : 'Need more'}
+              </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Duration</Text>
               <Text style={styles.summaryValue}>{formatDuration(totalDuration)}</Text>
+              <Text style={styles.summarySubtext}>
+                {totalDuration >= 300 ? '✓ Good length' : 'Could be longer'}
+              </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Avg Quality</Text>
               <Text style={[styles.summaryValue, { color: getQualityColor(avgQuality) }]}>
                 {Math.round(avgQuality)}/100
               </Text>
+              <Text style={[styles.summarySubtext, { color: getQualityColor(avgQuality) }]}>
+                {avgQuality >= 80 ? 'Excellent' : avgQuality >= 60 ? 'Good' : 'Needs work'}
+              </Text>
             </View>
           </View>
 
           {!canProceed && (
             <View style={styles.warningContainer}>
+              <Text style={styles.warningIcon}>⚠️</Text>
               <Text style={styles.warningText}>
                 {samples.length < minSamplesRequired
-                  ? `Record at least ${minSamplesRequired - samples.length} more sample(s)`
-                  : 'Average quality too low. Consider re-recording some samples.'}
+                  ? `Record at least ${minSamplesRequired - samples.length} more sample(s) to continue`
+                  : 'Average quality is below recommended threshold. Consider re-recording some samples for better results.'}
+              </Text>
+            </View>
+          )}
+
+          {canProceed && (
+            <View style={styles.successContainer}>
+              <Text style={styles.successIcon}>✅</Text>
+              <Text style={styles.successText}>
+                Ready to upload! Your voice samples meet the quality requirements.
               </Text>
             </View>
           )}
@@ -324,16 +349,45 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  summarySubtext: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+    textAlign: 'center',
+  },
   warningContainer: {
     marginTop: 15,
-    padding: 10,
+    padding: 12,
     backgroundColor: '#FFF3CD',
-    borderRadius: 6,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  warningIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   warningText: {
     fontSize: 14,
     color: '#856404',
-    textAlign: 'center',
+    flex: 1,
+  },
+  successContainer: {
+    marginTop: 15,
+    padding: 12,
+    backgroundColor: '#D4EDDA',
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  successIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  successText: {
+    fontSize: 14,
+    color: '#155724',
+    flex: 1,
   },
   samplesContainer: {
     marginBottom: 20,

@@ -101,8 +101,9 @@ export const VoiceUploadScreen: React.FC = () => {
           currentSample: i + 1,
         });
 
-        // Simulate upload delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Simulate upload delay with more realistic timing based on sample size
+        const uploadTime = Math.max(1500, Math.min(5000, samples[i].duration * 100)); // 100ms per second of audio
+        await new Promise((resolve) => setTimeout(resolve, uploadTime));
       }
 
       // Upload complete

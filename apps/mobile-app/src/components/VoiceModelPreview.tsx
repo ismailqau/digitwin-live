@@ -276,6 +276,91 @@ export const VoiceModelPreview: React.FC<VoiceModelPreviewProps> = ({
         </ScrollView>
       </View>
 
+      {/* Side-by-Side Comparison */}
+      {selectedModel && (
+        <View style={styles.comparisonContainer}>
+          <Text style={styles.comparisonTitle}>Voice Comparison</Text>
+          <Text style={styles.comparisonSubtitle}>
+            Compare your original voice with the AI-generated clone
+          </Text>
+          <View style={styles.comparisonRow}>
+            <View style={styles.comparisonItem}>
+              <Text style={styles.comparisonLabel}>Original Voice</Text>
+              <TouchableOpacity
+                style={styles.comparisonPlayButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Original Voice Sample',
+                    `Playing original recording:\n\n"${TEST_PHRASES[selectedPhrase]}"\n\nThis is from your voice training samples.`
+                  );
+                }}
+              >
+                <Text style={styles.comparisonPlayText}>▶ Play Original</Text>
+              </TouchableOpacity>
+              <Text style={styles.comparisonNote}>From training samples</Text>
+              <View style={styles.comparisonStats}>
+                <Text style={styles.comparisonStatText}>Natural</Text>
+                <Text style={styles.comparisonStatText}>100% Authentic</Text>
+              </View>
+            </View>
+            <View style={styles.comparisonDivider}>
+              <Text style={styles.comparisonVsText}>VS</Text>
+            </View>
+            <View style={styles.comparisonItem}>
+              <Text style={styles.comparisonLabel}>Cloned Voice</Text>
+              <TouchableOpacity
+                style={[styles.comparisonPlayButton, styles.comparisonPlayButtonCloned]}
+                onPress={() => testVoiceModel(selectedModel)}
+                disabled={testingModel === selectedModel.id}
+              >
+                {testingModel === selectedModel.id ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.comparisonPlayText}>▶ Play Clone</Text>
+                )}
+              </TouchableOpacity>
+              <Text style={styles.comparisonNote}>AI-generated</Text>
+              <View style={styles.comparisonStats}>
+                <Text
+                  style={[
+                    styles.comparisonStatText,
+                    { color: getQualityColor(selectedModel.qualityScore) },
+                  ]}
+                >
+                  {selectedModel.qualityScore}% Similar
+                </Text>
+                <Text style={styles.comparisonStatText}>
+                  {selectedModel.provider.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.similarityContainer}>
+            <Text style={styles.similarityLabel}>Overall Voice Similarity:</Text>
+            <Text
+              style={[
+                styles.similarityScore,
+                { color: getQualityColor(selectedModel.qualityScore) },
+              ]}
+            >
+              {selectedModel.qualityScore}%
+            </Text>
+          </View>
+          <Text style={styles.similarityDescription}>
+            {selectedModel.qualityScore >= 90 &&
+              'Excellent match! The cloned voice is nearly indistinguishable from your original.'}
+            {selectedModel.qualityScore >= 80 &&
+              selectedModel.qualityScore < 90 &&
+              'Very good similarity. Minor differences may be noticeable in some phrases.'}
+            {selectedModel.qualityScore >= 70 &&
+              selectedModel.qualityScore < 80 &&
+              'Good similarity. The voice is recognizable but may need refinement.'}
+            {selectedModel.qualityScore < 70 &&
+              'Fair similarity. Consider re-training with higher quality samples for better results.'}
+          </Text>
+        </View>
+      )}
+
       {/* Voice Models List */}
       <View style={styles.modelsContainer}>
         <Text style={styles.modelsTitle}>Your Voice Models</Text>
@@ -455,6 +540,117 @@ const styles = StyleSheet.create({
   },
   phraseButtonTextSelected: {
     color: '#fff',
+  },
+  comparisonContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  comparisonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  comparisonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  comparisonItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  comparisonSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  comparisonDivider: {
+    width: 40,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  comparisonVsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  comparisonStats: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  comparisonStatText: {
+    fontSize: 11,
+    color: '#666',
+    marginBottom: 2,
+  },
+  similarityDescription: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  comparisonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  comparisonPlayButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  comparisonPlayButtonCloned: {
+    backgroundColor: '#4CAF50',
+  },
+  comparisonPlayText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  comparisonNote: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+  similarityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  similarityLabel: {
+    fontSize: 16,
+    color: '#333',
+    marginRight: 10,
+  },
+  similarityScore: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   modelsContainer: {
     marginBottom: 20,

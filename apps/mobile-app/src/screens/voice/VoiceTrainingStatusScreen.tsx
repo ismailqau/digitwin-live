@@ -133,10 +133,17 @@ export const VoiceTrainingStatusScreen: React.FC = () => {
     for (let i = 0; i <= steps; i++) {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
+      // Add some realistic variation to the progress
+      const progressVariation = Math.random() * 2 - 1; // -1 to +1
+      const actualProgress = Math.max(
+        startProgress,
+        Math.min(endProgress, startProgress + progressIncrement * i + progressVariation)
+      );
+
       setTrainingProgress({
         status,
-        progress: startProgress + progressIncrement * i,
-        currentStep: step,
+        progress: actualProgress,
+        currentStep: i === steps ? step : `${step}...`,
         estimatedTimeRemaining: Math.max(0, estimatedTime - timeIncrement * i),
       });
     }

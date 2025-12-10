@@ -1724,7 +1724,7 @@ apps/mobile-app/
   - _Documentation: See docs/MOBILE-APP-ONBOARDING.md_
   - _Note: Permissions are now requested just-in-time when user actually needs the feature, following UX best practices_
 
-- [ ] 13.3 Implement voice model creation UI
+- [-] 13.3 Implement voice model creation UI
   - **13.3.1 Enhance voice recording screen:**
     - Enhance existing `src/components/VoiceSampleRecording.tsx`
     - Create `src/screens/voice/VoiceRecordingScreen.tsx` wrapper
