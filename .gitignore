@@ -109,3 +109,4 @@ terraform-key-*.json
 
 # Generated files
 *.tfvars.json
+.history

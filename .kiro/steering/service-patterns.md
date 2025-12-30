@@ -2,118 +2,50 @@
 inclusion: always
 ---
 
-# Service Patterns
-
-## Microservice Architecture
-
-See `project-overview.md` for the full list of services and monorepo structure.
+# Service & Security Patterns
 
 ## Service Structure
 
-Each service follows this structure:
-
 ```
-services/my-service/
-├── src/
-│   ├── index.ts           # Entry point
-│   ├── service.ts         # Main service class
-│   ├── handlers/          # Request handlers
-│   ├── providers/         # External provider integrations
-│   └── utils/             # Service-specific utilities
-├── jest.config.js
-├── jest.setup.ts
-├── package.json
-└── tsconfig.json
-```
-
-## Service Dependencies
-
-Services use shared packages:
-
-```json
-{
-  "dependencies": {
-    "@clone/shared-types": "workspace:*",
-    "@clone/logger": "workspace:*",
-    "@clone/errors": "workspace:*",
-    "@clone/config": "workspace:*"
-  }
-}
-```
-
-## Logging & Error Handling
-
-See `error-handling.md` for error handling patterns and logging guidelines.
-
-## Configuration
-
-Services use environment-based configuration:
-
-```typescript
-import { config } from '@clone/config';
-
-const port = config.get('PORT');
-const databaseUrl = config.get('DATABASE_URL');
+services/my-service/src/
+├── index.ts      # Entry
+├── service.ts    # Main class
+├── handlers/     # Request handlers
+└── providers/    # External integrations
 ```
 
 ## Health Checks
 
-All services implement health check endpoints:
-
 ```typescript
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', service: 'my-service' });
-});
-
+app.get('/health', (req, res) => res.json({ status: 'healthy' }));
 app.get('/ready', async (req, res) => {
-  // Check dependencies
-  const dbHealthy = await checkDatabase();
-  if (dbHealthy) {
-    res.json({ status: 'ready' });
-  } else {
-    res.status(503).json({ status: 'not ready' });
-  }
+  /* check deps */
 });
 ```
 
 ## Inter-Service Communication
 
-Services communicate via:
+- gRPC: sync calls via `@clone/grpc-proto`
+- Pub/Sub: async events via `@clone/event-bus`
 
-1. **gRPC**: For synchronous service-to-service calls
-2. **Event Bus**: For asynchronous events (Google Cloud Pub/Sub)
-3. **HTTP**: For external API calls
+## Security
+
+- All queries filter by `userId`
+- Validate all input with Zod
+- No hardcoded secrets - use `process.env`
+- Use Prisma parameterized queries (no raw SQL)
+- JWT auth with refresh tokens
+
+## Access Control
 
 ```typescript
-// gRPC client
-import { createGrpcClient } from '@clone/grpc-proto';
-
-const ragClient = createGrpcClient('rag-service');
-const result = await ragClient.search({ query, userId });
-
-// Event publishing
-import { EventPublisher } from '@clone/event-bus';
-
-await publisher.publish({
-  type: 'document.processed',
-  data: { documentId, userId },
-});
+import { AccessControl, AuditLogger } from '@clone/security';
+await accessControl.verifyDocumentOwnership(userId, documentId, ipAddress);
+await auditLogger.logAuth(userId, AuditAction.USER_LOGIN, 'success', ipAddress);
 ```
 
-## Service Authentication
-
-Services authenticate using JWT tokens:
+## Rate Limits
 
 ```typescript
-import { verifyServiceToken } from '@clone/service-auth';
-
-// Middleware for service-to-service auth
-const serviceAuth = async (req, res, next) => {
-  const token = req.headers['x-service-token'];
-  const verified = await verifyServiceToken(token);
-  if (!verified) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-};
+const rateLimits = { free: { requests: 100, window: '1h' }, pro: { requests: 1000, window: '1h' } };
 ```
