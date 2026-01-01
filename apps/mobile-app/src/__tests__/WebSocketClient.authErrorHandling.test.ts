@@ -64,7 +64,7 @@ class MockWebSocket {
   close(): void {
     this.readyState = WebSocket.CLOSED;
     if (this.onclose) {
-      this.onclose(new CloseEvent('close'));
+      this.onclose({ type: 'close' } as CloseEvent);
     }
   }
 
@@ -325,7 +325,7 @@ describe('NativeWebSocketClient - Auth Error Handling', () => {
 
     // Simulate connection close
     if (mockWsInstance && mockWsInstance.onclose) {
-      mockWsInstance.onclose(new CloseEvent('close'));
+      mockWsInstance.onclose({ type: 'close' } as CloseEvent);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 100));

@@ -72,15 +72,16 @@ export default function PermissionsScreen({
 
   const checkPermissions = async () => {
     try {
-      // Check microphone permission (via Camera API which includes audio)
-      const cameraStatus = await Camera.getCameraPermissionsAsync();
-      const micStatus = cameraStatus.granted
+      // Check microphone permission
+      const micPermission = await Camera.getMicrophonePermissionsAsync();
+      const micStatus = micPermission.granted
         ? 'granted'
-        : cameraStatus.canAskAgain
+        : micPermission.canAskAgain
           ? 'pending'
           : 'blocked';
 
       // Check camera permission
+      const cameraStatus = await Camera.getCameraPermissionsAsync();
       const camStatus = cameraStatus.granted
         ? 'granted'
         : cameraStatus.canAskAgain
@@ -120,8 +121,7 @@ export default function PermissionsScreen({
       let status: 'granted' | 'denied' | 'blocked' = 'denied';
 
       if (permissionId === 'microphone') {
-        // Microphone permission is handled via Camera API
-        const result = await Camera.requestCameraPermissionsAsync();
+        const result = await Camera.requestMicrophonePermissionsAsync();
         status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
       } else if (permissionId === 'camera') {
         const result = await Camera.requestCameraPermissionsAsync();

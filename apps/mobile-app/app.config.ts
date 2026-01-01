@@ -4,7 +4,27 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
     name: config.name || 'DigiTwin Live',
-    plugins: [...(config.plugins || []), 'expo-audio'],
+    plugins: [
+      ...(config.plugins || []),
+      'expo-audio',
+      [
+        'expo-camera',
+        {
+          cameraPermission: 'Allow $(PRODUCT_NAME) to access your camera to capture your face.',
+          microphonePermission:
+            'Allow $(PRODUCT_NAME) to access your microphone to record your voice.',
+          recordAudioAndroid: true,
+        },
+      ],
+      [
+        'expo-media-library',
+        {
+          photosPermission: 'Allow $(PRODUCT_NAME) to access your photos.',
+          savePhotosPermission: 'Allow $(PRODUCT_NAME) to save photos.',
+          isAccessMediaLocationEnabled: true,
+        },
+      ],
+    ],
     slug: config.slug || 'digitwin-live',
     extra: {
       ...config.extra,

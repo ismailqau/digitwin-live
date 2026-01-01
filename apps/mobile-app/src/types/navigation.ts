@@ -32,7 +32,22 @@ export type OnboardingStackParamList = {
   VoicePreview: { modelId: string };
   FaceSetupPrompt: undefined;
   FaceCapture: undefined;
+  FaceVideoRecord: undefined;
+  FaceReview: undefined;
+  FaceUpload: undefined;
+  FaceProcessingStatus: { modelId: string };
+  FacePreview: { modelId: string };
   OnboardingComplete: undefined;
+};
+
+// Face Model Stack (can be used standalone or in settings)
+export type FaceStackParamList = {
+  FaceCapture: undefined;
+  FaceVideoRecord: undefined;
+  FaceReview: undefined;
+  FaceUpload: undefined;
+  FaceProcessingStatus: { modelId: string };
+  FacePreview: { modelId: string };
 };
 
 // Main Tab Navigator
@@ -91,6 +106,11 @@ export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScr
 
 export type OnboardingScreenProps<T extends keyof OnboardingStackParamList> =
   NativeStackScreenProps<OnboardingStackParamList, T>;
+
+export type FaceScreenProps<T extends keyof FaceStackParamList> = NativeStackScreenProps<
+  FaceStackParamList,
+  T
+>;
 
 export type MainTabScreenProps<T extends keyof MainTabParamList> = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, T>,
