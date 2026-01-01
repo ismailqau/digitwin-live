@@ -115,6 +115,7 @@ Key variables:
 - Audio services (recording, playback)
 - Basic conversation screen
 - Voice sample recording
+- Voice model creation UI (recording, review, upload, training status, preview)
 
 ### 🚧 In Progress
 
@@ -130,3 +131,15 @@ Key variables:
 - Video player for lip-sync
 - Push notifications
 - Deep linking
+
+## Voice Model Creation UI
+
+The voice model creation flow includes:
+
+1. **VoiceRecordingScreen** - Guided recording with real-time waveform, quality indicators
+2. **VoiceSampleReviewScreen** - Review samples with playback, quality scores, delete/re-record
+3. **VoiceUploadScreen** - Upload progress with cancel/retry functionality
+4. **VoiceTrainingStatusScreen** - Training progress with stages and tips
+5. **VoicePreviewScreen** - Preview and compare original vs cloned voice, rating system
+
+See [Voice Sample Recording Guide](../VOICE-SAMPLE-RECORDING.md) for detailed documentation.

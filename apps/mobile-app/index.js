@@ -6,6 +6,7 @@
 
 // Polyfills for Socket.io in React Native
 // These must be imported before any other code
+import 'react-native-gesture-handler';
 import 'react-native-url-polyfill/auto';
 
 console.log('[index.js] Starting app initialization...');

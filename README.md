@@ -141,6 +141,17 @@ Microservices architecture deployed on GCP Cloud Run:
 - [Vector Database](./docs/VECTOR-DATABASE.md) - pgvector setup
 - [Mobile App Onboarding](./docs/MOBILE-APP-ONBOARDING.md) - Onboarding flow guide
 
+### Voice & Audio
+
+- [Voice Sample Recording](./docs/VOICE-SAMPLE-RECORDING.md) - Voice model creation UI and recording
+- [Voice Model Training](./docs/VOICE-MODEL-TRAINING.md) - Training pipeline and management
+- [TTS Multi-Provider](./docs/TTS-MULTI-PROVIDER.md) - Text-to-speech providers
+
+### Face & Video
+
+- [Face Model Creation](./docs/FACE-MODEL-CREATION.md) - Face model creation UI and processing
+- [Lipsync Service](./docs/LIPSYNC-SERVICE.md) - Lip-sync video generation
+
 ### Development
 
 - [Getting Started](./docs/GETTING-STARTED.md) - Local setup

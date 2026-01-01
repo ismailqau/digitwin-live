@@ -1,7 +1,7 @@
 /**
  * AudioPlaybackManager Service (Expo Compatible)
  *
- * Handles audio playback for TTS-generated responses using expo-av.
+ * Handles audio playback for TTS-generated responses using expo-audio.
  */
 
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';

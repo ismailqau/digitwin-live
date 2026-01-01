@@ -10,6 +10,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
 import { Alert, BackHandler } from 'react-native';
 
+import {
+  FaceCaptureScreen,
+  FaceVideoRecordScreen,
+  FaceReviewScreen,
+  FaceUploadScreen,
+  FaceProcessingStatusScreen,
+  FacePreviewScreen,
+} from '../screens/face';
 import FaceSetupPromptScreen from '../screens/onboarding/FaceSetupPromptScreen';
 import OnboardingCompleteScreen from '../screens/onboarding/OnboardingCompleteScreen';
 import PersonalitySetupScreen from '../screens/onboarding/PersonalitySetupScreen';
@@ -27,11 +35,6 @@ import type { OnboardingStackParamList } from '../types/navigation';
 // Voice model creation screens (Task 13.3)
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
-
-// Placeholder screen for face capture (to be implemented in Phase 13.4)
-const FaceCaptureScreen = () => {
-  return null; // Placeholder - will be implemented in Phase 13.4
-};
 
 export default function OnboardingNavigator() {
   useEffect(() => {
@@ -139,6 +142,41 @@ export default function OnboardingNavigator() {
         component={FaceCaptureScreen}
         options={{
           animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="FaceVideoRecord"
+        component={FaceVideoRecordScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="FaceReview"
+        component={FaceReviewScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="FaceUpload"
+        component={FaceUploadScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="FaceProcessingStatus"
+        component={FaceProcessingStatusScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="FacePreview"
+        component={FacePreviewScreen}
+        options={{
+          animation: 'slide_from_right',
         }}
       />
       <Stack.Screen

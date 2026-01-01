@@ -1,7 +1,7 @@
 /**
  * AudioManager Service (Expo Compatible)
  *
- * Handles audio recording using expo-av.
+ * Handles audio recording using expo-audio.
  * Note: Real-time low-latency streaming (100ms chunks) is limited in pure Expo Go.
  * This implementation provides a stable recording interface that won't crash the app.
  */
