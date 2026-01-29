@@ -5,8 +5,18 @@
  * Displays permission status and handles "Don't Allow" scenarios
  */
 
-import { Camera } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
+// Safely import native modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Camera: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let MediaLibrary: any = null;
+
+try {
+  Camera = require('expo-camera').Camera;
+  MediaLibrary = require('expo-media-library');
+} catch (error) {
+  console.warn('[PermissionsScreen] Failed to load native modules:', error);
+}
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 
@@ -73,7 +83,9 @@ export default function PermissionsScreen({
   const checkPermissions = async () => {
     try {
       // Check microphone permission
-      const micPermission = await Camera.getMicrophonePermissionsAsync();
+      const micPermission = Camera
+        ? await Camera.getMicrophonePermissionsAsync()
+        : { granted: false, canAskAgain: false };
       const micStatus = micPermission.granted
         ? 'granted'
         : micPermission.canAskAgain
@@ -81,7 +93,9 @@ export default function PermissionsScreen({
           : 'blocked';
 
       // Check camera permission
-      const cameraStatus = await Camera.getCameraPermissionsAsync();
+      const cameraStatus = Camera
+        ? await Camera.getCameraPermissionsAsync()
+        : { granted: false, canAskAgain: false };
       const camStatus = cameraStatus.granted
         ? 'granted'
         : cameraStatus.canAskAgain
@@ -89,7 +103,9 @@ export default function PermissionsScreen({
           : 'blocked';
 
       // Check photo library permission
-      const mediaStatus = await MediaLibrary.getPermissionsAsync();
+      const mediaStatus = MediaLibrary
+        ? await MediaLibrary.getPermissionsAsync()
+        : { granted: false, canAskAgain: false };
       const photoStatus = mediaStatus.granted
         ? 'granted'
         : mediaStatus.canAskAgain
@@ -121,12 +137,15 @@ export default function PermissionsScreen({
       let status: 'granted' | 'denied' | 'blocked' = 'denied';
 
       if (permissionId === 'microphone') {
+        if (!Camera) return;
         const result = await Camera.requestMicrophonePermissionsAsync();
         status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
       } else if (permissionId === 'camera') {
+        if (!Camera) return;
         const result = await Camera.requestCameraPermissionsAsync();
         status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
       } else if (permissionId === 'photoLibrary') {
+        if (!MediaLibrary) return;
         const result = await MediaLibrary.requestPermissionsAsync();
         status = result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'blocked';
       } else if (permissionId === 'notifications') {

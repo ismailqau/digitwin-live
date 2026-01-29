@@ -241,6 +241,7 @@ export class NativeWebSocketClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       WebSocketMonitor.debug('message', `Sending message: ${message.type}`, {
         type: message.type,
+        readyState: this.ws.readyState,
       });
 
       const envelope: MessageEnvelope = {
@@ -432,9 +433,17 @@ export class NativeWebSocketClient {
     // Connection closed
     this.ws.onclose = (event: WebSocketCloseEvent) => {
       const reason = event.reason || 'Unknown';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const wasClean = (event as any).wasClean;
+      const msSinceStart = Date.now() - this.connectionStartTime;
+
       WebSocketMonitor.warn('connection', `WebSocket closed: ${reason}`, {
         code: event.code,
         reason,
+        wasClean,
+        msSinceStart,
+        manualDisconnect: this.manualDisconnect,
+        connectionId: this.connectionId,
       });
 
       this.clearPongTimer();

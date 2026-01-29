@@ -9,12 +9,23 @@
  * - Face visibility validation
  */
 
-import {
-  CameraView,
-  CameraType,
-  useCameraPermissions,
-  useMicrophonePermissions,
-} from 'expo-camera';
+// Safely import native modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let CameraView: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let useCameraPermissions: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let useMicrophonePermissions: any = null;
+
+try {
+  const Camera = require('expo-camera');
+  CameraView = Camera.CameraView;
+  useCameraPermissions = Camera.useCameraPermissions;
+  useMicrophonePermissions = Camera.useMicrophonePermissions;
+} catch (error) {
+  console.warn('[FaceVideoRecordScreen] Failed to load native camera modules:', error);
+}
+import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -58,16 +69,22 @@ const PHASE_INSTRUCTIONS: Record<RecordingPhase, string> = {
 export function FaceVideoRecordScreen({
   navigation,
 }: FaceVideoRecordScreenProps): React.ReactElement {
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
-  const [facing] = useState<CameraType>('front');
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions
+    ? useCameraPermissions()
+    : [{ granted: false, canAskAgain: false }, () => {}];
+  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions
+    ? useMicrophonePermissions()
+    : [{ granted: false, canAskAgain: false }, () => {}];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [facing] = useState<any>('front');
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [phase, setPhase] = useState<RecordingPhase>('ready');
   const [faceDetected, setFaceDetected] = useState(false);
 
-  const cameraRef = useRef<CameraView>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cameraRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const faceValidator = useRef(new FaceQualityValidator()).current;
@@ -141,15 +158,26 @@ export function FaceVideoRecordScreen({
       setPhase('center');
       startTimer();
 
+      if (!Constants.isDevice) {
+        throw { code: 'ERR_SIMULATOR_NOT_SUPPORTED', message: 'Simulator not supported' };
+      }
+
       const promise = cameraRef.current.recordAsync({
         maxDuration: MAX_DURATION,
       });
       setRecordingPromise(promise);
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error('Recording error:', error);
       setIsRecording(false);
       stopTimer();
-      Alert.alert('Error', 'Failed to start recording. Please try again.');
+
+      const isSimulatorError = error?.code === 'ERR_SIMULATOR_NOT_SUPPORTED';
+      const message = isSimulatorError
+        ? 'Video recording is not supported on the iOS Simulator. Please use a physical device.'
+        : 'Failed to start recording. Please try again.';
+
+      Alert.alert(isSimulatorError ? 'Simulator Limitation' : 'Error', message);
     }
   }, [isRecording, startTimer, stopTimer]);
 
@@ -207,11 +235,18 @@ export function FaceVideoRecordScreen({
       } else {
         navigation.navigate('FaceReview');
       }
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error('Stop recording error:', error);
       setIsRecording(false);
       stopTimer();
-      Alert.alert('Error', 'Failed to save video. Please try again.');
+
+      const isSimulatorError = error?.code === 'ERR_SIMULATOR_NOT_SUPPORTED';
+      const message = isSimulatorError
+        ? 'Video recording failed because it is not supported on the simulator.'
+        : 'Failed to save video. Please try again.';
+
+      Alert.alert(isSimulatorError ? 'Simulator Limitation' : 'Error', message);
     }
   }, [isRecording, recordingTime, faceValidator, setVideo, navigation, stopTimer]);
 
@@ -288,116 +323,136 @@ export function FaceVideoRecordScreen({
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing={facing} mode="video">
-        {/* Face alignment overlay */}
-        <View style={styles.overlay}>
-          <View style={styles.ovalContainer}>
-            <View
-              style={[styles.oval, faceDetected ? styles.ovalDetected : styles.ovalNotDetected]}
-            />
-          </View>
+      {CameraView ? (
+        <View style={styles.cameraContainer}>
+          <CameraView ref={cameraRef} style={styles.camera} facing={facing} mode="video" />
 
-          {/* Phase instruction */}
-          <View style={styles.instructionContainer}>
-            <Text style={styles.instructionText}>{PHASE_INSTRUCTIONS[phase]}</Text>
-            {phase !== 'ready' && phase !== 'complete' && (
-              <View style={styles.arrowContainer}>
-                {phase === 'left' && <Text style={styles.arrow}>←</Text>}
-                {phase === 'right' && <Text style={styles.arrow}>→</Text>}
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Top controls */}
-        <View style={styles.topControls}>
-          <TouchableOpacity style={styles.controlButton} onPress={handleCancel}>
-            <Text style={styles.controlIcon}>✕</Text>
-          </TouchableOpacity>
-
-          {/* Timer */}
-          <View style={styles.timerContainer}>
-            {isRecording && (
-              <View style={styles.recordingIndicator}>
-                <View style={styles.recordingDot} />
-                <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.controlButton} />
-        </View>
-
-        {/* Progress bar */}
-        {isRecording && (
-          <View style={styles.progressContainer}>
-            <Animated.View
-              style={[
-                styles.progressBar,
-                {
-                  width: progressAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
-            />
-            <View
-              style={[styles.progressMarker, { left: `${(MIN_DURATION / MAX_DURATION) * 100}%` }]}
-            />
-          </View>
-        )}
-
-        {/* Bottom controls */}
-        <View style={styles.bottomControls}>
-          {/* Photo mode button */}
-          <TouchableOpacity
-            style={styles.modeButton}
-            onPress={() => navigation.goBack()}
-            disabled={isRecording}
+          {/* UI Layer - Layered over camera using absolute positioning to avoid Fabric crashes with complex native children */}
+          <View
+            style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]}
+            pointerEvents="box-none"
           >
-            <Text style={styles.modeIcon}>📷</Text>
-            <Text style={styles.modeText}>Photo</Text>
-          </TouchableOpacity>
+            {/* Face alignment overlay */}
+            <View style={styles.overlay} pointerEvents="none">
+              <View style={styles.ovalContainer}>
+                <View
+                  style={[styles.oval, faceDetected ? styles.ovalDetected : styles.ovalNotDetected]}
+                />
+              </View>
 
-          {/* Record button */}
-          {!isRecording ? (
-            <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
-              <View style={styles.recordButtonInner} />
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.recordingControls}>
-              <TouchableOpacity style={styles.pauseButton} onPress={togglePause}>
-                <Text style={styles.pauseIcon}>{isPaused ? '▶' : '⏸'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.stopButton,
-                  recordingTime < MIN_DURATION && styles.stopButtonDisabled,
-                ]}
-                onPress={stopRecording}
-              >
-                <View style={styles.stopButtonInner} />
-              </TouchableOpacity>
+              {/* Phase instruction */}
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>{PHASE_INSTRUCTIONS[phase]}</Text>
+                {phase !== 'ready' && phase !== 'complete' && (
+                  <View style={styles.arrowContainer}>
+                    {phase === 'left' && <Text style={styles.arrow}>←</Text>}
+                    {phase === 'right' && <Text style={styles.arrow}>→</Text>}
+                  </View>
+                )}
+              </View>
             </View>
-          )}
 
-          {/* Placeholder for symmetry */}
-          <View style={styles.modeButton} />
-        </View>
+            {/* Top controls */}
+            <View style={styles.topControls}>
+              <TouchableOpacity style={styles.controlButton} onPress={handleCancel}>
+                <Text style={styles.controlIcon}>✕</Text>
+              </TouchableOpacity>
 
-        {/* Duration hint */}
-        {!isRecording && (
-          <View style={styles.hintContainer}>
-            <Text style={styles.hintText}>
-              Record {MIN_DURATION}-{MAX_DURATION} seconds
-            </Text>
-            <Text style={styles.hintSubtext}>
-              Slowly turn your head left and right during recording
-            </Text>
+              {/* Timer */}
+              <View style={styles.timerContainer}>
+                {isRecording && (
+                  <View style={styles.recordingIndicator}>
+                    <View style={styles.recordingDot} />
+                    <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.controlButton} />
+            </View>
+
+            {/* Progress bar */}
+            {isRecording && (
+              <View style={styles.progressContainer}>
+                <Animated.View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: progressAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressMarker,
+                    { left: `${(MIN_DURATION / MAX_DURATION) * 100}%` },
+                  ]}
+                />
+              </View>
+            )}
+
+            {/* Bottom controls */}
+            <View style={styles.bottomControls}>
+              {/* Photo mode button */}
+              <TouchableOpacity
+                style={styles.modeButton}
+                onPress={() => navigation.goBack()}
+                disabled={isRecording}
+              >
+                <Text style={styles.modeIcon}>📷</Text>
+                <Text style={styles.modeText}>Photo</Text>
+              </TouchableOpacity>
+
+              {/* Record button */}
+              {!isRecording ? (
+                <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
+                  <View style={styles.recordButtonInner} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.recordingControls}>
+                  <TouchableOpacity style={styles.pauseButton} onPress={togglePause}>
+                    <Text style={styles.pauseIcon}>{isPaused ? '▶' : '⏸'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.stopButton,
+                      recordingTime < MIN_DURATION && styles.stopButtonDisabled,
+                    ]}
+                    onPress={stopRecording}
+                  >
+                    <View style={styles.stopButtonInner} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Placeholder for symmetry */}
+              <View style={styles.modeButton} />
+            </View>
+
+            {/* Duration hint */}
+            {!isRecording && (
+              <View style={styles.hintContainer}>
+                <Text style={styles.hintText}>
+                  Record {MIN_DURATION}-{MAX_DURATION} seconds
+                </Text>
+                <Text style={styles.hintSubtext}>
+                  Slowly turn your head left and right during recording
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-      </CameraView>
+        </View>
+      ) : (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Camera module not available</Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.permissionButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -410,6 +465,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   camera: {
+    flex: 1,
+    width: '100%',
+  },
+  cameraContainer: {
     flex: 1,
     width: '100%',
   },
@@ -635,6 +694,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });
 

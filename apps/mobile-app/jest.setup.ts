@@ -24,6 +24,7 @@ jest.mock('react-native', () => ({
     currentState: 'active',
   },
   StyleSheet: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     create: (styles: any) => styles,
   },
   View: 'View',

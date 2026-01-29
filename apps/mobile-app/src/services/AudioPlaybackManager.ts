@@ -4,9 +4,23 @@
  * Handles audio playback for TTS-generated responses using expo-audio.
  */
 
-import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
+import type { AudioPlayer } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import { AppState, type AppStateStatus } from 'react-native';
+
+// Safely import expo-audio
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let createAudioPlayer: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let setAudioModeAsync: any = null;
+
+try {
+  const Audio = require('expo-audio');
+  createAudioPlayer = Audio.createAudioPlayer;
+  setAudioModeAsync = Audio.setAudioModeAsync;
+} catch (error) {
+  console.warn('[AudioPlaybackManager] Failed to load expo-audio module:', error);
+}
 
 export enum AudioPlaybackState {
   IDLE = 'idle',
@@ -65,12 +79,20 @@ export class AudioPlaybackManager {
   private currentPosition: number = 0;
   private isMuted: boolean = false;
   private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+  private isAvailable: boolean = false;
 
   constructor(config: Partial<PlaybackConfig> = {}, callbacks: PlaybackCallbacks = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.callbacks = callbacks;
-    this.setupAudioSession();
-    this.setupAppStateListener();
+    this.isAvailable = !!createAudioPlayer && !!setAudioModeAsync;
+    if (!this.isAvailable) {
+      console.warn(
+        '[AudioPlaybackManager] expo-audio is not available. Playback will be disabled.'
+      );
+    } else {
+      this.setupAudioSession();
+      this.setupAppStateListener();
+    }
   }
 
   private async setupAudioSession(): Promise<void> {
@@ -129,6 +151,10 @@ export class AudioPlaybackManager {
   }
 
   private async processQueue(): Promise<void> {
+    if (!this.isAvailable) {
+      this.handleError(new Error('Audio playback not available on this device/build'));
+      return;
+    }
     if (this.isProcessingQueue) return;
     this.isProcessingQueue = true;
     this.setState(AudioPlaybackState.BUFFERING);
@@ -164,7 +190,8 @@ export class AudioPlaybackManager {
     player.playbackRate = this.config.playbackSpeed;
 
     // Setup listener
-    const subscription = player.addListener('playbackStatusUpdate', (status) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subscription = player.addListener('playbackStatusUpdate', (status: any) => {
       this.onPlaybackStatusUpdate(status);
     });
 
@@ -198,7 +225,8 @@ export class AudioPlaybackManager {
     await FileSystem.deleteAsync(tempUri, { idempotent: true });
   }
 
-  private onPlaybackStatusUpdate(status: AudioStatus): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private onPlaybackStatusUpdate(status: any): void {
     if (!status.isLoaded) return;
     this.currentPosition = (status.currentTime || 0) * 1000; // Convert to ms
     const duration = (status.duration || 0) * 1000; // Convert to ms

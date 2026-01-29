@@ -7,13 +7,35 @@
  * - Handles fallback to passcode/pin where applicable via system fallback
  */
 
-import * as LocalAuthentication from 'expo-local-authentication';
+import type * as LocalAuthType from 'expo-local-authentication';
+
+// Safely import expo-local-authentication to prevent crash if native module is missing
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let LocalAuthentication: any = null;
+try {
+  LocalAuthentication = require('expo-local-authentication');
+} catch (error) {
+  console.warn('[BiometricAuth] Failed to load expo-local-authentication:', error);
+}
 
 export class BiometricAuth {
+  /**
+   * Internal check for native module availability
+   */
+  private static isModuleAvailable(): boolean {
+    if (!LocalAuthentication) return false;
+    // Check for some essential methods that should exist if the native module is linked
+    return typeof LocalAuthentication.hasHardwareAsync === 'function';
+  }
+
   /**
    * Check if biometric authentication is available on the device
    */
   static async isBiometricAvailable(): Promise<boolean> {
+    if (!BiometricAuth.isModuleAvailable()) {
+      console.warn('[BiometricAuth] Native module LocalAuthentication not found.');
+      return false;
+    }
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -34,7 +56,8 @@ export class BiometricAuth {
   /**
    * Get the type of biometric authentication available
    */
-  static async getBiometricType(): Promise<LocalAuthentication.AuthenticationType[] | null> {
+  static async getBiometricType(): Promise<LocalAuthType.AuthenticationType[] | null> {
+    if (!BiometricAuth.isModuleAvailable()) return null;
     try {
       const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
       return types.length > 0 ? types : null;
@@ -48,6 +71,10 @@ export class BiometricAuth {
    * Prompt for biometric authentication
    */
   static async authenticate(promptMessage: string = 'Authenticate'): Promise<boolean> {
+    if (!BiometricAuth.isModuleAvailable()) {
+      console.warn('[BiometricAuth] Native module LocalAuthentication not found.');
+      return false;
+    }
     try {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage,
@@ -78,14 +105,17 @@ export class BiometricAuth {
       return 'Biometric Authentication';
     }
 
-    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-      return 'Face ID';
-    }
-    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-      return 'Touch ID';
-    }
-    if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-      return 'Iris Scan';
+    const authTypes = LocalAuthentication?.AuthenticationType;
+    if (authTypes) {
+      if (types.includes(authTypes.FACIAL_RECOGNITION)) {
+        return 'Face ID';
+      }
+      if (types.includes(authTypes.FINGERPRINT)) {
+        return 'Touch ID';
+      }
+      if (types.includes(authTypes.IRIS)) {
+        return 'Iris Scan';
+      }
     }
 
     return 'Biometric Authentication';

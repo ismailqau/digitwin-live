@@ -21,6 +21,10 @@ export interface Recording {
   syncedToServer: boolean;
 }
 
+interface StoredRecording extends Omit<Recording, 'timestamp'> {
+  timestamp: string;
+}
+
 // Module-level state
 let recordings: Recording[] = [];
 let isLoading = true;
@@ -66,7 +70,7 @@ const serializeRecordings = (recs: Recording[]): string => {
 const deserializeRecordings = (json: string): Recording[] => {
   try {
     const parsed = JSON.parse(json);
-    return parsed.map((r: any) => ({
+    return parsed.map((r: StoredRecording) => ({
       ...r,
       timestamp: new Date(r.timestamp),
     }));

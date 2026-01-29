@@ -10,7 +10,19 @@
  * - Guided multi-step capture flow (3-10 photos)
  */
 
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+// Safely import native modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let CameraView: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let useCameraPermissions: any = null;
+
+try {
+  const Camera = require('expo-camera');
+  CameraView = Camera.CameraView;
+  useCameraPermissions = Camera.useCameraPermissions;
+} catch (error) {
+  console.warn('[FaceCaptureScreen] Failed to load expo-camera module:', error);
+}
 import * as FileSystem from 'expo-file-system/legacy';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -41,14 +53,18 @@ interface FaceCaptureScreenProps {
 }
 
 export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React.ReactElement {
-  const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<CameraType>('front');
+  const [permission, requestPermission] = useCameraPermissions
+    ? useCameraPermissions()
+    : [{ granted: false, canAskAgain: false }, () => {}];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [facing, setFacing] = useState<any>('front');
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [currentGuidance, setCurrentGuidance] = useState<AngleGuidance | null>(null);
 
-  const cameraRef = useRef<CameraView>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cameraRef = useRef<any>(null);
   const captureAnimation = useRef(new Animated.Value(1)).current;
   const faceValidator = useRef(new FaceQualityValidator()).current;
 
@@ -152,7 +168,8 @@ export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React
   ]);
 
   const toggleCameraFacing = useCallback((): void => {
-    setFacing((current) => (current === 'back' ? 'front' : 'back'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setFacing((current: any) => (current === 'back' ? 'front' : 'back'));
   }, []);
 
   const toggleFlash = useCallback((): void => {
@@ -195,102 +212,119 @@ export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React
 
   return (
     <View style={styles.container}>
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        facing={facing}
-        flash={flashEnabled ? 'on' : 'off'}
-      >
-        {/* Face alignment overlay */}
-        <View style={styles.overlay}>
-          <View style={styles.ovalContainer}>
-            <View
-              style={[styles.oval, faceDetected ? styles.ovalDetected : styles.ovalNotDetected]}
-            />
-          </View>
+      {CameraView ? (
+        <View style={styles.cameraContainer}>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing={facing}
+            flash={flashEnabled ? 'on' : 'off'}
+          />
 
-          {/* Face detection indicator */}
-          <View style={styles.detectionIndicator}>
-            <View
-              style={[
-                styles.detectionDot,
-                faceDetected ? styles.dotDetected : styles.dotNotDetected,
-              ]}
-            />
-            <Text style={styles.detectionText}>
-              {faceDetected ? 'Face Detected' : 'Position your face'}
-            </Text>
-          </View>
+          {/* UI Layer - Layered over camera using absolute positioning to avoid Fabric crashes with complex native children */}
+          <View
+            style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]}
+            pointerEvents="box-none"
+          >
+            {/* Face alignment overlay */}
+            <View style={styles.overlay} pointerEvents="none">
+              <View style={styles.ovalContainer}>
+                <View
+                  style={[styles.oval, faceDetected ? styles.ovalDetected : styles.ovalNotDetected]}
+                />
+              </View>
 
-          {/* Guidance text */}
-          {currentGuidance && (
-            <View style={styles.guidanceContainer}>
-              <Text style={styles.guidanceText}>{currentGuidance.instruction}</Text>
-              <Text style={styles.progressText}>
-                Photo {photos.length + 1} of {MAX_PHOTOS}
-              </Text>
+              {/* Face detection indicator */}
+              <View style={styles.detectionIndicator}>
+                <View
+                  style={[
+                    styles.detectionDot,
+                    faceDetected ? styles.dotDetected : styles.dotNotDetected,
+                  ]}
+                />
+                <Text style={styles.detectionText}>
+                  {faceDetected ? 'Face Detected' : 'Position your face'}
+                </Text>
+              </View>
+
+              {/* Guidance text */}
+              {currentGuidance && (
+                <View style={styles.guidanceContainer}>
+                  <Text style={styles.guidanceText}>{currentGuidance.instruction}</Text>
+                  <Text style={styles.progressText}>
+                    Photo {photos.length + 1} of {MAX_PHOTOS}
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
+
+            {/* Top controls */}
+            <View style={styles.topControls}>
+              <TouchableOpacity style={styles.controlButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.controlIcon}>✕</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.controlButton} onPress={toggleFlash}>
+                <Text style={styles.controlIcon}>{flashEnabled ? '⚡' : '⚡️'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom controls */}
+            <View style={styles.bottomControls}>
+              {/* Video mode button */}
+              <TouchableOpacity style={styles.modeButton} onPress={handleVideoMode}>
+                <Text style={styles.modeIcon}>🎬</Text>
+                <Text style={styles.modeText}>Video</Text>
+              </TouchableOpacity>
+
+              {/* Capture button */}
+              <Animated.View style={{ transform: [{ scale: captureAnimation }] }}>
+                <TouchableOpacity
+                  style={[styles.captureButton, !faceDetected && styles.captureButtonDisabled]}
+                  onPress={handleCapture}
+                  disabled={isCapturing || photos.length >= MAX_PHOTOS}
+                >
+                  <View style={styles.captureButtonInner} />
+                </TouchableOpacity>
+              </Animated.View>
+
+              {/* Flip camera button */}
+              <TouchableOpacity style={styles.modeButton} onPress={toggleCameraFacing}>
+                <Text style={styles.modeIcon}>🔄</Text>
+                <Text style={styles.modeText}>Flip</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Continue button */}
+            {photos.length >= MIN_PHOTOS && (
+              <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                <Text style={styles.continueText}>Continue ({photos.length} photos)</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Photo count indicator */}
+            <View style={styles.photoCountContainer}>
+              {Array.from({ length: MAX_PHOTOS }).map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.photoCountDot,
+                    index < photos.length && styles.photoCountDotFilled,
+                    index < MIN_PHOTOS && index >= photos.length && styles.photoCountDotRequired,
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
         </View>
-
-        {/* Top controls */}
-        <View style={styles.topControls}>
-          <TouchableOpacity style={styles.controlButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.controlIcon}>✕</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.controlButton} onPress={toggleFlash}>
-            <Text style={styles.controlIcon}>{flashEnabled ? '⚡' : '⚡️'}</Text>
+      ) : (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Camera module not available</Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.permissionButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Bottom controls */}
-        <View style={styles.bottomControls}>
-          {/* Video mode button */}
-          <TouchableOpacity style={styles.modeButton} onPress={handleVideoMode}>
-            <Text style={styles.modeIcon}>🎬</Text>
-            <Text style={styles.modeText}>Video</Text>
-          </TouchableOpacity>
-
-          {/* Capture button */}
-          <Animated.View style={{ transform: [{ scale: captureAnimation }] }}>
-            <TouchableOpacity
-              style={[styles.captureButton, !faceDetected && styles.captureButtonDisabled]}
-              onPress={handleCapture}
-              disabled={isCapturing || photos.length >= MAX_PHOTOS}
-            >
-              <View style={styles.captureButtonInner} />
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* Flip camera button */}
-          <TouchableOpacity style={styles.modeButton} onPress={toggleCameraFacing}>
-            <Text style={styles.modeIcon}>🔄</Text>
-            <Text style={styles.modeText}>Flip</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Continue button */}
-        {photos.length >= MIN_PHOTOS && (
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueText}>Continue ({photos.length} photos)</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Photo count indicator */}
-        <View style={styles.photoCountContainer}>
-          {Array.from({ length: MAX_PHOTOS }).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.photoCountDot,
-                index < photos.length && styles.photoCountDotFilled,
-                index < MIN_PHOTOS && index >= photos.length && styles.photoCountDotRequired,
-              ]}
-            />
-          ))}
-        </View>
-      </CameraView>
+      )}
     </View>
   );
 }
@@ -303,6 +337,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   camera: {
+    flex: 1,
+    width: '100%',
+  },
+  cameraContainer: {
     flex: 1,
     width: '100%',
   },
@@ -487,6 +525,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });
 

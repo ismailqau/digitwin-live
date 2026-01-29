@@ -8,6 +8,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...(config.plugins || []),
       'expo-audio',
       [
+        'expo-local-authentication',
+        {
+          faceIDPermission: 'Allow $(PRODUCT_NAME) to use Face ID for secure login.',
+        },
+      ],
+      [
         'expo-camera',
         {
           cameraPermission: 'Allow $(PRODUCT_NAME) to access your camera to capture your face.',

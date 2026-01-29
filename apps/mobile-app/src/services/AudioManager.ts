@@ -6,13 +6,28 @@
  * This implementation provides a stable recording interface that won't crash the app.
  */
 
-import {
-  AudioModule,
-  RecordingPresets,
-  setAudioModeAsync,
-  requestRecordingPermissionsAsync,
-  getRecordingPermissionsAsync,
-} from 'expo-audio';
+// Safely import expo-audio
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let AudioModule: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let RecordingPresets: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let setAudioModeAsync: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let requestRecordingPermissionsAsync: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let getRecordingPermissionsAsync: any = null;
+
+try {
+  const Audio = require('expo-audio');
+  AudioModule = Audio.AudioModule;
+  RecordingPresets = Audio.RecordingPresets;
+  setAudioModeAsync = Audio.setAudioModeAsync;
+  requestRecordingPermissionsAsync = Audio.requestRecordingPermissionsAsync;
+  getRecordingPermissionsAsync = Audio.getRecordingPermissionsAsync;
+} catch (error) {
+  console.warn('[AudioManager] Failed to load expo-audio module:', error);
+}
 import * as FileSystem from 'expo-file-system/legacy';
 
 export enum AudioRecordingState {
@@ -65,24 +80,31 @@ const DEFAULT_CONFIG: AudioManagerConfig = {
 };
 
 // Use RecordingPresets directly
-const RECORDING_OPTIONS = RecordingPresets.HIGH_QUALITY;
+const RECORDING_OPTIONS = RecordingPresets?.HIGH_QUALITY || {};
 
 export class AudioManager {
   // Use 'any' for now as AudioRecorder class type is hard to access directly without using 'typeof AudioModule.AudioRecorder'
   // or relying on type inference. It's an instance of the native class.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private recording: any | null = null;
   private config: AudioManagerConfig;
   private callbacks: AudioManagerCallbacks;
   private state: AudioRecordingState = AudioRecordingState.IDLE;
   private sequenceNumber: number = 0;
   private recordingStartTime: number = 0;
+  private isAvailable: boolean = false;
 
   constructor(config: Partial<AudioManagerConfig> = {}, callbacks: AudioManagerCallbacks = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.callbacks = callbacks;
+    this.isAvailable = !!AudioModule && !!RecordingPresets;
+    if (!this.isAvailable) {
+      console.warn('[AudioManager] expo-audio is not available. Recording will be disabled.');
+    }
   }
 
   async requestPermissions(): Promise<boolean> {
+    if (!this.isAvailable || !requestRecordingPermissionsAsync) return false;
     try {
       const response = await requestRecordingPermissionsAsync();
       return response.status === 'granted';
@@ -93,6 +115,7 @@ export class AudioManager {
   }
 
   async checkPermissions(): Promise<boolean> {
+    if (!this.isAvailable || !getRecordingPermissionsAsync) return false;
     try {
       const response = await getRecordingPermissionsAsync();
       return response.status === 'granted';
@@ -103,6 +126,10 @@ export class AudioManager {
   }
 
   async startRecording(): Promise<void> {
+    if (!this.isAvailable) {
+      this.handleError(new Error('Audio recording not available on this device/build'));
+      return;
+    }
     try {
       if (this.state === AudioRecordingState.RECORDING) {
         console.warn('Already recording');
@@ -126,6 +153,7 @@ export class AudioManager {
 
       this.recording = new AudioModule.AudioRecorder(RECORDING_OPTIONS);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.recording.addListener('recordingStatusUpdate', (status: any) => {
         if (!status.isRecording) return;
 
