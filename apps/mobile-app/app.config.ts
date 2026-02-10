@@ -42,5 +42,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ENVIRONMENT: process.env.ENVIRONMENT || config.extra?.ENVIRONMENT || 'development',
       DEBUG: process.env.DEBUG || config.extra?.DEBUG || 'false',
     },
+    android: {
+      package: 'com.digitwinlive.app',
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#FFFFFF',
+      },
+    },
   };
 };

@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '../../store/authStore';
 import type { AuthStackParamList } from '../../types/navigation';
@@ -22,6 +23,7 @@ type SplashScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 
 export default function SplashScreen() {
   const navigation = useNavigation<SplashScreenNavigationProp>();
   const { setLoading } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -95,7 +97,7 @@ export default function SplashScreen() {
         <Text style={styles.tagline}>Your AI Conversational Clone</Text>
       </Animated.View>
 
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { bottom: 80 + insets.bottom }]}>
         <ActivityIndicator size="small" color="#007AFF" />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>

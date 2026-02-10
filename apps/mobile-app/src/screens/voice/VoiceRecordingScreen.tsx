@@ -17,7 +17,8 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, StatusBar, Alert, BackHandler } from 'react-native';
+import { View, StyleSheet, StatusBar, Alert, BackHandler } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { VoiceSampleRecording } from '../../components/VoiceSampleRecording';
 import type { VoiceSample, VoiceSampleRequirements } from '../../services/VoiceSampleManager';
@@ -31,6 +32,7 @@ type RouteParams = RouteProp<
 export const VoiceRecordingScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
+  const insets = useSafeAreaInsets();
 
   const requirements = route.params?.requirements;
 
@@ -76,7 +78,7 @@ export const VoiceRecordingScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
       <View style={styles.content}>
         <VoiceSampleRecording
@@ -85,7 +87,7 @@ export const VoiceRecordingScreen: React.FC = () => {
           requirements={requirements}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

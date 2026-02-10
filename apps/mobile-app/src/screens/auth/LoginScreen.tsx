@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z, ZodError } from 'zod';
 
 import { BiometricAuth } from '../../services/BiometricAuth';
@@ -41,6 +42,7 @@ const loginSchema = z.object({
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { login, loginAsGuest } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -196,8 +198,11 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 + insets.bottom }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={[styles.header, { marginTop: 40 + insets.top }]}>
           <View style={styles.headerTop}>
             <View style={styles.headerTextContainer}>
               <Text style={styles.title}>Welcome Back</Text>

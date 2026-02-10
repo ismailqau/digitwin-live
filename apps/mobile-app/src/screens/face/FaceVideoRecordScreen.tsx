@@ -37,6 +37,7 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FaceQualityValidator } from '../../services/FaceQualityValidator';
 import { useFaceStore, FaceVideo } from '../../store/faceStore';
@@ -69,6 +70,7 @@ const PHASE_INSTRUCTIONS: Record<RecordingPhase, string> = {
 export function FaceVideoRecordScreen({
   navigation,
 }: FaceVideoRecordScreenProps): React.ReactElement {
+  const insets = useSafeAreaInsets();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions
     ? useCameraPermissions()
     : [{ granted: false, canAskAgain: false }, () => {}];
@@ -353,7 +355,7 @@ export function FaceVideoRecordScreen({
             </View>
 
             {/* Top controls */}
-            <View style={styles.topControls}>
+            <View style={[styles.topControls, { top: 60 + insets.top }]}>
               <TouchableOpacity style={styles.controlButton} onPress={handleCancel}>
                 <Text style={styles.controlIcon}>✕</Text>
               </TouchableOpacity>
@@ -373,7 +375,7 @@ export function FaceVideoRecordScreen({
 
             {/* Progress bar */}
             {isRecording && (
-              <View style={styles.progressContainer}>
+              <View style={[styles.progressContainer, { top: 120 + insets.top }]}>
                 <Animated.View
                   style={[
                     styles.progressBar,
@@ -395,7 +397,7 @@ export function FaceVideoRecordScreen({
             )}
 
             {/* Bottom controls */}
-            <View style={styles.bottomControls}>
+            <View style={[styles.bottomControls, { bottom: 100 + insets.bottom }]}>
               {/* Photo mode button */}
               <TouchableOpacity
                 style={styles.modeButton}
@@ -434,7 +436,7 @@ export function FaceVideoRecordScreen({
 
             {/* Duration hint */}
             {!isRecording && (
-              <View style={styles.hintContainer}>
+              <View style={[styles.hintContainer, { bottom: 200 + insets.bottom }]}>
                 <Text style={styles.hintText}>
                   Record {MIN_DURATION}-{MAX_DURATION} seconds
                 </Text>

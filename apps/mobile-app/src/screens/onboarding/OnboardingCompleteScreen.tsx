@@ -8,6 +8,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { useAuthStore } from '../../store/authStore';
@@ -54,6 +55,7 @@ export default function OnboardingCompleteScreen(
   const { setOnboarded } = useAuthStore();
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     // Animate success icon
@@ -90,7 +92,7 @@ export default function OnboardingCompleteScreen(
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Progress Indicator */}
       <OnboardingProgressIndicator
         currentStep={5}
@@ -197,7 +199,7 @@ export default function OnboardingCompleteScreen(
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity
           style={[styles.button, styles.primaryButton]}
           onPress={handleStartConversation}

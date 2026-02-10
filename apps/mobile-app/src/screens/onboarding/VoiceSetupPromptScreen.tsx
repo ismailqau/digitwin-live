@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { lightTheme } from '../../theme';
@@ -49,6 +50,8 @@ const VOICE_QUALITY_TIPS: Tip[] = [
 export default function VoiceSetupPromptScreen({
   navigation,
 }: OnboardingScreenProps<'VoiceSetupPrompt'>): React.ReactElement {
+  const insets = useSafeAreaInsets();
+
   const handleSetUpNow = () => {
     navigation.navigate('VoiceRecording');
   };
@@ -58,7 +61,7 @@ export default function VoiceSetupPromptScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Progress Indicator */}
       <OnboardingProgressIndicator
         currentStep={3}
@@ -123,7 +126,7 @@ export default function VoiceSetupPromptScreen({
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
           onPress={handleSetUpLater}

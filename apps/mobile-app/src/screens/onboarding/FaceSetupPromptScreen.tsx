@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { lightTheme } from '../../theme';
@@ -76,6 +77,8 @@ const CAPTURE_TIPS: Requirement[] = [
 export default function FaceSetupPromptScreen({
   navigation,
 }: OnboardingScreenProps<'FaceSetupPrompt'>): React.ReactElement {
+  const insets = useSafeAreaInsets();
+
   const handleSetUpNow = () => {
     navigation.navigate('FaceCapture');
   };
@@ -85,7 +88,7 @@ export default function FaceSetupPromptScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Progress Indicator */}
       <OnboardingProgressIndicator
         currentStep={4}
@@ -147,7 +150,7 @@ export default function FaceSetupPromptScreen({
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
           onPress={handleSetUpLater}

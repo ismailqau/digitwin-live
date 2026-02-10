@@ -16,6 +16,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import OnboardingProgressIndicator from '../../components/OnboardingProgressIndicator';
 import { lightTheme } from '../../theme';
@@ -45,6 +46,7 @@ export default function PersonalitySetupScreen({
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
   const [selectedStyle, setSelectedStyle] = useState<string>('friendly');
   const [customDescription, setCustomDescription] = useState('');
+  const insets = useSafeAreaInsets();
 
   const toggleTrait = (trait: string) => {
     setSelectedTraits((prev) =>
@@ -85,7 +87,7 @@ export default function PersonalitySetupScreen({
   const selectedStyleData = SPEAKING_STYLES.find((s) => s.id === selectedStyle);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Progress Indicator */}
       <OnboardingProgressIndicator
         currentStep={2}
@@ -186,7 +188,7 @@ export default function PersonalitySetupScreen({
       </ScrollView>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleSkip}>
           <Text style={styles.secondaryButtonText}>Skip for Now</Text>
         </TouchableOpacity>

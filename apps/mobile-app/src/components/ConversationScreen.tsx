@@ -21,6 +21,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useConversation } from '../hooks/useConversation';
 import { ConversationState } from '../services/ConversationManager';
@@ -39,6 +40,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
 }) => {
   const navigation = useNavigation();
   const { isGuest } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const {
     state,
@@ -115,7 +117,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}
+    >
       {/* Guest Mode Banner */}
       {isGuest && <GuestModeBanner onSignInPress={handleSignInPress} />}
 

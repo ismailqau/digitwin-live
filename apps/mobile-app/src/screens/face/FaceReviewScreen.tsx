@@ -24,6 +24,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FaceQualityValidator, OverallValidationResult } from '../../services/FaceQualityValidator';
 import { useFaceStore, FacePhoto } from '../../store/faceStore';
@@ -45,6 +46,7 @@ interface FaceReviewScreenProps {
 export function FaceReviewScreen({ navigation }: FaceReviewScreenProps): React.ReactElement {
   const [selectedPhoto, setSelectedPhoto] = useState<FacePhoto | null>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const { photos, video, removePhoto, setVideo } = useFaceStore();
   const faceValidator = useMemo(() => new FaceQualityValidator(), []);
@@ -233,7 +235,7 @@ export function FaceReviewScreen({ navigation }: FaceReviewScreenProps): React.R
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
@@ -274,7 +276,7 @@ export function FaceReviewScreen({ navigation }: FaceReviewScreenProps): React.R
       </ScrollView>
 
       {/* Bottom buttons */}
-      <View style={styles.bottomButtons}>
+      <View style={[styles.bottomButtons, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity style={styles.captureMoreButton} onPress={handleCaptureMore}>
           <Text style={styles.captureMoreText}>Capture More</Text>
         </TouchableOpacity>

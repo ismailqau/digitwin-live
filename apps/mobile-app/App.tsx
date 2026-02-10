@@ -7,9 +7,11 @@
  */
 
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import * as NavigationBar from 'expo-navigation-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useCallback } from 'react';
 import { StatusBar, useColorScheme, Text, View } from 'react-native';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -97,6 +99,15 @@ export default function App() {
     prepare();
   }, [setLoading]);
 
+  // Configure system bars
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setPositionAsync('absolute');
+      NavigationBar.setBackgroundColorAsync('#ffffff00');
+      NavigationBar.setButtonStyleAsync('dark');
+    }
+  }, []);
+
   // Update theme when it changes
   useEffect(() => {
     setDarkMode(isDarkMode);
@@ -136,7 +147,8 @@ export default function App() {
           <NavigationContainer theme={navigationTheme}>
             <StatusBar
               barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-              backgroundColor={theme.colors.background}
+              backgroundColor="transparent"
+              translucent
             />
             <RootNavigator />
           </NavigationContainer>

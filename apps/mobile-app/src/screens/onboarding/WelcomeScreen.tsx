@@ -15,6 +15,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '../../store/authStore';
 import { lightTheme } from '../../theme';
@@ -59,6 +60,7 @@ const FEATURES: Feature[] = [
 export default function WelcomeScreen({
   navigation,
 }: OnboardingScreenProps<'Welcome'>): React.ReactElement {
+  const insets = useSafeAreaInsets();
   const { setOnboarded } = useAuthStore();
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -108,7 +110,7 @@ export default function WelcomeScreen({
   return (
     <View style={styles.container}>
       {/* Header with Skip Button */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + lightTheme.spacing.md }]}>
         <Text style={styles.appName}>DigiTwin Live</Text>
         <TouchableOpacity onPress={handleSkip}>
           <Text style={styles.skipButton}>Skip</Text>
@@ -140,7 +142,7 @@ export default function WelcomeScreen({
       <View style={styles.dotsContainer}>{FEATURES.map((_, index) => renderDot(index))}</View>
 
       {/* Action Buttons */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: lightTheme.spacing.xl + insets.bottom }]}>
         <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleGetStarted}>
           <Text style={styles.primaryButtonText}>Get Started</Text>
         </TouchableOpacity>

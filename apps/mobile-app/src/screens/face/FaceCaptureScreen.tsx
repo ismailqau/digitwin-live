@@ -34,6 +34,7 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FaceQualityValidator, AngleGuidance } from '../../services/FaceQualityValidator';
 import { useFaceStore, FacePhoto } from '../../store/faceStore';
@@ -53,6 +54,7 @@ interface FaceCaptureScreenProps {
 }
 
 export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React.ReactElement {
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions
     ? useCameraPermissions()
     : [{ granted: false, canAskAgain: false }, () => {}];
@@ -259,7 +261,7 @@ export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React
             </View>
 
             {/* Top controls */}
-            <View style={styles.topControls}>
+            <View style={[styles.topControls, { top: 50 + insets.top }]}>
               <TouchableOpacity style={styles.controlButton} onPress={() => navigation.goBack()}>
                 <Text style={styles.controlIcon}>✕</Text>
               </TouchableOpacity>
@@ -270,7 +272,7 @@ export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React
             </View>
 
             {/* Bottom controls */}
-            <View style={styles.bottomControls}>
+            <View style={[styles.bottomControls, { bottom: 100 + insets.bottom }]}>
               {/* Video mode button */}
               <TouchableOpacity style={styles.modeButton} onPress={handleVideoMode}>
                 <Text style={styles.modeIcon}>🎬</Text>
@@ -297,13 +299,16 @@ export function FaceCaptureScreen({ navigation }: FaceCaptureScreenProps): React
 
             {/* Continue button */}
             {photos.length >= MIN_PHOTOS && (
-              <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+              <TouchableOpacity
+                style={[styles.continueButton, { bottom: 40 + insets.bottom }]}
+                onPress={handleContinue}
+              >
                 <Text style={styles.continueText}>Continue ({photos.length} photos)</Text>
               </TouchableOpacity>
             )}
 
             {/* Photo count indicator */}
-            <View style={styles.photoCountContainer}>
+            <View style={[styles.photoCountContainer, { bottom: 160 + insets.bottom }]}>
               {Array.from({ length: MAX_PHOTOS }).map((_, index) => (
                 <View
                   key={index}

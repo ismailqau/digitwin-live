@@ -20,6 +20,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFaceStore, FaceModelStatus } from '../../store/faceStore';
 import { lightColors } from '../../theme';
@@ -99,6 +100,7 @@ export function FaceProcessingStatusScreen({
   route,
 }: FaceProcessingStatusScreenProps): React.ReactElement {
   const modelId = route.params?.modelId;
+  const insets = useSafeAreaInsets();
 
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -289,7 +291,7 @@ export function FaceProcessingStatusScreen({
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 40 }]}>
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} disabled={isCompleted}>
           <Text style={[styles.cancelText, isCompleted && styles.cancelTextDisabled]}>
             {isCompleted ? '' : 'Cancel'}

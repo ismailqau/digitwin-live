@@ -23,6 +23,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z, ZodError } from 'zod';
 
 import type { AuthStackParamList } from '../../types/navigation';
@@ -43,6 +44,7 @@ type RegistrationStep = 'email' | 'password' | 'name' | 'confirm';
 
 export default function RegisterScreen() {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const [currentStep, setCurrentStep] = useState<RegistrationStep>('email');
   const [email, setEmail] = useState('');
@@ -313,9 +315,12 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 + insets.bottom }]}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
+        <View style={[styles.progressContainer, { marginTop: 20 + insets.top }]}>
           <Text style={styles.progressText}>Step {getStepNumber()} of 4</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: `${(getStepNumber() / 4) * 100}%` }]} />

@@ -22,6 +22,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFaceStore } from '../../store/faceStore';
 import { lightColors } from '../../theme';
@@ -53,7 +54,7 @@ export function FacePreviewScreen({
   const [isActivating, setIsActivating] = useState(false);
 
   const { faceModel, photos, reset: resetFaceStore } = useFaceStore();
-
+  const insets = useSafeAreaInsets();
   const qualityScore = faceModel?.qualityScore ?? 85;
   const firstPhoto = photos[0];
 
@@ -144,7 +145,7 @@ export function FacePreviewScreen({
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
@@ -276,7 +277,7 @@ export function FacePreviewScreen({
       </ScrollView>
 
       {/* Bottom buttons */}
-      <View style={styles.bottomButtons}>
+      <View style={[styles.bottomButtons, { paddingBottom: insets.bottom + 20 }]}>
         {qualityScore < 60 ? (
           <>
             <TouchableOpacity style={styles.recaptureButton} onPress={handleRecapture}>

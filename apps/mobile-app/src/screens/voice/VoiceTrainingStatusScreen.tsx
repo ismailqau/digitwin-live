@@ -20,10 +20,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type NavigationProp = NativeStackNavigationProp<Record<string, object | undefined>>;
 type RouteParams = RouteProp<{ params: { modelId: string } }, 'params'>;
@@ -50,6 +50,7 @@ const TRAINING_TIPS = [
 export const VoiceTrainingStatusScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteParams>();
+  const insets = useSafeAreaInsets();
 
   const modelId = route.params?.modelId;
   const [trainingProgress, setTrainingProgress] = useState<TrainingProgress>({
@@ -226,7 +227,7 @@ export const VoiceTrainingStatusScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
         {/* Header */}
         <View style={styles.header}>
@@ -372,7 +373,7 @@ export const VoiceTrainingStatusScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
