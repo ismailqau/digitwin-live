@@ -7,6 +7,7 @@ import { ITTSProvider } from '../interfaces/ITTSProvider';
 import { ElevenLabsProvider } from '../providers/ElevenLabsProvider';
 import { GoogleCloudTTSProvider } from '../providers/GoogleCloudTTSProvider';
 import { OpenAITTSProvider } from '../providers/OpenAITTSProvider';
+import { Qwen3TTSProvider } from '../providers/Qwen3TTSProvider';
 import { XTTSProvider } from '../providers/XTTSProvider';
 import {
   TTSRequest,
@@ -45,6 +46,7 @@ export class TTSService {
     this.providers.set(TTSProvider.OPENAI_TTS, new OpenAITTSProvider(this.logger));
     this.providers.set(TTSProvider.XTTS_V2, new XTTSProvider(this.logger));
     this.providers.set(TTSProvider.ELEVENLABS, new ElevenLabsProvider(this.logger));
+    this.providers.set(TTSProvider.QWEN3_TTS, new Qwen3TTSProvider(this.logger));
   }
 
   async initializeProvider(config: TTSProviderConfig): Promise<void> {

@@ -1,0 +1,19 @@
+# Qwen3-TTS Service - GPU Dependencies
+# Extends base requirements.txt with CUDA-enabled PyTorch, FlashAttention 2, and vLLM
+
+# Base requirements
+-r requirements.txt
+
+# PyTorch with CUDA 12.1 support
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1+cu121
+torchaudio==2.5.1+cu121
+
+# FlashAttention 2 (requires CUDA, Ada Lovelace / Ampere+)
+flash-attn==2.7.3
+
+# vLLM for production serving with continuous batching
+vllm==0.6.6
+
+# GPU monitoring
+nvidia-ml-py3==7.352.0

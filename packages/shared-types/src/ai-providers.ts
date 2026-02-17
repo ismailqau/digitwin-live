@@ -11,6 +11,7 @@ export enum TTSProvider {
   GOOGLE_CLOUD_TTS = 'google-cloud-tts',
   OPENAI_TTS = 'openai-tts',
   ELEVENLABS = 'elevenlabs',
+  QWEN3_TTS = 'qwen3-tts',
 }
 
 export interface LLMConfig {

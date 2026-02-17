@@ -1,0 +1,17 @@
+# Qwen3-TTS Service - Base Dependencies
+
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+
+# Audio processing
+soundfile==0.12.1
+numpy==1.26.4
+
+# Qwen3-TTS model
+qwen-tts==0.1.0
+
+# Utilities
+python-dotenv==1.0.1
+python-multipart==0.0.18
