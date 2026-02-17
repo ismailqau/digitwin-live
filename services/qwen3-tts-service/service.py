@@ -56,6 +56,7 @@ class Qwen3TTSService:
         self.custom_voice_model_loaded: bool = False
         self.base_model_loaded: bool = False
         self.device: str = DEVICE
+        self.init_error: Optional[str] = None
 
     async def initialize_models(self) -> None:
         """Load CustomVoice and Base models, downloading and caching if not present."""
@@ -64,6 +65,7 @@ class Qwen3TTSService:
                 return
 
             try:
+                logger.info("Importing qwen_tts package...")
                 from qwen_tts import Qwen3TTSModel
 
                 cache_dir = Config.MODEL_CACHE_DIR
@@ -90,13 +92,18 @@ class Qwen3TTSService:
                 logger.info("Base model loaded successfully")
 
             except Exception as e:
+                self.init_error = str(e)
                 logger.error("Failed to initialize models: %s", e)
-                raise
+                # Don't re-raise — let the service stay up so health checks pass
 
     async def synthesize(self, request: SynthesizeRequest) -> SynthesizeResponse:
         """Generate audio using CustomVoice model with a premium timbre."""
         if not self.custom_voice_model_loaded:
+            if self.init_error:
+                raise RuntimeError(f"Model initialization failed: {self.init_error}")
             await self.initialize_models()
+            if not self.custom_voice_model_loaded:
+                raise RuntimeError(f"Model not available: {self.init_error}")
 
         start_time = time.time()
 
@@ -136,7 +143,11 @@ class Qwen3TTSService:
     async def clone_voice(self, request: CloneRequest) -> SynthesizeResponse:
         """Generate audio using Base model with voice cloning from an audio sample."""
         if not self.base_model_loaded:
+            if self.init_error:
+                raise RuntimeError(f"Model initialization failed: {self.init_error}")
             await self.initialize_models()
+            if not self.base_model_loaded:
+                raise RuntimeError(f"Model not available: {self.init_error}")
 
         start_time = time.time()
         tmp_path: Optional[str] = None
@@ -184,7 +195,13 @@ class Qwen3TTSService:
     ) -> AsyncGenerator[StreamChunk, None]:
         """Stream audio chunks using CustomVoice model's dual-track hybrid streaming."""
         if not self.custom_voice_model_loaded:
+            if self.init_error:
+                yield StreamChunk(chunk="", sequence_number=0, is_last=True, error=f"Model init failed: {self.init_error}")
+                return
             await self.initialize_models()
+            if not self.custom_voice_model_loaded:
+                yield StreamChunk(chunk="", sequence_number=0, is_last=True, error=f"Model not available: {self.init_error}")
+                return
 
         sequence = 0
 

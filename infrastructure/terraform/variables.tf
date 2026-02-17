@@ -157,3 +157,10 @@ variable "discord_webhook_url" {
   default     = ""
   sensitive   = true
 }
+
+# Qwen3-TTS Variables
+variable "qwen3_tts_image" {
+  description = "Container image URL for the Qwen3-TTS service"
+  type        = string
+  default     = "us-central1-docker.pkg.dev/digitwinlive/digitwinlive/qwen3-tts-service:latest"
+}

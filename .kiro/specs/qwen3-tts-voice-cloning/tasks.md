@@ -106,17 +106,17 @@ Incremental implementation of the Qwen3-TTS integration: Python FastAPI service 
 - [x] 7. Checkpoint - Provider integration
   - Ensure all TypeScript compiles (`pnpm --filter tts-service type-check`) and tests pass. Ask the user if questions arise.
 
-- [ ] 8. Implement voice-only conversation mode in mobile app
-  - [ ] 8.1 Create `apps/mobile-app/src/screens/conversation/VoiceOnlyConversationScreen.tsx`
+- [x] 8. Implement voice-only conversation mode in mobile app
+  - [x] 8.1 Create `apps/mobile-app/src/screens/conversation/VoiceOnlyConversationScreen.tsx`
     - Audio-only conversation UI with no video/face animation components
     - Integrate with existing WebSocket conversation flow for audio streaming
     - Display audio waveform indicator when AI is speaking
     - _Requirements: 8.2, 8.3, 8.5_
-  - [ ] 8.2 Create `apps/mobile-app/src/components/audio/AudioWaveform.tsx`
+  - [x] 8.2 Create `apps/mobile-app/src/components/audio/AudioWaveform.tsx`
     - Animated waveform visualization component
     - Accept `isPlaying` prop to show/hide animation
     - _Requirements: 8.5_
-  - [ ] 8.3 Update conversation start flow to check face model availability
+  - [x] 8.3 Update conversation start flow to check face model availability
     - If user has no active face model → default to Voice_Only_Mode
     - If user has active face model → present choice between video and voice-only
     - Add navigation route for `VoiceOnlyConversationScreen`
@@ -126,21 +126,21 @@ Incremental implementation of the Qwen3-TTS integration: Python FastAPI service 
     - Generate random user states (with/without active face model) using `fast-check` and verify correct mode options are presented
     - **Validates: Requirements 8.1, 8.4**
 
-- [ ] 9. Checkpoint - Mobile app voice-only mode
+- [x] 9. Checkpoint - Mobile app voice-only mode
   - Ensure mobile app compiles and tests pass. Ask the user if questions arise.
 
-- [ ] 10. Create Docker and Terraform infrastructure
-  - [ ] 10.1 Create `services/qwen3-tts-service/Dockerfile` (GPU production)
+- [x] 10. Create Docker and Terraform infrastructure
+  - [x] 10.1 Create `services/qwen3-tts-service/Dockerfile` (GPU production)
     - Base: `nvidia/cuda:12.1-devel-ubuntu22.04`
     - Install Python 3.12, `qwen-tts`, FlashAttention 2, vLLM
     - Health check on `/health`, expose port 8001
     - Startup script to sync models from GCS if `GCS_MODEL_BUCKET` is set
     - _Requirements: 7.1_
-  - [ ] 10.2 Create `services/qwen3-tts-service/Dockerfile.cpu` and `docker-compose.yml`
+  - [x] 10.2 Create `services/qwen3-tts-service/Dockerfile.cpu` and `docker-compose.yml`
     - CPU Dockerfile based on `python:3.12-slim` for local dev
     - docker-compose with optional GPU passthrough, model cache volume, env vars
     - _Requirements: 7.2_
-  - [ ] 10.3 Create `infrastructure/terraform/modules/qwen3-tts/main.tf`
+  - [x] 10.3 Create `infrastructure/terraform/modules/qwen3-tts/main.tf`
     - Cloud Run service with NVIDIA L4 GPU (production: `g2-standard-8`, 32 GB RAM)
     - Dev/staging variant with NVIDIA T4 (`n1-standard-4`, 16 GB RAM)
     - GCS bucket for model weight caching
@@ -149,7 +149,7 @@ Incremental implementation of the Qwen3-TTS integration: Python FastAPI service 
     - Environment variables from `GPU_CONFIGS` in design
     - _Requirements: 7.3, 7.4, 7.5, 7.6_
 
-- [ ] 11. Final checkpoint
+- [x] 11. Final checkpoint
   - Ensure all tests pass across Python service, TypeScript provider, and mobile app. Verify Docker builds succeed. Ask the user if questions arise.
 
 ## Notes

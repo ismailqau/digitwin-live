@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PrismaClient, VoiceModel } from '@clone/database';
+import { PrismaClient } from '@clone/database';
 import { logger } from '@clone/logger';
 import { TTSProvider } from '@clone/shared-types';
+import { VoiceModel } from '@prisma/client';
 
 export interface VoiceModelCreateRequest {
   userId: string;
@@ -352,7 +353,7 @@ export class VoiceModelService {
 
       // Get usage stats for each model
       const modelsWithStats = await Promise.all(
-        models.map(async (model) => {
+        models.map(async (model: any) => {
           const usageStats = await this.getVoiceModelUsageStats(model.id);
           return {
             ...model,
@@ -431,10 +432,10 @@ export class VoiceModelService {
       });
 
       const totalModels = models.length;
-      const activeModels = models.filter((m) => m.isActive).length;
+      const activeModels = models.filter((m: any) => m.isActive).length;
 
       const modelsByProvider = models.reduce(
-        (acc, model) => {
+        (acc: Record<TTSProvider, number>, model: any) => {
           acc[model.provider as TTSProvider] = (acc[model.provider as TTSProvider] || 0) + 1;
           return acc;
         },
@@ -442,14 +443,16 @@ export class VoiceModelService {
       );
 
       const averageQualityScore =
-        totalModels > 0 ? models.reduce((sum, m) => sum + m.qualityScore, 0) / totalModels : 0;
+        totalModels > 0
+          ? models.reduce((sum: number, m: any) => sum + m.qualityScore, 0) / totalModels
+          : 0;
 
       // Get usage stats from conversation turns (simplified)
       const usageStats = await this.prisma.conversationTurn.aggregate({
         where: {
           session: {
             userId,
-            voiceModelId: { in: models.map((m) => m.id) },
+            voiceModelId: { in: models.map((m: any) => m.id) },
           },
         },
         _sum: {
@@ -553,7 +556,9 @@ export class VoiceModelService {
       const trainingData =
         trainingJobs.length > 0
           ? {
-              sampleIds: trainingJobs[0].trainingJobVoiceSamples.map((tjs) => tjs.voiceSample.id),
+              sampleIds: trainingJobs[0].trainingJobVoiceSamples.map(
+                (tjs: any) => tjs.voiceSample.id
+              ),
               trainingJobId: trainingJobs[0].id,
             }
           : undefined;

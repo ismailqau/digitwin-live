@@ -1,0 +1,31 @@
+# Qwen3-TTS CPU-only Dockerfile
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY config.py models.py service.py main.py ./
+
+RUN mkdir -p /app/models /app/logs
+
+# Cloud Run sets PORT env var (default 8080). Use it dynamically.
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=5 \
+    CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
+
+# Use shell form so $PORT is expanded at runtime
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

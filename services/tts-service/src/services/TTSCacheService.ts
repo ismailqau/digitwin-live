@@ -261,12 +261,15 @@ export class TTSCacheService {
         },
       });
 
-      const totalSize = entries.reduce((sum, entry) => sum + entry.audioData.length, 0);
+      const totalSize = entries.reduce(
+        (sum: number, entry: any) => sum + entry.audioData.length,
+        0
+      );
 
       // Calculate compression ratio
       let originalSize = 0;
       let compressedSize = 0;
-      entries.forEach((entry) => {
+      entries.forEach((entry: any) => {
         const size = entry.audioData.length;
         if (entry.compression === 'opus') {
           compressedSize += size;
@@ -295,7 +298,7 @@ export class TTSCacheService {
       });
 
       const cacheByProvider: Record<TTSProvider, number> = {} as any;
-      providerStats.forEach((stat) => {
+      providerStats.forEach((stat: any) => {
         const provider = (stat.metadata as any)?.provider;
         if (provider) {
           cacheByProvider[provider as TTSProvider] = stat._count.id;
@@ -430,11 +433,14 @@ export class TTSCacheService {
         select: { id: true, audioData: true },
       });
 
-      const spaceSaved = lowValueEntries.reduce((sum, entry) => sum + entry.audioData.length, 0);
+      const spaceSaved = lowValueEntries.reduce(
+        (sum: number, entry: any) => sum + entry.audioData.length,
+        0
+      );
 
       const result = await this.prisma.audioChunkCache.deleteMany({
         where: {
-          id: { in: lowValueEntries.map((e) => e.id) },
+          id: { in: lowValueEntries.map((e: any) => e.id) },
         },
       });
 
@@ -477,7 +483,7 @@ export class TTSCacheService {
       const savingsByProvider: Record<TTSProvider, number> = {} as any;
       let totalHitCount = 0;
 
-      entries.forEach((entry) => {
+      entries.forEach((entry: any) => {
         const originalCost = (entry.metadata as any)?.originalCost || 0;
         const hitCount = entry.hitCount;
         const provider = (entry.metadata as any)?.provider as TTSProvider;
@@ -690,7 +696,7 @@ export class TTSCacheService {
         });
 
         await this.prisma.audioChunkCache.deleteMany({
-          where: { id: { in: oldestEntries.map((e) => e.id) } },
+          where: { id: { in: oldestEntries.map((e: any) => e.id) } },
         });
 
         this.logger.info('LRU eviction performed', { removedCount: oldestEntries.length });

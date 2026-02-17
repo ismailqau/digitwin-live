@@ -45,3 +45,6 @@ gke_gpu_node_pools = [
     max_nodes    = 3
   }
 ]
+
+# Qwen3-TTS
+qwen3_tts_image = "us-central1-docker.pkg.dev/digitwinlive/digitwinlive/qwen3-tts-service:latest"

@@ -110,3 +110,8 @@ terraform-key-*.json
 # Generated files
 *.tfvars.json
 .history
+services/qwen3-tts-service/models/models--Qwen--Qwen3-TTS-12Hz-1.7B-CustomVoice/blobs/38b1d5971bdbd982b561cccec982669a53b0537c3cf5e9bd4778ed07bb2f5137
+.gitignore
+services/qwen3-tts-service/models/models--Qwen--Qwen3-TTS-12Hz-1.7B-CustomVoice/snapshots/0c0e3051f131929182e2c023b9537f8b1c68adfe/model.safetensors
+services/qwen3-tts-service/models/models--Qwen--Qwen3-TTS-12Hz-1.7B-CustomVoice/blobs/95d74b20b7485f5dfa09d05988d6c606ec226811
+services/qwen3-tts-service/models/models--Qwen--Qwen3-TTS-12Hz-1.7B-CustomVoice/refs/main

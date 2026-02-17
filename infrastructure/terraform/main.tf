@@ -176,3 +176,14 @@ module "monitoring" {
   alert_email         = var.alert_email
   discord_webhook_url = var.discord_webhook_url
 }
+
+# Qwen3-TTS Service (GPU-accelerated TTS with voice cloning)
+module "qwen3_tts" {
+  source = "./modules/qwen3-tts"
+
+  environment      = var.environment
+  region           = var.region
+  project_id       = var.project_id
+  image            = var.qwen3_tts_image
+  vpc_connector_id = google_vpc_access_connector.main.id
+}

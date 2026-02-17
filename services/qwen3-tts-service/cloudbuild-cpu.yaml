@@ -1,0 +1,14 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-f',
+        'Dockerfile.cpu',
+        '-t',
+        'us-central1-docker.pkg.dev/digitwinlive/digitwinlive/qwen3-tts-service:cpu-latest',
+        '.',
+      ]
+images:
+  - 'us-central1-docker.pkg.dev/digitwinlive/digitwinlive/qwen3-tts-service:cpu-latest'
+timeout: 3600s

@@ -62,6 +62,7 @@ export type MainTabParamList = {
 export type ConversationStackParamList = {
   ConversationMain: undefined;
   ConversationDetail: { sessionId: string };
+  VoiceOnlyConversation: undefined;
 };
 
 // History Stack (nested in Main Tab)

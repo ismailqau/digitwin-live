@@ -133,7 +133,7 @@ export class TrainingJobQueue {
 
       // Add job to queue
       const jobData: TrainingJobData = {
-        voiceSamplePaths: voiceSamples.map((sample) => sample.storagePath),
+        voiceSamplePaths: voiceSamples.map((sample: { storagePath: string }) => sample.storagePath),
         outputModelPath: `gs://digitwin-live-voice-models/${request.userId}/${trainingJob.id}/model`,
         provider: request.provider,
         options: request.options || {},
@@ -279,7 +279,7 @@ export class TrainingJobQueue {
         skip: offset,
       });
 
-      return trainingJobs.map((job) => ({
+      return trainingJobs.map((job: any) => ({
         id: job.id,
         userId: job.userId,
         status: job.status as TrainingStatus,

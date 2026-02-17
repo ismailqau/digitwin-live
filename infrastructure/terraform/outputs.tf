@@ -65,3 +65,13 @@ output "load_balancer_ip" {
   description = "Load balancer IP address"
   value       = module.load_balancer.ip_address
 }
+
+output "qwen3_tts_service_url" {
+  description = "Qwen3-TTS Cloud Run service URL"
+  value       = module.qwen3_tts.service_url
+}
+
+output "qwen3_tts_model_cache_bucket" {
+  description = "Qwen3-TTS model cache GCS bucket"
+  value       = module.qwen3_tts.model_cache_bucket
+}

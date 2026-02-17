@@ -1,0 +1,85 @@
+# Qwen3-TTS Service Docker Compose
+# Supports GPU and CPU deployments
+
+version: '3.8'
+
+services:
+  # GPU version (Linux with NVIDIA GPU)
+  qwen3-tts-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qwen3-tts-gpu
+    ports:
+      - '8001:8001'
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - MODEL_CACHE_DIR=/app/models
+      - CUSTOM_VOICE_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+      - BASE_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-Base
+      - TOKENIZER_MODEL=Qwen/Qwen3-TTS-Tokenizer-12Hz
+      - CUDA_VISIBLE_DEVICES=0
+      - MAX_TEXT_LENGTH=2000
+      - GCS_MODEL_BUCKET=
+      - USE_VLLM=false
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    profiles:
+      - gpu
+
+  # CPU version (local development without GPU)
+  qwen3-tts-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    container_name: qwen3-tts-cpu
+    ports:
+      - '8001:8001'
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - MODEL_CACHE_DIR=/app/models
+      - CUSTOM_VOICE_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+      - BASE_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-Base
+      - TOKENIZER_MODEL=Qwen/Qwen3-TTS-Tokenizer-12Hz
+      - MAX_TEXT_LENGTH=2000
+      - USE_VLLM=false
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+    restart: unless-stopped
+    profiles:
+      - cpu
+
+  # Development version with hot reload
+  qwen3-tts-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    container_name: qwen3-tts-dev
+    ports:
+      - '8001:8001'
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - MODEL_CACHE_DIR=/app/models
+      - MAX_TEXT_LENGTH=2000
+      - USE_VLLM=false
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - .:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    restart: unless-stopped
+    profiles:
+      - dev

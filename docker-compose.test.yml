@@ -78,3 +78,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  qwen3-tts-service:
+    image: qwen3-tts-service:local
+    ports:
+      - '8002:8001'
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - MODEL_CACHE_DIR=/app/models
+      - CUSTOM_VOICE_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+      - BASE_MODEL=Qwen/Qwen3-TTS-12Hz-1.7B-Base
+      - TOKENIZER_MODEL=Qwen/Qwen3-TTS-Tokenizer-12Hz
+      - MAX_TEXT_LENGTH=2000
+      - USE_VLLM=false
+    volumes:
+      - ./services/qwen3-tts-service/models:/app/models
+      - ./services/qwen3-tts-service/logs:/app/logs
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8001/health']
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+    restart: unless-stopped

@@ -45,8 +45,19 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    logger.info("Starting Qwen3-TTS service...")
-    asyncio.create_task(qwen3_service.initialize_models())
+    logger.info("Starting Qwen3-TTS service on %s:%s", Config.HOST, Config.PORT)
+    logger.info("Device: %s, Platform: %s", DEVICE, PLATFORM)
+    # Fire-and-forget model loading — server starts immediately
+    asyncio.create_task(_safe_model_init())
+
+
+async def _safe_model_init() -> None:
+    """Initialize models with full error handling so the server never crashes."""
+    try:
+        await qwen3_service.initialize_models()
+    except Exception as e:
+        logger.error("Background model initialization failed: %s", e)
+        # Service stays up — /health reports status, /ready returns 503
 
 
 # ---------------------------------------------------------------------------
@@ -55,9 +66,18 @@ async def startup_event() -> None:
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
+    """Always returns 200 so Cloud Run keeps the container alive."""
     gpu_info = Qwen3TTSService.get_gpu_info()
+
+    if qwen3_service.custom_voice_model_loaded and qwen3_service.base_model_loaded:
+        status = "healthy"
+    elif qwen3_service.init_error:
+        status = f"error: {qwen3_service.init_error}"
+    else:
+        status = "initializing"
+
     return HealthResponse(
-        status="healthy" if qwen3_service.custom_voice_model_loaded else "initializing",
+        status=status,
         device=DEVICE,
         platform=PLATFORM,
         custom_voice_model_loaded=qwen3_service.custom_voice_model_loaded,
@@ -72,7 +92,8 @@ async def health_check() -> HealthResponse:
 async def readiness_check() -> dict:
     if qwen3_service.custom_voice_model_loaded and qwen3_service.base_model_loaded:
         return {"status": "ready"}
-    raise HTTPException(status_code=503, detail="Models not loaded yet")
+    detail = qwen3_service.init_error or "Models not loaded yet"
+    raise HTTPException(status_code=503, detail=detail)
 
 
 # ---------------------------------------------------------------------------
