@@ -20,20 +20,27 @@ except ImportError:
 
 from config import Config
 from models import (
+    AudioToAudioRequest,
+    CloneAudioToAudioRequest,
+    CloneAudioToAudioResponse,
     CloneRequest,
     StreamChunk,
     SynthesizeRequest,
     SynthesizeResponse,
+    TranslateSynthesizeRequest,
+    TranslateSynthesizeResponse,
 )
+from translation_provider import translation_provider
+from voice_library import voice_library
 
 logger = logging.getLogger(__name__)
 
 PLATFORM = platform.system().lower()
 
-SUPPORTED_AUDIO_FORMATS = {"WAV", "FLAC", "MP3"}
+SUPPORTED_AUDIO_FORMATS = {"WAV", "wav", "FLAC", "flac", "MP3", "mp3", "M4A", "m4a"}
 MIN_AUDIO_DURATION_SECONDS = 3.0
 
-# Map short language codes to full names expected by qwen-tts
+# Map short language codes to full names expected by qwen-tts (native only)
 LANGUAGE_MAP = {
     "zh": "Chinese",
     "en": "English",
@@ -45,6 +52,10 @@ LANGUAGE_MAP = {
     "pt": "Portuguese",
     "es": "Spanish",
     "it": "Italian",
+    # Extended: these are translated to English before synthesis
+    "ur": "English",
+    "ar": "English",
+    "hi": "English",
 }
 
 
@@ -363,8 +374,258 @@ class Qwen3TTSService:
         parts = re.split(r'(?<=[.!?。！？])\s*', text)
         return [p for p in parts if p.strip()]
 
+    # ------------------------------------------------------------------
+    # Translation-aware synthesis
+    # ------------------------------------------------------------------
+
+    async def translate_and_synthesize(
+        self, request: TranslateSynthesizeRequest
+    ) -> TranslateSynthesizeResponse:
+        """Translate text from source_language to target_language, then synthesize.
+
+        If a voice_id is provided the Base model is used for voice cloning.
+        Otherwise the CustomVoice model is used with the selected speaker.
+        """
+        start_time = time.time()
+
+        # Resolve translation
+        src = request.source_language.value
+        tgt = request.target_language.value
+        original_text = request.text
+
+        if src != tgt:
+            translated_text = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: translation_provider.translate(original_text, src, tgt),
+            )
+        else:
+            translated_text = original_text
+
+        # Determine synthesis language (bridge for extended langs)
+        synth_lang_code = tgt if translation_provider.is_native(tgt) else translation_provider.get_bridge_language(tgt)
+
+        if request.voice_id:
+            voice = voice_library.get_voice(request.voice_id)
+            if not voice:
+                raise ValueError(f"Voice '{request.voice_id}' not found in library")
+            clone_req = CloneRequest(
+                text=translated_text,
+                speaker_audio=voice.ref_audio_b64,
+                ref_text=voice.ref_text,
+                language=synth_lang_code,  # type: ignore[arg-type]
+            )
+            synth_resp = await self.clone_voice(clone_req)
+            speaker_label = voice.name
+        else:
+            synth_req = SynthesizeRequest(
+                text=translated_text,
+                speaker=request.speaker,
+                language=synth_lang_code,  # type: ignore[arg-type]
+                instruction=request.instruction,
+            )
+            synth_resp = await self.synthesize(synth_req)
+            speaker_label = request.speaker.value
+
+        return TranslateSynthesizeResponse(
+            audio_data=synth_resp.audio_data,
+            sample_rate=synth_resp.sample_rate,
+            duration=synth_resp.duration,
+            source_language=src,
+            target_language=tgt,
+            original_text=original_text,
+            translated_text=translated_text,
+            speaker=speaker_label,
+            device_used=self.device,
+            processing_time=round(time.time() - start_time, 3),
+        )
+
+    # ------------------------------------------------------------------
+    # Audio-to-audio (ASR → translate → synthesize/clone)
+    # ------------------------------------------------------------------
+
+    async def audio_to_audio(self, request: AudioToAudioRequest) -> TranslateSynthesizeResponse:
+        """Transcribe input audio, translate to target language, then synthesize.
+
+        Pipeline: base64 audio → Whisper ASR → translation → TTS synthesis.
+        If voice_id is set, the library voice is used for cloning.
+        """
+        start_time = time.time()
+
+        # Step 1: decode and save audio to temp file
+        tmp_path, _ = self.validate_audio_sample(request.audio)
+
+        try:
+            # Step 2: ASR with faster-whisper
+            source_lang, transcribed_text = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: self._transcribe(tmp_path),
+            )
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+        tgt = request.target_language.value
+
+        # Step 3: translate if needed
+        if source_lang != tgt:
+            translated_text = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: translation_provider.translate(transcribed_text, source_lang, tgt),
+            )
+        else:
+            translated_text = transcribed_text
+
+        # Step 4: synthesize
+        synth_lang_code = tgt if translation_provider.is_native(tgt) else translation_provider.get_bridge_language(tgt)
+
+        if request.voice_id:
+            voice = voice_library.get_voice(request.voice_id)
+            if not voice:
+                raise ValueError(f"Voice '{request.voice_id}' not found in library")
+            clone_req = CloneRequest(
+                text=translated_text,
+                speaker_audio=voice.ref_audio_b64,
+                ref_text=voice.ref_text,
+                language=synth_lang_code,  # type: ignore[arg-type]
+            )
+            synth_resp = await self.clone_voice(clone_req)
+            speaker_label = voice.name
+        else:
+            synth_req = SynthesizeRequest(
+                text=translated_text,
+                speaker=request.speaker,
+                language=synth_lang_code,  # type: ignore[arg-type]
+                instruction=request.instruction,
+            )
+            synth_resp = await self.synthesize(synth_req)
+            speaker_label = request.speaker.value
+
+        return TranslateSynthesizeResponse(
+            audio_data=synth_resp.audio_data,
+            sample_rate=synth_resp.sample_rate,
+            duration=synth_resp.duration,
+            source_language=source_lang,
+            target_language=tgt,
+            original_text=transcribed_text,
+            translated_text=translated_text,
+            speaker=speaker_label,
+            device_used=self.device,
+            processing_time=round(time.time() - start_time, 3),
+        )
+
+    @staticmethod
+    def _transcribe(audio_path: str) -> tuple[str, str]:
+        """Transcribe audio using faster-whisper. Returns (detected_lang, text)."""
+        try:
+            from faster_whisper import WhisperModel
+
+            model_size = os.getenv("WHISPER_MODEL_SIZE", "base")
+            device = "cuda" if (torch is not None and torch.cuda.is_available()) else "cpu"
+            compute_type = "float16" if device == "cuda" else "int8"
+
+            model = WhisperModel(model_size, device=device, compute_type=compute_type)
+            segments, info = model.transcribe(audio_path, beam_size=5)
+            text = " ".join(seg.text.strip() for seg in segments)
+            return info.language, text.strip()
+        except ImportError:
+            raise RuntimeError(
+                "faster-whisper is required for audio-to-audio. "
+                "Install it with: pip install faster-whisper"
+            )
+
+    # ------------------------------------------------------------------
+    # Voice library synthesis helpers
+    # ------------------------------------------------------------------
+
+    async def synthesize_with_library_voice(
+        self,
+        text: str,
+        voice_id: str,
+        language: str = "en",
+    ) -> SynthesizeResponse:
+        """Synthesize text using a voice from the library."""
+        voice = voice_library.get_voice(voice_id)
+        if not voice:
+            raise ValueError(f"Voice '{voice_id}' not found in library")
+
+        synth_lang = language if translation_provider.is_native(language) else translation_provider.get_bridge_language(language)
+
+        clone_req = CloneRequest(
+            text=text,
+            speaker_audio=voice.ref_audio_b64,
+            ref_text=voice.ref_text,
+            language=synth_lang,  # type: ignore[arg-type]
+        )
+        return await self.clone_voice(clone_req)
+
+    # ------------------------------------------------------------------
+    # Clone audio-to-audio (no translation)
+    # ------------------------------------------------------------------
+
+    async def clone_audio_to_audio(
+        self, request: CloneAudioToAudioRequest
+    ) -> CloneAudioToAudioResponse:
+        """Transcribe input audio and re-synthesize using a cloned voice — no translation.
+
+        The detected language from ASR is used directly for synthesis so the
+        output preserves the original language while replacing the speaker voice.
+        Provide either voice_id (library) or speaker_audio (inline reference).
+        """
+        if not request.voice_id and not request.speaker_audio:
+            raise ValueError("Provide either voice_id or speaker_audio")
+
+        start_time = time.time()
+
+        # Step 1: transcribe input audio
+        tmp_path, _ = self.validate_audio_sample(request.audio)
+        try:
+            detected_lang, transcribed_text = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: self._transcribe(tmp_path),
+            )
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+        # Step 2: resolve synthesis language — no translation, use detected lang directly
+        # Fall back to "en" only if Qwen3-TTS doesn't natively support the detected lang
+        synth_lang = detected_lang if translation_provider.is_native(detected_lang) else "en"
+
+        # Step 3: resolve reference audio (library voice or inline)
+        if request.voice_id:
+            voice = voice_library.get_voice(request.voice_id)
+            if not voice:
+                raise ValueError(f"Voice '{request.voice_id}' not found in library")
+            ref_audio = voice.ref_audio_b64
+            ref_text = voice.ref_text
+            speaker_label = voice.name
+        else:
+            ref_audio = request.speaker_audio  # type: ignore[assignment]
+            ref_text = request.ref_text
+            speaker_label = "clone"
+
+        # Step 4: synthesize with cloned voice
+        clone_req = CloneRequest(
+            text=transcribed_text,
+            speaker_audio=ref_audio,
+            ref_text=ref_text,
+            language=synth_lang,  # type: ignore[arg-type]
+        )
+        synth_resp = await self.clone_voice(clone_req)
+
+        return CloneAudioToAudioResponse(
+            audio_data=synth_resp.audio_data,
+            sample_rate=synth_resp.sample_rate,
+            duration=synth_resp.duration,
+            detected_language=detected_lang,
+            transcribed_text=transcribed_text,
+            speaker=speaker_label,
+            device_used=self.device,
+            processing_time=round(time.time() - start_time, 3),
+        )
+
     def validate_audio_sample(self, audio_b64: str) -> tuple[str, float]:
-        """Decode base64 audio, detect format (WAV/MP3/FLAC), validate >= 3s duration.
+        """Decode base64 audio, detect format (WAV/MP3/FLAC/M4A), validate >= 3s duration.
 
         Returns:
             Tuple of (temporary file path, duration in seconds).
@@ -384,7 +645,7 @@ class Qwen3TTSService:
                 f"Unsupported audio format. Supported formats: {', '.join(sorted(SUPPORTED_AUDIO_FORMATS))}"
             )
 
-        suffix_map = {"WAV": ".wav", "MP3": ".mp3", "FLAC": ".flac"}
+        suffix_map = {"WAV": ".wav", "MP3": ".mp3", "FLAC": ".flac", "M4A": ".m4a"}
         suffix = suffix_map.get(fmt, ".wav")
 
         tmp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
@@ -393,17 +654,39 @@ class Qwen3TTSService:
             tmp_file.flush()
             tmp_file.close()
 
-            data, sample_rate = sf.read(tmp_file.name)
+            # M4A/AAC: soundfile cannot read it — convert to WAV via pydub
+            read_path = tmp_file.name
+            converted_path: Optional[str] = None
+            if fmt == "M4A":
+                try:
+                    from pydub import AudioSegment  # type: ignore[import]
+                    audio_seg = AudioSegment.from_file(tmp_file.name, format="m4a")
+                    wav_tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+                    wav_tmp.close()
+                    audio_seg.export(wav_tmp.name, format="wav")
+                    converted_path = wav_tmp.name
+                    read_path = converted_path
+                except Exception as e:
+                    raise ValueError(f"Failed to convert M4A audio: {e}") from e
+
+            data, sample_rate = sf.read(read_path)
             duration = len(data) / sample_rate
 
-            if duration < MIN_AUDIO_DURATION_SECONDS:
+            # Clean up converted temp file — caller gets the original or converted path
+            if converted_path:
                 os.unlink(tmp_file.name)
+                tmp_file_name = converted_path
+            else:
+                tmp_file_name = tmp_file.name
+
+            if duration < MIN_AUDIO_DURATION_SECONDS:
+                os.unlink(tmp_file_name)
                 raise ValueError(
                     f"Audio sample too short ({duration:.1f}s). "
                     f"Minimum duration is {MIN_AUDIO_DURATION_SECONDS:.0f} seconds."
                 )
 
-            return tmp_file.name, duration
+            return tmp_file_name, duration
 
         except ValueError:
             raise
@@ -424,6 +707,13 @@ class Qwen3TTSService:
         # MP3: check for ID3 tag or MPEG sync word
         if data[:3] == b"ID3" or (data[0] == 0xFF and (data[1] & 0xE0) == 0xE0):
             return "MP3"
+        # M4A/AAC: ISO Base Media File Format — 'ftyp' box at offset 4
+        # Covers .m4a, .mp4 audio, .aac containers from mobile recorders
+        if len(data) >= 12 and data[4:8] == b"ftyp":
+            return "M4A"
+        # Some M4A files start with a 'wide' or 'mdat' box before ftyp
+        if len(data) >= 8 and data[0:4] in (b"wide", b"mdat", b"moov"):
+            return "M4A"
         return "UNKNOWN"
 
     @staticmethod

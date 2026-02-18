@@ -34,8 +34,9 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install PyTorch with CUDA first (flash-attn needs torch at build time)
+# faster-whisper is also installed here after torch so ctranslate2 picks up CUDA
 RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu121 \
-    torch==2.5.1+cu121 torchaudio==2.5.1+cu121
+    torch==2.5.1+cu121 torchaudio==2.5.1+cu121 faster-whisper==1.1.0
 
 # Install build deps for flash-attn (ninja speeds up compilation significantly)
 RUN pip install --no-cache-dir ninja packaging setuptools wheel
@@ -48,14 +49,16 @@ RUN pip install --no-cache-dir --no-build-isolation flash-attn==2.7.3
 RUN pip install --no-cache-dir vllm==0.6.6 nvidia-ml-py3==7.352.0
 
 # Copy application code
-COPY config.py models.py service.py main.py gcs_loader.py ./
+COPY config.py models.py service.py main.py gcs_loader.py translation_provider.py voice_library.py ./
 
 # Copy startup script
 COPY start.sh ./
 RUN chmod +x start.sh
 
-# Create directories for models and logs
-RUN mkdir -p /app/models /app/logs
+# Create directories for models, logs, and voice library
+RUN mkdir -p /app/models /app/logs /app/voice_library
+
+ENV VOICE_LIBRARY_DIR=/app/voice_library
 
 EXPOSE 8001
 
