@@ -17,7 +17,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY config.py models.py service.py main.py ./
+COPY config.py models.py service.py main.py gcs_loader.py ./
 
 RUN mkdir -p /app/models /app/logs
 

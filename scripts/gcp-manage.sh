@@ -87,6 +87,7 @@ Cloud Run Services:
   api-gateway
   websocket-server
   face-processing-service
+  qwen3-tts-service
 
 Examples:
   $0 status
@@ -230,7 +231,7 @@ show_status() {
     # Cloud Run Services
     echo ""
     log_info "Cloud Run Services:"
-    CLOUD_RUN_SERVICES=("api-gateway" "websocket-server" "face-processing-service")
+    CLOUD_RUN_SERVICES=("api-gateway" "websocket-server" "face-processing-service" "qwen3-tts-service")
     SERVICE_FOUND=false
     for service in "${CLOUD_RUN_SERVICES[@]}"; do
         if run_with_timeout 10 gcloud run services describe "$service" --region="$GCP_REGION" --format="value(status.url)" 2>/dev/null | grep -q "https://"; then
@@ -426,7 +427,7 @@ delete_resource() {
             ;;
         cloud-run)
             log_warning "Deleting all Cloud Run services..."
-            SERVICES=("api-gateway" "websocket-server" "face-processing-service")
+            SERVICES=("api-gateway" "websocket-server" "face-processing-service" "qwen3-tts-service")
             for service in "${SERVICES[@]}"; do
                 log_info "Deleting $service..."
                 gcloud run services delete "$service" --region="$GCP_REGION" --quiet 2>/dev/null || true
@@ -652,6 +653,11 @@ show_costs() {
     echo "    - 5M requests/month: ~\$1.20"
     echo ""
     echo "  Scale-to-zero: No cost when not in use"
+    echo ""
+    echo "  Qwen3-TTS (16Gi RAM, 4 vCPU):"
+    echo "    - Scale-to-zero when idle"
+    echo "    - ~\$0.10/hr when active (CPU + memory)"
+    echo "    - GPU instance (if enabled): ~\$0.50-1.50/hr"
     
     # Artifact Registry
     echo ""

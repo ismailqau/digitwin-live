@@ -42,6 +42,7 @@ class SynthesizeRequest(BaseModel):
 class CloneRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
     speaker_audio: str = Field(..., description="Base64-encoded audio (WAV/MP3/FLAC)")
+    ref_text: Optional[str] = Field(None, max_length=2000, description="Transcript of the reference audio for better cloning quality")
     language: LanguageCode = Field(default=LanguageCode.EN)
 
 

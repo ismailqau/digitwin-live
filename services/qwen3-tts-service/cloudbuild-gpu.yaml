@@ -1,0 +1,18 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-f',
+        'Dockerfile',
+        '-t',
+        'us-central1-docker.pkg.dev/digitwinlive/digitwinlive/qwen3-tts-service:gpu-latest',
+        '.',
+      ]
+    timeout: '3600s'
+images:
+  - 'us-central1-docker.pkg.dev/digitwinlive/digitwinlive/qwen3-tts-service:gpu-latest'
+options:
+  machineType: 'N1_HIGHCPU_32'
+  diskSizeGb: 200
+timeout: 7200s

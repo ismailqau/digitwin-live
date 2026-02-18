@@ -21,6 +21,7 @@ export * from './providers/GoogleCloudTTSProvider';
 export * from './providers/OpenAITTSProvider';
 export * from './providers/XTTSProvider';
 export * from './providers/ElevenLabsProvider';
+export * from './providers/Qwen3TTSProvider';
 
 // Main service initialization
 export async function createTTSService(): Promise<{
@@ -60,6 +61,13 @@ export async function createTTSService(): Promise<{
       provider: TTSProvider.ELEVENLABS,
       options: {
         apiKey: process.env.ELEVENLABS_API_KEY,
+      },
+    },
+    {
+      provider: TTSProvider.QWEN3_TTS,
+      options: {
+        serviceUrl: process.env.QWEN3_TTS_SERVICE_URL,
+        gpuEnabled: process.env.QWEN3_TTS_GPU_ENABLED === 'true',
       },
     },
   ];

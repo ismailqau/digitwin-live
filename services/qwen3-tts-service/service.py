@@ -33,6 +33,20 @@ PLATFORM = platform.system().lower()
 SUPPORTED_AUDIO_FORMATS = {"WAV", "FLAC", "MP3"}
 MIN_AUDIO_DURATION_SECONDS = 3.0
 
+# Map short language codes to full names expected by qwen-tts
+LANGUAGE_MAP = {
+    "zh": "Chinese",
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "de": "German",
+    "fr": "French",
+    "ru": "Russian",
+    "pt": "Portuguese",
+    "es": "Spanish",
+    "it": "Italian",
+}
+
 
 def get_device() -> str:
     """Determine the best available device for inference."""
@@ -59,7 +73,13 @@ class Qwen3TTSService:
         self.init_error: Optional[str] = None
 
     async def initialize_models(self) -> None:
-        """Load CustomVoice and Base models, downloading and caching if not present."""
+        """Load CustomVoice and Base models.
+
+        Loading order:
+        1. Check local cache (already downloaded)
+        2. Download from GCS bucket if GCS_MODEL_BUCKET is set
+        3. Fall back to HuggingFace from_pretrained
+        """
         async with _model_lock:
             if self.custom_voice_model_loaded and self.base_model_loaded:
                 return
@@ -71,22 +91,30 @@ class Qwen3TTSService:
                 cache_dir = Config.MODEL_CACHE_DIR
                 os.makedirs(cache_dir, exist_ok=True)
 
+                custom_voice_path = self._resolve_model_path(
+                    Config.CUSTOM_VOICE_MODEL, "CustomVoice", cache_dir
+                )
+                base_path = self._resolve_model_path(
+                    Config.BASE_MODEL, "Base", cache_dir
+                )
+
+                # Build from_pretrained kwargs based on device
+                load_kwargs = self._get_load_kwargs()
+
                 logger.info(
-                    "Loading CustomVoice model: %s", Config.CUSTOM_VOICE_MODEL
+                    "Loading CustomVoice model from: %s (device_map=%s)",
+                    custom_voice_path,
+                    load_kwargs.get("device_map", "N/A"),
                 )
                 self.custom_voice_model = Qwen3TTSModel.from_pretrained(
-                    Config.CUSTOM_VOICE_MODEL,
-                    cache_dir=cache_dir,
-                    device=self.device,
+                    custom_voice_path, **load_kwargs
                 )
                 self.custom_voice_model_loaded = True
                 logger.info("CustomVoice model loaded successfully")
 
-                logger.info("Loading Base model: %s", Config.BASE_MODEL)
+                logger.info("Loading Base model from: %s", base_path)
                 self.base_model = Qwen3TTSModel.from_pretrained(
-                    Config.BASE_MODEL,
-                    cache_dir=cache_dir,
-                    device=self.device,
+                    base_path, **load_kwargs
                 )
                 self.base_model_loaded = True
                 logger.info("Base model loaded successfully")
@@ -95,6 +123,70 @@ class Qwen3TTSService:
                 self.init_error = str(e)
                 logger.error("Failed to initialize models: %s", e)
                 # Don't re-raise — let the service stay up so health checks pass
+
+    def _get_load_kwargs(self) -> dict:
+        """Build kwargs for Qwen3TTSModel.from_pretrained based on device.
+
+        The qwen-tts library accepts ``device_map`` for GPU placement and
+        ``dtype`` for precision.  On CPU we omit ``device_map`` entirely so
+        the library falls back to its default CPU path — passing
+        ``device_map="cpu"`` causes an unexpected ``device`` kwarg error
+        inside the underlying model constructor.
+        """
+        kwargs: dict = {}
+        if self.device == "cuda":
+            kwargs["device_map"] = "cuda:0"
+            if torch is not None:
+                kwargs["dtype"] = torch.bfloat16
+            # Enable FlashAttention 2 when available (Ada Lovelace / Ampere+)
+            try:
+                import flash_attn  # noqa: F401
+                kwargs["attn_implementation"] = "flash_attention_2"
+            except ImportError:
+                pass
+        # On CPU / MPS: don't pass device_map — let the library default
+        return kwargs
+
+    @staticmethod
+    def _resolve_model_path(hf_model_id: str, gcs_prefix: str, cache_dir: str) -> str:
+        """Resolve model path: GCS download → local cache → HuggingFace ID.
+
+        Returns a local path if GCS download succeeds, otherwise the original
+        HuggingFace model ID for from_pretrained to handle.
+        """
+        # Check if models already exist locally from a previous GCS download
+        local_path = os.path.join(cache_dir, gcs_prefix)
+        marker = os.path.join(local_path, ".download_complete")
+        if os.path.exists(marker):
+            logger.info("Using cached model at %s", local_path)
+            return local_path
+
+        # Try GCS download
+        bucket_name = Config.GCS_MODEL_BUCKET
+        if bucket_name:
+            try:
+                from gcs_loader import download_model_from_gcs
+
+                path = download_model_from_gcs(
+                    bucket_name=bucket_name,
+                    model_prefix=f"models/{gcs_prefix}/",
+                    local_dir=cache_dir,
+                )
+                return path
+            except Exception as e:
+                logger.warning(
+                    "GCS download failed for %s, falling back to HuggingFace: %s",
+                    gcs_prefix, e,
+                )
+
+        # Fall back to HuggingFace
+        logger.info("Using HuggingFace model ID: %s", hf_model_id)
+        return hf_model_id
+
+    @staticmethod
+    def _to_language_name(code: str) -> str:
+        """Convert short language code to full name expected by qwen-tts."""
+        return LANGUAGE_MAP.get(code, "Auto")
 
     async def synthesize(self, request: SynthesizeRequest) -> SynthesizeResponse:
         """Generate audio using CustomVoice model with a premium timbre."""
@@ -108,18 +200,19 @@ class Qwen3TTSService:
         start_time = time.time()
 
         try:
-            kwargs = {
+            language_name = self._to_language_name(request.language.value)
+
+            kwargs: dict = {
                 "text": request.text,
                 "speaker": request.speaker.value,
-                "language": request.language.value,
+                "language": language_name,
             }
             if request.instruction:
-                kwargs["instruction"] = request.instruction
+                kwargs["instruct"] = request.instruction
 
-            result = self.custom_voice_model.generate_custom_voice(**kwargs)
+            wavs, sample_rate = self.custom_voice_model.generate_custom_voice(**kwargs)
 
-            audio_data = np.array(result["audio"], dtype=np.float32)
-            sample_rate = int(result.get("sample_rate", 24000))
+            audio_data = np.array(wavs[0], dtype=np.float32)
             duration = len(audio_data) / sample_rate
 
             audio_b64 = self._encode_audio_to_base64(audio_data, sample_rate)
@@ -157,14 +250,24 @@ class Qwen3TTSService:
                 request.speaker_audio
             )
 
-            result = self.base_model.generate_voice_clone(
-                text=request.text,
-                speaker_audio=tmp_path,
-                language=request.language.value,
-            )
+            language_name = self._to_language_name(request.language.value)
 
-            audio_data = np.array(result["audio"], dtype=np.float32)
-            sample_rate = int(result.get("sample_rate", 24000))
+            clone_kwargs: dict = {
+                "text": request.text,
+                "ref_audio": tmp_path,
+                "language": language_name,
+            }
+
+            # If ref_text is provided, use full clone mode for better quality.
+            # Otherwise use x_vector_only_mode (speaker embedding only).
+            if request.ref_text:
+                clone_kwargs["ref_text"] = request.ref_text
+            else:
+                clone_kwargs["x_vector_only_mode"] = True
+
+            wavs, sample_rate = self.base_model.generate_voice_clone(**clone_kwargs)
+
+            audio_data = np.array(wavs[0], dtype=np.float32)
             duration = len(audio_data) / sample_rate
 
             audio_b64 = self._encode_audio_to_base64(audio_data, sample_rate)
@@ -193,7 +296,12 @@ class Qwen3TTSService:
     async def synthesize_stream(
         self, request: SynthesizeRequest
     ) -> AsyncGenerator[StreamChunk, None]:
-        """Stream audio chunks using CustomVoice model's dual-track hybrid streaming."""
+        """Stream audio chunks by splitting text into sentences and generating each.
+
+        Note: qwen-tts does not have a native streaming API, so we simulate
+        streaming by splitting text on sentence boundaries and generating
+        each segment individually.
+        """
         if not self.custom_voice_model_loaded:
             if self.init_error:
                 yield StreamChunk(chunk="", sequence_number=0, is_last=True, error=f"Model init failed: {self.init_error}")
@@ -206,22 +314,26 @@ class Qwen3TTSService:
         sequence = 0
 
         try:
-            kwargs = {
-                "text": request.text,
-                "speaker": request.speaker.value,
-                "language": request.language.value,
-                "streaming": True,
-            }
-            if request.instruction:
-                kwargs["instruction"] = request.instruction
+            # Split text into sentence-level chunks for pseudo-streaming
+            sentences = self._split_sentences(request.text)
+            language_name = self._to_language_name(request.language.value)
 
-            stream = self.custom_voice_model.generate_custom_voice(**kwargs)
+            for i, sentence in enumerate(sentences):
+                if not sentence.strip():
+                    continue
 
-            for chunk_audio in stream:
-                audio_data = np.array(chunk_audio["audio"], dtype=np.float32)
-                sample_rate = int(chunk_audio.get("sample_rate", 24000))
+                kwargs: dict = {
+                    "text": sentence,
+                    "speaker": request.speaker.value,
+                    "language": language_name,
+                }
+                if request.instruction:
+                    kwargs["instruct"] = request.instruction
+
+                wavs, sample_rate = self.custom_voice_model.generate_custom_voice(**kwargs)
+                audio_data = np.array(wavs[0], dtype=np.float32)
                 chunk_b64 = self._encode_audio_to_base64(audio_data, sample_rate)
-                is_last = chunk_audio.get("is_last", False)
+                is_last = (i == len(sentences) - 1)
 
                 yield StreamChunk(
                     chunk=chunk_b64,
@@ -230,16 +342,9 @@ class Qwen3TTSService:
                 )
                 sequence += 1
 
-                if is_last:
-                    return
-
-            # If the stream ended without an explicit is_last, send a final chunk
-            if sequence == 0 or not is_last:
-                yield StreamChunk(
-                    chunk="",
-                    sequence_number=sequence,
-                    is_last=True,
-                )
+            # If no chunks were yielded, send an empty final chunk
+            if sequence == 0:
+                yield StreamChunk(chunk="", sequence_number=0, is_last=True)
 
         except Exception as e:
             logger.error("Streaming synthesis failed: %s", e)
@@ -249,6 +354,14 @@ class Qwen3TTSService:
                 is_last=True,
                 error=str(e),
             )
+
+    @staticmethod
+    def _split_sentences(text: str) -> list[str]:
+        """Split text into sentences on common delimiters."""
+        import re
+        # Split on sentence-ending punctuation (keep the delimiter attached)
+        parts = re.split(r'(?<=[.!?。！？])\s*', text)
+        return [p for p in parts if p.strip()]
 
     def validate_audio_sample(self, audio_b64: str) -> tuple[str, float]:
         """Decode base64 audio, detect format (WAV/MP3/FLAC), validate >= 3s duration.

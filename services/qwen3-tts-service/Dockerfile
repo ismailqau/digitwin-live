@@ -48,7 +48,7 @@ RUN pip install --no-cache-dir --no-build-isolation flash-attn==2.7.3
 RUN pip install --no-cache-dir vllm==0.6.6 nvidia-ml-py3==7.352.0
 
 # Copy application code
-COPY config.py models.py service.py main.py ./
+COPY config.py models.py service.py main.py gcs_loader.py ./
 
 # Copy startup script
 COPY start.sh ./

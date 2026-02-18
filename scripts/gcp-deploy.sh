@@ -217,6 +217,10 @@ get_current_service_urls() {
         --region="$GCP_REGION" \
         --format="value(status.url)" 2>/dev/null || echo "")
     
+    export QWEN3_TTS_URL=$(gcloud run services describe qwen3-tts-service \
+        --region="$GCP_REGION" \
+        --format="value(status.url)" 2>/dev/null || echo "")
+    
     if [ -n "$API_GATEWAY_URL" ]; then
         log_info "API Gateway URL: $API_GATEWAY_URL"
     fi
@@ -225,6 +229,9 @@ get_current_service_urls() {
     fi
     if [ -n "$FACE_PROCESSING_URL" ]; then
         log_info "Face Processing URL: $FACE_PROCESSING_URL"
+    fi
+    if [ -n "$QWEN3_TTS_URL" ]; then
+        log_info "Qwen3-TTS URL: $QWEN3_TTS_URL"
     fi
 }
 
@@ -378,6 +385,9 @@ deploy_service() {
     if [ -n "$FACE_PROCESSING_URL" ]; then
         env_vars+=("FACE_PROCESSING_URL=$FACE_PROCESSING_URL")
     fi
+    if [ -n "$QWEN3_TTS_URL" ]; then
+        env_vars+=("QWEN3_TTS_SERVICE_URL=$QWEN3_TTS_URL")
+    fi
     
     # Add important variables if they exist
     for var in "${important_vars[@]}"; do
@@ -415,8 +425,9 @@ deploy_service() {
         --env-vars-file="$env_file"
     )
     
-    # WebSocket-specific configuration (Requirements 1.1, 5.5)
+    # Service-specific configuration
     if [ "$service" = "websocket-server" ]; then
+        # WebSocket-specific configuration (Requirements 1.1, 5.5)
         deploy_cmd+=(
             --min-instances=1                    # Keep 1 instance warm to reduce cold starts
             --max-instances=10
@@ -429,6 +440,21 @@ deploy_service() {
         echo "  Timeout: 3600s (1 hour for long connections)"
         echo "  CPU throttling: disabled (consistent performance)"
         echo "  Session affinity: enabled (sticky sessions)"
+    elif [ "$service" = "qwen3-tts-service" ]; then
+        # Qwen3-TTS: Python ML service — needs more memory, longer timeout, no DB
+        deploy_cmd+=(
+            --min-instances=0
+            --max-instances=3
+            --timeout=600                        # 10 min for model loading + inference
+            --memory=16Gi
+            --cpu=4
+            --no-cpu-throttling                  # Consistent inference performance
+        )
+        log_info "Qwen3-TTS configuration applied:"
+        echo "  Memory: 16Gi (ML model loading)"
+        echo "  CPU: 4 (inference)"
+        echo "  Timeout: 600s (model loading + inference)"
+        echo "  CPU throttling: disabled"
     else
         deploy_cmd+=(
             --min-instances=0                    # Scale-to-zero for non-WebSocket services
@@ -437,22 +463,26 @@ deploy_service() {
         )
     fi
     
-    # Add secrets from Secret Manager (Requirement 4.3, Property 17)
-    deploy_cmd+=(
-        --set-secrets="JWT_SECRET=jwt-secret:latest,REFRESH_SECRET=refresh-secret:latest,DATABASE_PASSWORD=database-password:latest"
-    )
+    # Add secrets from Secret Manager — skip for services that don't need DB (Requirement 4.3, Property 17)
+    if [ "$service" != "qwen3-tts-service" ]; then
+        deploy_cmd+=(
+            --set-secrets="JWT_SECRET=jwt-secret:latest,REFRESH_SECRET=refresh-secret:latest,DATABASE_PASSWORD=database-password:latest"
+        )
+    fi
     
-    # Add Cloud SQL connection (Requirement 4.4, Property 18)
-    if [ -n "$CLOUD_SQL_CONNECTION_NAME" ]; then
+    # Add Cloud SQL connection — skip for services that don't need DB (Requirement 4.4, Property 18)
+    if [ -n "$CLOUD_SQL_CONNECTION_NAME" ] && [ "$service" != "qwen3-tts-service" ]; then
         deploy_cmd+=(--add-cloudsql-instances="$CLOUD_SQL_CONNECTION_NAME")
     fi
     
     log_info "Deploying to Cloud Run..."
-    log_info "Base Configuration:"
-    echo "  Memory: 512Mi"
-    echo "  CPU: 1"
-    echo "  Max instances: 10"
-    echo "  Authentication: Public (unauthenticated)"
+    if [ "$service" != "qwen3-tts-service" ]; then
+        log_info "Base Configuration:"
+        echo "  Memory: 512Mi"
+        echo "  CPU: 1"
+        echo "  Max instances: 10"
+        echo "  Authentication: Public (unauthenticated)"
+    fi
     
     # Execute deployment (Property 24: exit on failure)
     if "${deploy_cmd[@]}" 2>&1 | tee /tmp/deploy-$service.log; then
@@ -519,6 +549,7 @@ cmd_deploy() {
         "api-gateway:apps/api-gateway/Dockerfile"
         "websocket-server:apps/websocket-server/Dockerfile"
         "face-processing-service:services/face-processing-service/Dockerfile"
+        "qwen3-tts-service:services/qwen3-tts-service/Dockerfile.cpu"
     )
     
     # Determine which services to deploy
@@ -541,7 +572,7 @@ cmd_deploy() {
         
         if [ "$found" = false ]; then
             log_error "Unknown service: $service_name"
-            log_info "Available services: api-gateway, websocket-server, face-processing-service"
+            log_info "Available services: api-gateway, websocket-server, face-processing-service, qwen3-tts-service"
             return 1
         fi
         
@@ -602,6 +633,9 @@ cmd_deploy() {
             face-processing-service)
                 export FACE_PROCESSING_URL="$service_url"
                 ;;
+            qwen3-tts-service)
+                export QWEN3_TTS_URL="$service_url"
+                ;;
         esac
     done
     
@@ -648,6 +682,9 @@ cmd_deploy() {
             face-processing-service)
                 echo "FACE_PROCESSING_URL=$url"
                 ;;
+            qwen3-tts-service)
+                echo "QWEN3_TTS_SERVICE_URL=$url"
+                ;;
         esac
     done
     echo ""
@@ -661,7 +698,7 @@ cmd_deploy() {
 cmd_status() {
     log_header "Cloud Run Services Status"
     
-    local services=("api-gateway" "websocket-server" "face-processing-service")
+    local services=("api-gateway" "websocket-server" "face-processing-service" "qwen3-tts-service")
     
     echo ""
     for service in "${services[@]}"; do
@@ -696,7 +733,7 @@ cmd_status() {
 cmd_urls() {
     log_header "Service URLs"
     
-    local services=("api-gateway" "websocket-server" "face-processing-service")
+    local services=("api-gateway" "websocket-server" "face-processing-service" "qwen3-tts-service")
     
     echo ""
     log_info "Copy these to your .env.production file:"
@@ -717,6 +754,9 @@ cmd_urls() {
                     ;;
                 face-processing-service)
                     echo "FACE_PROCESSING_URL=$url"
+                    ;;
+                qwen3-tts-service)
+                    echo "QWEN3_TTS_SERVICE_URL=$url"
                     ;;
             esac
         fi
@@ -742,7 +782,7 @@ cmd_delete() {
     local services=()
     
     if [ "$service_name" = "all" ]; then
-        services=("api-gateway" "websocket-server" "face-processing-service")
+        services=("api-gateway" "websocket-server" "face-processing-service" "qwen3-tts-service")
         log_warning "This will delete ALL Cloud Run services"
     else
         services=("$service_name")
@@ -783,7 +823,8 @@ Usage: $0 <command> [options]
 Commands:
   deploy [service] [--env=ENV]   Deploy service(s) to Cloud Run
                                   service: api-gateway, websocket-server, 
-                                          face-processing-service, or 'all'
+                                          face-processing-service,
+                                          qwen3-tts-service, or 'all'
                                   --env: development or production (default: production)
   
   status                         Show deployment status of all services
