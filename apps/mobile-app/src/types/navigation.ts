@@ -63,6 +63,10 @@ export type ConversationStackParamList = {
   ConversationMain: undefined;
   ConversationDetail: { sessionId: string };
   VoiceOnlyConversation: undefined;
+  TTSTest: undefined;
+  VoiceLibrary: undefined;
+  TranslateSynthesize: undefined;
+  CloneAudioToAudio: undefined;
 };
 
 // History Stack (nested in Main Tab)

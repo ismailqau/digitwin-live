@@ -13,11 +13,16 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ConversationScreen from '../components/ConversationScreen';
 import ENV from '../config/env';
+import { TTSTestScreen } from '../screens/conversation/TTSTestScreen';
 import { VoiceOnlyConversationScreen } from '../screens/conversation/VoiceOnlyConversationScreen';
+import { CloneAudioToAudioScreen } from '../screens/tts/CloneAudioToAudioScreen';
+import { TranslateSynthesizeScreen } from '../screens/tts/TranslateSynthesizeScreen';
+import { VoiceLibraryScreen } from '../screens/tts/VoiceLibraryScreen';
 import { useFaceStore } from '../store/faceStore';
 import type { ConversationStackParamList, MainTabParamList } from '../types/navigation';
 import { generateGuestToken } from '../utils/guestToken';
@@ -35,22 +40,30 @@ const WEBSOCKET_URL = ENV.WEBSOCKET_URL;
 const ConversationModeSelect: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { faceModel } = useFaceStore();
   const hasFaceModel = faceModel !== null;
+  const insets = useSafeAreaInsets();
 
-  // No face model: default straight to voice-only
+  // No face model: default straight to voice-only (unless dev mode with TTS test)
   React.useEffect(() => {
-    if (!hasFaceModel) {
+    if (!hasFaceModel && !__DEV__) {
       navigation.replace('VoiceOnlyConversation');
     }
   }, [hasFaceModel, navigation]);
 
-  // If no face model, render nothing while redirecting
-  if (!hasFaceModel) {
+  // If no face model and not dev, render nothing while redirecting
+  if (!hasFaceModel && !__DEV__) {
     return null;
   }
 
   // User has face model: present choice
   return (
-    <View style={styles.modeSelect}>
+    <ScrollView
+      style={styles.modeSelectContainer}
+      contentContainerStyle={[
+        styles.modeSelect,
+        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.modeTitle}>Start Conversation</Text>
       <Text style={styles.modeSubtitle}>Choose your conversation mode</Text>
 
@@ -75,7 +88,53 @@ const ConversationModeSelect: React.FC<{ navigation: any }> = ({ navigation }) =
         <Text style={styles.modeCardTitle}>Voice Only</Text>
         <Text style={styles.modeCardDesc}>Audio conversation without video</Text>
       </TouchableOpacity>
-    </View>
+
+      {__DEV__ && (
+        <TouchableOpacity
+          style={[styles.modeCard, styles.testCard]}
+          onPress={() => navigation.navigate('TTSTest')}
+          accessibilityRole="button"
+          accessibilityLabel="Test Qwen3 TTS service directly"
+        >
+          <Text style={styles.modeCardEmoji}>🧪</Text>
+          <Text style={styles.modeCardTitle}>TTS Test</Text>
+          <Text style={styles.modeCardDesc}>Direct Qwen3-TTS service test</Text>
+        </TouchableOpacity>
+      )}
+
+      <TouchableOpacity
+        style={[styles.modeCard, styles.libraryCard]}
+        onPress={() => navigation.navigate('VoiceLibrary')}
+        accessibilityRole="button"
+        accessibilityLabel="Manage voice library"
+      >
+        <Text style={styles.modeCardEmoji}>🎙</Text>
+        <Text style={styles.modeCardTitle}>Voice Library</Text>
+        <Text style={styles.modeCardDesc}>Save and manage cloned voices</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.modeCard, styles.translateCard]}
+        onPress={() => navigation.navigate('TranslateSynthesize')}
+        accessibilityRole="button"
+        accessibilityLabel="Translate and synthesize speech"
+      >
+        <Text style={styles.modeCardEmoji}>🌍</Text>
+        <Text style={styles.modeCardTitle}>Translate & Speak</Text>
+        <Text style={styles.modeCardDesc}>Urdu, Arabic, Hindi + 10 more languages</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.modeCard, styles.cloneAudioCard]}
+        onPress={() => navigation.navigate('CloneAudioToAudio')}
+        accessibilityRole="button"
+        accessibilityLabel="Clone audio to audio without translation"
+      >
+        <Text style={styles.modeCardEmoji}>🔄</Text>
+        <Text style={styles.modeCardTitle}>Clone Audio</Text>
+        <Text style={styles.modeCardDesc}>Re-speak audio in a cloned voice</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
@@ -98,6 +157,10 @@ const ConversationTab: React.FC = () => {
       <ConversationStack.Screen name="ConversationMain" component={ConversationModeSelect} />
       <ConversationStack.Screen name="ConversationDetail" component={VideoConversationScreen} />
       <ConversationStack.Screen name="VoiceOnlyConversation" component={VoiceOnlyScreen} />
+      <ConversationStack.Screen name="TTSTest" component={TTSTestScreen} />
+      <ConversationStack.Screen name="VoiceLibrary" component={VoiceLibraryScreen} />
+      <ConversationStack.Screen name="TranslateSynthesize" component={TranslateSynthesizeScreen} />
+      <ConversationStack.Screen name="CloneAudioToAudio" component={CloneAudioToAudioScreen} />
     </ConversationStack.Navigator>
   );
 };
@@ -139,9 +202,7 @@ export default function MainNavigator(): React.JSX.Element {
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E5E5EA',
-          paddingBottom: 4,
           paddingTop: 4,
-          height: 56,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -208,11 +269,12 @@ const styles = StyleSheet.create({
   iconFocused: {
     opacity: 1,
   },
-  modeSelect: {
+  modeSelectContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f5f5f5',
+  },
+  modeSelect: {
+    alignItems: 'center',
     padding: 24,
   },
   modeTitle: {
@@ -238,6 +300,18 @@ const styles = StyleSheet.create({
   },
   voiceCard: {
     backgroundColor: '#34C759',
+  },
+  testCard: {
+    backgroundColor: '#FF9500',
+  },
+  libraryCard: {
+    backgroundColor: '#5856D6',
+  },
+  translateCard: {
+    backgroundColor: '#FF2D55',
+  },
+  cloneAudioCard: {
+    backgroundColor: '#AF52DE',
   },
   modeCardEmoji: {
     fontSize: 40,
